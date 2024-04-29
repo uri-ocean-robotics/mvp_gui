@@ -4,5 +4,107 @@
 {% endblock %}
 
 {% block content%}  
-  This is the home Page
+  <!-- <h1>Home Page</h1> -->
+  <h1> {{ vitals.name }}  </h1>
+
+  <h4>Health</h4>
+
+  <table class="table table-hover table-dark table-bordered">
+    <thead>
+        <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col" bgcolor="rgba(255, 255, 0)">Voltage [V]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">Current [Amp]</th>
+            <!-- <th scope="col">Connection</th> -->
+            <!-- <th scope="col">voltage</th> -->
+            <!-- <th scope="col">current</th> -->
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Your rows inside the table HERE: -->
+            <tr>
+                <td>{{ vitals.voltage }}</td>
+                <td>{{ vitals.current }}</td>
+                <!-- <td>{{ poses.z }}</td> -->
+            </tr>
+    </tbody>
+</table>
+
+  <h4>General</h4>
+  <table class="table table-hover table-dark table-bordered">
+    <thead>
+        <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col" bgcolor="rgba(255, 255, 0)">latitude [deg]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">longitude [deg]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">depth [m]</th>
+            <!-- <th scope="col">voltage</th> -->
+            <!-- <th scope="col">current</th> -->
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Your rows inside the table HERE: -->
+            <tr>
+                <td>{{ poses.lat }}</td>
+                <td>{{ poses.lon }}</td>
+                <td>{{ poses.z }}</td>
+            </tr>
+    </tbody>
+</table>
+  
+<h4>Earth frame information</h4>
+<table class="table table-hover table-dark table-bordered">
+    <thead>
+        <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col" bgcolor="rgba(255, 255, 0)">frame_id</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">x [m]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">y [m]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">z [m]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">roll [deg]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">pitch [deg]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">yaw [deg]</th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Your rows inside the table HERE: -->
+            <tr>
+                <td>{{ poses.frame_id }}</td>
+                <td>{{ poses.x }}</td>
+                <td>{{ poses.y }}</td>
+                <td>{{ poses.z }}</td>
+                <td>{{ poses.roll }}</td>
+                <td>{{ poses.pitch }}</td>
+                <td>{{ poses.yaw }}</td>
+            </tr>
+    </tbody>
+</table>
+
+<h4>Body frame information</h4>
+<table class="table table-hover table-dark table-bordered">
+  <thead>
+      <tr>
+          <!-- Your Columns HERE -->
+          <th scope="col" bgcolor="rgba(255, 255, 0)">child_frame_id</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">u [deg/s]</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">v [deg/s]</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">w [deg/s]</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">p [deg/s]</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">q [deg/s]</th>
+          <th scope="col" bgcolor="rgba(255, 255, 0)">r [deg/s]</th>
+      </tr>
+  </thead>
+  <tbody>
+      <!-- Your rows inside the table HERE: -->
+          <tr>
+              <td>{{ poses.child_frame_id }}</td>
+              <td>{{ poses.u }}</td>
+              <td>{{ poses.v }}</td>
+              <td>{{ poses.w }}</td>
+              <td>{{ poses.p }}</td>
+              <td>{{ poses.q }}</td>
+              <td>{{ poses.r }}</td>
+          </tr>
+  </tbody>
+</table>
 {% endblock %}

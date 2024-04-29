@@ -1,21 +1,40 @@
 from mvp_gui import db
 
-class User(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    username = db.Column(db.String(length=30), nullable=False, unique=True)
-    email_address = db.Column(db.String(length=50), nullable=False, unique=True)
-    password_hash = db.Column(db.String(length=60), nullable=False)
-    budget = db.Column(db.Integer(), nullable=False, default = 1000)
-    items = db.relationship('Item', backref='owned_user', lazy=True)
 
-
-class Item(db.Model):
+class Vitals(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(length=30), nullable=False, unique=True)
-    price = db.Column(db.Integer(), nullable=False)
-    barcode = db.Column(db.String(length=12), nullable=False, unique=True)
-    description = db.Column(db.String(length=1024), nullable=False, unique=True)
-    owner = db.Column(db.Integer(), db.ForeignKey('user.id'))
-    
+    voltage = db.Column(db.Numeric(10,2), nullable=False)
+    current = db.Column(db.Numeric(10,2), nullable=False)
     def __repr__(self):
-        return f'item {self.name}'
+        return f'vitals {self.name}'
+
+class Poses(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    x = db.Column(db.Numeric(10,2), nullable=False)
+    y = db.Column(db.Numeric(10,2), nullable=False)
+    z = db.Column(db.Numeric(10,2), nullable=False)
+    roll = db.Column(db.Numeric(10,2), nullable=False)
+    pitch = db.Column(db.Numeric(10,2), nullable=False)
+    yaw = db.Column(db.Numeric(10,2), nullable=False)
+    child_frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    u = db.Column(db.Numeric(10,2), nullable=False)
+    v = db.Column(db.Numeric(10,2), nullable=False)
+    w = db.Column(db.Numeric(10,2), nullable=False)
+    p = db.Column(db.Numeric(10,2), nullable=False)
+    q = db.Column(db.Numeric(10,2), nullable=False)
+    r = db.Column(db.Numeric(10,2), nullable=False)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'poses {self}'
+    
+
+class PowerItems(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    device = db.Column(db.String(length=30), nullable=False, unique=True)
+    gpio = db.Column(db.Integer(), nullable=False, unique=True)
+    status = db.Column(db.String(length=5), nullable=False)
+    def __repr__(self):
+        return f'item {self}'
