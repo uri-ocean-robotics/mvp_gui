@@ -25,8 +25,11 @@
                     <td>{{ item.gpio }}</td>
                     <td>{{ item.status }}</td>
                     <td>
-                        <button class="btn btn-outline btn-info"> On </button>
-                        <button class="btn btn-outline btn-success"> Off </button>
+                        <!-- <button  method="POST" class="btn btn-outline btn-info"> On </button> -->
+                    <form action="/power_manager" method="post">
+                        <input type="hidden" name="action" value= "{{ item.id }}" >
+                        <button type="submit"> Switch </button>
+                    </form>
                     </td>
                 </tr>
             {% endfor %}
