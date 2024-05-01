@@ -5,18 +5,24 @@ from mvp_gui import db
 import time
 import threading
 import random
+from datetime import datetime
 
-
+counter_fr = 0
 # flask turbo setup
 @app.before_request
 def before_first_request():
-    threading.Thread(target=update_load).start()
-    threading.Thread(target=random_pose).start()
+    global counter_fr
+    print("INIT: ", counter_fr)
+    if counter_fr == 0 :
+        update_t = threading.Thread(target=update_load).start()
+        random_t = threading.Thread(target=random_pose).start()
+    counter_fr += 1    
 
 def random_pose():
     with app.app_context():
         while True:
             time.sleep(1)
+            print("random_pose: ", datetime.now())
             vitals = Vitals.query.first()
             poses = Poses.query.first()
             poses.roll = random.random()
@@ -27,7 +33,7 @@ def random_pose():
             poses.z = random.random()
 
             poses.u = random.random()
-            poses.v = random.random()
+            poses.v = random.random()   
             poses.w = random.random()
             poses.p = random.random()
             poses.q = random.random()
