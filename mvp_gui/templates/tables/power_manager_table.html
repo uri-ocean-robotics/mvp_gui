@@ -1,0 +1,30 @@
+<div id="power_manager" class="power_manager">
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <!-- Your Columns HERE -->
+                <th scope="col">ID</th>
+                <th scope="col">Device</th>
+                <th scope="col">GPIO</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Your rows inside the table HERE: -->
+            {% for item in items%}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.device }}</td>
+                    <td>{{ item.gpio }}</td>
+                    <td>{{ item.status }}</td>
+                    <td>
+                    <form action="/power_manager" method="post">
+                        <input type="hidden" name="action" value= "{{ item.id }}" >
+                        <button type="submit"> Switch </button>
+                    </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

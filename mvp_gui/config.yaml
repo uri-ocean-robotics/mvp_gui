@@ -1,0 +1,21 @@
+#Homepage
+home:
+  odometry_topic:
+  geo_point_topic:
+  power_status_topic:
+
+#power manager page
+power_manager_topic_prefix: 
+
+
+#mission page
+mission:
+  get_states_service: 
+  get_state_service:
+  change_state_service:
+  load_waypoint_service:
+  update_waypoint_topic:
+
+
+
+

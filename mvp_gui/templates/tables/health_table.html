@@ -1,0 +1,22 @@
+<div id="power_health" class="power_health">
+    <table class="table table-hover table-dark table-bordered">
+    <!-- <table> -->
+        <thead>
+            <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col" bgcolor="rgba(255, 255, 0)">Voltage [V]</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">Current [Amp]</th>
+            <!-- <th scope="col">Connection</th> -->
+            <!-- <th scope="col">voltage</th> -->
+            <!-- <th scope="col">current</th> -->
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Your rows inside the table HERE: -->
+            <tr>
+            <td>{{ vitals.voltage }}</td>
+            <td>{{ vitals.current }}</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
