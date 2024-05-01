@@ -49,7 +49,7 @@ def random_pose():
 def update_load():
     with app.app_context():
         while True:
-            time.sleep(5)
+            time.sleep(1)
             turbo.push(turbo.replace(render_template("tables/health_table.html"), 'power_health'))
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))

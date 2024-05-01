@@ -4,8 +4,6 @@ from turbo_flask import Turbo
 import time
 import threading
 import random
-from datetime import datetime
-
 
 
 app = Flask(__name__)
@@ -15,6 +13,5 @@ turbo = Turbo(app)
 
 db = SQLAlchemy(app)
 app.app_context().push()
-
 
 from mvp_gui import routes
