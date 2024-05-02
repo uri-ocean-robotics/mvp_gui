@@ -12,7 +12,7 @@ counter_fr = 0
 @app.before_request
 def before_first_request():
     global counter_fr
-    # print("INIT: ", counter_fr)
+    print("INIT: ", counter_fr)
     if counter_fr == 0 :
         update_t = threading.Thread(target=update_load).start()
         random_t = threading.Thread(target=random_pose).start()
@@ -22,7 +22,7 @@ def random_pose():
     with app.app_context():
         while True:
             time.sleep(1)
-            # print("random_pose: ", datetime.now())
+            print("random_pose: ", datetime.now())
             vitals = Vitals.query.first()
             poses = Poses.query.first()
             poses.roll = random.random()
@@ -53,6 +53,7 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/health_table.html"), 'power_health'))
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
+            # turbo.push(turbo.replace(render_template("tables/map_table.html"), 'map'))
 
 @app.context_processor
 def inject_load():
@@ -91,6 +92,11 @@ def power_manager_page():
             # return render_template("power_manager.html", items=items, vitals=vitals)
     return render_template("power_manager.html", items=items, vitals=vitals)
 
+@app.route("/map", methods=['GET', 'POST'])
+def map_page():
+    print("map lnk")
+    return render_template("map.html")
+
 @app.route("/mission")
 def mission_page():
     return render_template("mission.html")
@@ -98,6 +104,8 @@ def mission_page():
 @app.route("/monitor")
 def monitor_page():
     return render_template("monitor.html")
+
+
 
 
 
