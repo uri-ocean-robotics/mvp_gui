@@ -12,7 +12,7 @@ counter_fr = 0
 @app.before_request
 def before_first_request():
     global counter_fr
-    print("INIT: ", counter_fr)
+    # print("INIT: ", counter_fr)
     if counter_fr == 0 :
         update_t = threading.Thread(target=update_load).start()
         random_t = threading.Thread(target=random_pose).start()
@@ -22,7 +22,7 @@ def random_pose():
     with app.app_context():
         while True:
             time.sleep(1)
-            print("random_pose: ", datetime.now())
+            # print("random_pose: ", datetime.now())
             vitals = Vitals.query.first()
             poses = Poses.query.first()
             poses.roll = random.random()
@@ -67,7 +67,14 @@ def inject_load():
 def home_page():
     vitals = Vitals.query.first()
     poses = Poses.query.first()
+    return render_template("home.html", vitals=vitals, poses=poses)
+
+
+@app.route("/power_manager",  methods=['GET', 'POST']) 
+def power_manager_page():
+    vitals = Vitals.query.first()
     items = PowerItems.query.all()
+    # print("power manager")
     if request.method == 'POST':
         action = request.form.get('action')
         for item in items:
@@ -80,27 +87,9 @@ def home_page():
                 else:
                     item.status = "On"
                     db.session.commit()
-    return render_template("home.html", vitals=vitals, poses=poses, items=items)
-
-
-# @app.route("/power_manager",  methods=['GET', 'POST']) 
-# def power_manager_page():
-#     vitals = Vitals.query.first()
-#     items = PowerItems.query.all()
-#     if request.method == 'POST':
-#         action = request.form.get('action')
-#         for item in items:
-#             # print(str(item.id))
-#             if action == str(item.id):
-#                 if item.status == 'On':
-#                     item.status = 'Off'
-#                     db.session.commit()
-#                     ##call rosservice
-#                 else:
-#                     item.status = "On"
-#                     db.session.commit()
-#                     ##call rosservice
-#     return render_template("power_manager.html", items=items, vitals=vitals)
+                    ##call rosservice
+            # return render_template("power_manager.html", items=items, vitals=vitals)
+    return render_template("power_manager.html", items=items, vitals=vitals)
 
 @app.route("/mission")
 def mission_page():
