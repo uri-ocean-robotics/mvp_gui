@@ -1,0 +1,21 @@
+
+{% extends "base.html" %}
+{% block title%}
+    Display a satellite map
+{% endblock %}
+
+{% block head%}
+<script src='https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.js'></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        html, body, #map { height: 100%; }
+</style>
+{% endblock %}
+
+{% block content%}  
+    {% include "tables/map_table.html" %}
+{% endblock %}
+
+
+
+  
