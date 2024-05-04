@@ -1,11 +1,12 @@
 from mvp_gui import app, turbo
 from flask import render_template, request, redirect, url_for
-from mvp_gui.models import PowerItems, Vitals, Poses
+from mvp_gui.models import PowerItems, Vitals, Poses, Waypoints
 from mvp_gui import db
 import time
 import threading
 import random
 from datetime import datetime
+from mvp_gui.forms import WaypointForm
 
 counter_fr = 0
 # flask turbo setup
@@ -97,9 +98,29 @@ def map_page():
     print("map lnk")
     return render_template("map.html")
 
-@app.route("/mission")
+@app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
-    return render_template("mission.html")
+    waypoints = Waypoints.query.all()
+    print(len(waypoints))
+    return render_template("mission.html", items=waypoints)
+
+@app.route('/mission/waypoints', methods=['GET','POST'])
+def register_page():
+    form = WaypointForm()
+    if form.validate_on_submit():
+         waypoint = Waypoints(id=form.id.data,
+                               type=form.type.dat,
+                               lat=form.lat.data,
+                               lon=form.lon.data,
+                               x=form.x.data,
+                               y=form.x.data,
+                               z=form.x.data,
+                               )
+         db.session.add(waypoint)
+         db.session.commit()
+         return redirect(url_for('/mission'))
+    return render_template('/mission.html', form=form)
+
 
 @app.route("/monitor")
 def monitor_page():

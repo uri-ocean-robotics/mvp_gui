@@ -38,3 +38,15 @@ class PowerItems(db.Model):
     status = db.Column(db.String(length=5), nullable=False)
     def __repr__(self):
         return f'item {self}'
+    
+
+class Waypoints(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    type = db.Column(db.String(length=30), nullable=False)
+    lat = db.Column(db.Numeric(10,8), nullable=True)
+    lon = db.Column(db.Numeric(10,8), nullable=True)
+    x = db.Column(db.Numeric(10,2), nullable=True)
+    y = db.Column(db.Numeric(10,2), nullable=True)
+    z = db.Column(db.Numeric(10,2), nullable=True)
+    def __repr__(self):
+        return f'waypoints {self}'
