@@ -47,8 +47,11 @@
                         <form action="/mission" method="post">
                             <input type="hidden" name="edit" value= "{{ item.id }}" >
                             <button type="submit"> Edit </button>
-                            
-                            <input type="hidden" name="action" value= "{{ item.id }}" >
+                        </form>
+                        </td>
+                        <td>
+                        <form action="/mission" method="post">
+                            <input type="hidden" name="delete" value= "{{ item.id }}" >
                             <button type="submit"> Delete </button>                            
                         </form>
                         </td>

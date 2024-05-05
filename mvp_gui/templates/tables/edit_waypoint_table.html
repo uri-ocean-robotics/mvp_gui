@@ -1,0 +1,37 @@
+ <!-- <body class="text-center"></body> -->
+ <div class="edit_waypoint">
+    <form method="POST" class = "form-register" style="color:white">
+        {{ form .hidden_tag() }}
+        <h1 class="h3 mb-3 font-weight-normal">
+           Edit the waypoint
+        </h1>
+        <br>
+        {{ form.id.label() }}
+        {{ form.id(class="form-control", placeholder="id", value=entry.id ) }}
+        <br>
+        {{ form.type.label() }}
+        {{ form.type(class="form-control", placeholder="geo or xy", value=entry.type ) }}
+        <br>
+        {{ form.lat.label() }}
+        {{ form.lat(class="form-control", placeholder="Latitude", value=entry.lat) }}
+        <br>
+        {{ form.lon.label() }}
+        {{ form.lon(class="form-control", placeholder="Longitude", value=entry.lon) }}
+        <br>
+        {{ form.x.label() }}
+        {{ form.x(class="form-control", placeholder="x", value=entry.x) }}
+        <br>
+        {{ form.y.label() }}
+        {{ form.y(class="form-control", placeholder="y", value=entry.y) }}
+        <br>
+        {{ form.z.label() }}
+        {{ form.z(class="form-control", placeholder="depth", value=entry.z) }}   
+        <br>
+        <input type="submit" value="Submit"> 
+    </form>
+    <br>
+    <!-- <form action="/mission/waypoints" method="post">
+        <input type="hidden" name="action" value= "submit" >
+        <button type="submit"> Submit </button>                          
+    </form> -->
+</div>
