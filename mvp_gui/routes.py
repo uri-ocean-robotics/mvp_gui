@@ -101,25 +101,31 @@ def map_page():
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
     waypoints = Waypoints.query.all()
-    print(len(waypoints))
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == str("add"):
+            return redirect(url_for('add_waypoint_page'))
     return render_template("mission.html", items=waypoints)
 
 @app.route('/mission/waypoints', methods=['GET','POST'])
-def register_page():
+def add_waypoint_page():
     form = WaypointForm()
+    waypoints = Waypoints.query.all()
+    id_data = len(waypoints)+1
     if form.validate_on_submit():
-         waypoint = Waypoints(id=form.id.data,
-                               type=form.type.dat,
-                               lat=form.lat.data,
-                               lon=form.lon.data,
-                               x=form.x.data,
-                               y=form.x.data,
-                               z=form.x.data,
-                               )
-         db.session.add(waypoint)
-         db.session.commit()
-         return redirect(url_for('/mission'))
-    return render_template('/mission.html', form=form)
+        waypoint = Waypoints(id=id_data,
+                           type=form.type.data,
+                           lat=form.lat.data,
+                           lon=form.lon.data,
+                           x=form.x.data,
+                           y=form.y.data,
+                           z=form.z.data,
+                           )
+        db.session.add(waypoint)
+        db.session.commit()
+        return redirect(url_for('mission_page'))
+    return render_template('add_waypoints.html', form=form
+    )
 
 
 @app.route("/monitor")

@@ -1,19 +1,19 @@
 <div id="mission_waypoints" class="mission_waypoints">
     <h4>Mission Manager Commands</h4>
     <form action="/mission" method="post">
-        <input type="hidden" name="add" >
+        <input type="hidden" name="action"  value ="add">
         <button type="submit"> Add Wayponts </button>
 
-        <input type="hidden" name="load" >
+        <input type="hidden" name="action" value ="load">
         <button type="submit"> Load a waypoint file </button>
 
-        <input type="hidden" name="load" >
+        <input type="hidden" name="action" value ="pick">
         <button type="submit"> Pick waypoints </button>
         
-        <input type="hidden" name="publish" >
+        <input type="hidden" name="action" value="publish" >
         <button type="submit"> Publish waypoints </button>      
         
-        <input type="hidden" name="generate" >
+        <input type="hidden" name="action" >
         <button type="submit"> Generate Waypont file </button>
     </form>
     

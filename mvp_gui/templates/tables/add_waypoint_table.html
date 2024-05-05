@@ -1,0 +1,37 @@
+ <!-- <body class="text-center"></body> -->
+ <div class="add_waypoint">
+    <form method="POST" class = "form-register" style="color:white">
+        {{ form .hidden_tag() }}
+        <h1 class="h3 mb-3 font-weight-normal">
+            Please Add a waypoint
+        </h1>
+        <br>
+        <!-- {{ form.id.label() }} -->
+        <!-- {{ form.id(class="form-control", placeholder="ID") }} -->
+        <br>
+        {{ form.type.label() }}
+        {{ form.type(class="form-control", placeholder="geo or xy") }}
+        <br>
+        {{ form.lat.label() }}
+        {{ form.lat(class="form-control", placeholder="Latitude") }}
+        <br>
+        {{ form.lon.label() }}
+        {{ form.lon(class="form-control", placeholder="Longitude") }}
+        <br>
+        {{ form.x.label() }}
+        {{ form.x(class="form-control", placeholder="x") }}
+        <br>
+        {{ form.y.label() }}
+        {{ form.y(class="form-control", placeholder="y") }}
+        <br>
+        {{ form.z.label() }}
+        {{ form.z(class="form-control", placeholder="depth") }}   
+        <br>
+        <input type="submit" value="Submit"> 
+    </form>
+    <br>
+    <!-- <form action="/mission/waypoints" method="post">
+        <input type="hidden" name="action" value= "submit" >
+        <button type="submit"> Submit </button>                          
+    </form> -->
+</div>
