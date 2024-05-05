@@ -106,8 +106,6 @@ def mission_page():
 
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
-    print(len(waypoints))
-
     ##reassign the ID from 1 to N
     count = 1
     for entry in waypoints:

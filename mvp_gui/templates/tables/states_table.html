@@ -1,0 +1,28 @@
+<div id="mission_state" class="mission_state">
+    <h4>Mission State machine Commands</h4>
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <!-- Your Columns HERE -->
+                <th scope="col">Current state</th>
+                <th scope="col">Connected state</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Your rows inside the table HERE: -->
+            <tr>
+                <td>Idle</td>
+                <td>
+                <form action="/mission" method="post">
+                    <input type="hidden" name="states" value= "survey_global" >
+                    <button type="submit"> survey_global </button>
+                    <input type="hidden" name="states" value= "kill" >
+                    <button type="submit"> kill </button>
+                    <input type="hidden" name="states" value= "idle" >
+                    <button type="submit"> idle </button>
+                </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
