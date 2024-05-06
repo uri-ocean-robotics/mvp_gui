@@ -21,6 +21,7 @@
     <script>
         
         const jsonData = {{ items_jsn | safe }};
+        const coordinates = document.getElementById('coordinates');
         const map = new maplibregl.Map({
             container: 'map',
             zoom: 9,
@@ -35,9 +36,16 @@
         //     .addTo(map);
 
         jsonData.forEach(item => {
-            const marker = new maplibregl.Marker()
+            const marker = new maplibregl.Marker({draggable: true})
             .setLngLat([item.lon, item.lat])
             .addTo(map);
+            function onDragEnd() {
+                const lngLat = marker.getLngLat();
+                coordinates.style.display = 'block';
+                coordinates.innerHTML =
+                    `Longitude: ${lngLat.lng}<br />Latitude: ${lngLat.lat}`;
+            }
+            marker.on('dragend', onDragEnd);
         });
 
     
