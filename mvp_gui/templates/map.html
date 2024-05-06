@@ -16,7 +16,6 @@
     {{ turbo() }}
 </head>
 <body>
-    
     <div id="map"></div>
     <script>
         
@@ -29,26 +28,73 @@
             style:
                 'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
         });
-        map.addControl(new maplibregl.NavigationControl());
+        map.addControl(new maplibregl.NavigationControl()); 
+        
+        map.on('load', () =>{
+            //make lines
+            const coordinates = jsonData.map(entry => ({
+                latitude: entry.lat,
+                longitude: entry.lon
+            }));
+            const geojson = {
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: coordinates.map(coord => [coord.longitude, coord.latitude])
+                        },
+                        properties: {
+                            // You can add additional properties here if needed
+                        }
+                    }
+                ]
+            };
+            map.addSource('route', {
+                type: 'geojson',
+                data: geojson
+            });
 
-        // const marker = new maplibregl.Marker()
-        //     .setLngLat([-71.42000000, 41.50000000])
-        //     .addTo(map);
-
-        jsonData.forEach(item => {
-            const marker = new maplibregl.Marker({draggable: true})
-            .setLngLat([item.lon, item.lat])
-            .addTo(map);
-            function onDragEnd() {
-                const lngLat = marker.getLngLat();
-                coordinates.style.display = 'block';
-                coordinates.innerHTML =
-                    `Longitude: ${lngLat.lng}<br />Latitude: ${lngLat.lat}`;
-            }
-            marker.on('dragend', onDragEnd);
+            map.addLayer({
+                id: 'route',
+                type: 'line',
+                source: 'route',
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-color': '#F7455D',
+                    'line-width': 4
+                }
+            });
+                    
+            ///add marker
+            jsonData.forEach(item => {
+                const marker = new maplibregl.Marker({draggable: true})
+                .setLngLat([item.lon, item.lat])
+                .addTo(map);
+                function onDragEnd() {
+                    const coordinates = marker.getLngLat();
+                    fetch('/waypoint_drag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: item.id,
+                        lng: coordinates.lng,
+                        lat: coordinates.lat
+                    })
+                });
+                }
+                marker.on('dragend', onDragEnd);
+                
+            });
         });
-
-    
     </script>
 </body>
+    Current longitude
+
 </html>

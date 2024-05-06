@@ -97,9 +97,20 @@ def power_manager_page():
     return render_template("power_manager.html", items=items, vitals=vitals)
 
 
+@app.route('/waypoint_drag', methods=['POST'])
+def waypoint_drag():
+    ##map actions
+    js_data = request.json
+    js_lon = js_data['lng']
+    js_lat = js_data['lat']
+    entry = Waypoints.query.get(js_data['id'])
+    entry.lat= js_lat
+    entry.lon = js_lon
+    db.session.commit()
+    return redirect(url_for('mission_page'))
+
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
-    
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     
@@ -118,7 +129,7 @@ def mission_page():
         entry.id = count
         count = count + 1
         db.session.commit()
-    
+
     #button actiions
     if request.method == 'POST':
         # action = request.form.get('action')
