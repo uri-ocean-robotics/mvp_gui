@@ -1,33 +1,29 @@
 <div id="mission_waypoints" class="mission_waypoints">
     <h4>Mission Manager Commands</h4>
-    <form action="/mission" method="post">
-        <input type="hidden" name="action"  value ="add">
-        <button type="submit"> Add Wayponts </button>
-
-        <input type="hidden" name="action" value ="load">
-        <button type="submit"> Load a waypoint file </button>
-
-        <input type="hidden" name="action" value ="pick">
-        <button type="submit"> Pick waypoints </button>
-        
-        <input type="hidden" name="action" value="publish" >
-        <button type="submit"> Publish waypoints </button>      
-        
-        <input type="hidden" name="action" >
-        <button type="submit"> Generate Waypont file </button>
-    </form>
-    
+    <table class="table table-hover table-dark">
+        <tbody>
+            <td>
+            <form action="/mission" method="post">
+                <input type="hidden" name="add"  value ="add">
+                <button type="submit"> Add Wayponts </button>
+            </form>
+            </td>
+            <td>
+            <form action="/mission" method="post">
+                <input type="hidden" name="publish" value="publish" >
+                <button type="submit"> Publish waypoints </button>  
+            </form>
+            </td>
+        </tbody>
+    </table>
     <h4>Waypoints in the Database</h4>
     <table class="table table-hover table-dark">
         <thead>
             <tr>
                 <!-- Your Columns HERE -->
                 <th scope="col">ID</th>
-                <th scope="col">Type</th>
                 <th scope="col">Laitude [deg]</th>
                 <th scope="col">Longitude[deg]</th>
-                <th scope="col">x [m]</th>
-                <th scope="col">y [m]</th>
                 <th scope="col">z [m]</th>
             </tr>
         </thead>
@@ -37,11 +33,8 @@
                 {% for item in items%}
                     <tr>
                         <td>{{ item.id }}</td>
-                        <td>{{ item.type }}</td>
                         <td>{{ item.lat }}</td>
                         <td>{{ item.lon }}</td>
-                        <td>{{ item.x }}</td>
-                        <td>{{ item.y }}</td>
                         <td>{{ item.z }}</td>
                         <td>
                         <form action="/mission" method="post">

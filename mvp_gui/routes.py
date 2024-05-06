@@ -1,4 +1,5 @@
 from mvp_gui import app, turbo
+import json
 from flask import render_template, request, redirect, url_for
 from mvp_gui.models import PowerItems, Vitals, Poses, Waypoints
 from mvp_gui import db
@@ -23,7 +24,7 @@ def random_pose():
     with app.app_context():
         while True:
             time.sleep(1)
-            print("random_pose: ", datetime.now())
+            # print("random_pose: ", datetime.now())
             vitals = Vitals.query.first()
             poses = Poses.query.first()
             poses.roll = random.random()
@@ -54,6 +55,7 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/health_table.html"), 'power_health'))
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
+            # turbo.push(turbo.replace(render_template("map.html"), 'map'))
             # turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
             # turbo.push(turbo.replace(render_template("tables/map_table.html"), 'map'))
 
@@ -95,17 +97,21 @@ def power_manager_page():
     return render_template("power_manager.html", items=items, vitals=vitals)
 
 
-@app.route("/map", methods=['GET', 'POST'])
-def map_page():
-    print("map lnk")
-    return render_template("map.html")
-
-
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
-
+    
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
+    
+    waypoints_data = []
+    for waypoint in waypoints:
+        waypoint_dict = {
+            "id": waypoint.id,
+            "lat": float(waypoint.lat),
+            "lon": float(waypoint.lon)
+        }
+        waypoints_data.append(waypoint_dict)
+
     ##reassign the ID from 1 to N
     count = 1
     for entry in waypoints:
@@ -115,12 +121,15 @@ def mission_page():
     
     #button actiions
     if request.method == 'POST':
-        action = request.form.get('action')
-        if action == str("add"):
-            return redirect(url_for('add_waypoint_page'))   
+        # action = request.form.get('action')
+        if 'add' in request.form:
+            return redirect(url_for('add_waypoint_page')) 
+
+        elif 'publish' in request.form:
+            print("waypoint publish")
 
         ##delete a waypoint
-        if 'delete' in request.form:
+        elif 'delete' in request.form:
             delete_id = request.form['delete']
             entry = Waypoints.query.get(delete_id)
             if entry:
@@ -134,7 +143,7 @@ def mission_page():
             return redirect(url_for('edit_waypoint_page', edit_id=edit_id)) 
         
     ##render the mission site      
-    return render_template("mission.html", items=waypoints)
+    return render_template("mission.html", items=waypoints, items_jsn=waypoints_data)
 
 
 @app.route('/mission/edit_waypoint', methods=['GET','POST'])
@@ -145,20 +154,9 @@ def edit_waypoint_page():
 
     ## if submit pressed
     if form.validate_on_submit():
-        ##set non values based on type
-        if form.type.data == str("geo"):
-            form.x.data = float("nan")
-            form.y.data = float("nan")
-        if form.type.data == str("local"):
-            form.lat.data = float("nan")
-            form.lon.data = float("nan")
-        ##get the values then commit
         entry.id = form.id.data
-        entry.type = form.type.data
         entry.lat = form.lat.data
         entry.lon = form.lon.data
-        entry.x = form.x.data
-        entry.y = form.y.data
         entry.z = form.z.data
         db.session.commit()
 
@@ -174,20 +172,10 @@ def add_waypoint_page():
 
     ## if submit pressed
     if form.validate_on_submit():
-        ##set non values based on type
-        if form.type.data == str("geo"):
-            form.x.data = float("nan")
-            form.y.data = float("nan")
-        if form.type.data == str("local"):
-            form.lat.data = float("nan")
-            form.lon.data = float("nan")
         ##get values    
         waypoint = Waypoints(id=id_data,
-                           type=form.type.data,
                            lat=form.lat.data,
                            lon=form.lon.data,
-                           x=form.x.data,
-                           y=form.y.data,
                            z=form.z.data,
                            )
         db.session.add(waypoint)

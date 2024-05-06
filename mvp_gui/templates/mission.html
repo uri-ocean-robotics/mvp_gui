@@ -1,9 +1,11 @@
 {% extends "base.html" %}
 {% block title%}
-  Power Manager
+  Mission
 {% endblock %}
 
 {% block content%}  
-  {% include "tables/states_table.html" %}
+    {% include "tables/states_table.html" %}
     {% include "tables/waypoints_table.html" %}
+    {% include "tables/waypoint_map.html" %}
+    {% include 'map.html' %}
 {% endblock %}
