@@ -40,10 +40,9 @@ def random_pose():
             poses.p = random.random()
             poses.q = random.random()
             poses.r = random.random()
-
-            poses.lat = 41.5 + random.random()*0.1
-            poses.lon = -71.6 + random.random()*0.1
-
+            poses.lat = 41.42947277 + random.random()*0.01
+            poses.lon = -71.56783571 + random.random()*0.01
+            
             vitals.voltage = random.random()
             vitals.current = random.random()
             db.session.commit()  

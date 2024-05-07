@@ -10,8 +10,8 @@ const vehicleData = {{ vehicle_jsn | safe }};
 const coordinates = document.getElementById('coordinates');
 const map = new maplibregl.Map({
     container: 'map',
-    zoom: 9,
-    center: [-71.421376, 41.491393], //long lat
+    zoom: 14,
+    center: [vehicleData.lon, vehicleData.lat], //long lat
     style:
         'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
 });
