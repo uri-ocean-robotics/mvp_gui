@@ -43,6 +43,12 @@
                         </form>
                         </td>
                         <td>
+                            <form action="/mission" method="post">
+                                <input type="hidden" name="copy" value= "{{ item.id }}" >
+                                <button type="submit"> Copy </button>
+                            </form>
+                        </td>
+                        <td>
                         <form action="/mission" method="post">
                             <input type="hidden" name="delete" value= "{{ item.id }}" >
                             <button type="submit"> Delete </button>                            

@@ -111,17 +111,16 @@ def waypoint_drag():
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
+
+    ##get vehilce lat lon for map
     poses = Poses.query.first()
-    # vehicle_data = []
     vehicle_data = {
             "lat": float(poses.lat),
             "lon": float(poses.lon)
         }
-    # vehicle_data.append(vehicle_dict)
 
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
-    
     waypoints_data = []
     for waypoint in waypoints:
         waypoint_dict = {
@@ -160,6 +159,20 @@ def mission_page():
         elif 'edit' in request.form:
             edit_id = request.form['edit']
             return redirect(url_for('edit_waypoint_page', edit_id=edit_id)) 
+        
+        elif 'copy' in request.form:
+            edit_id = request.form['copy']
+            entry = Waypoints.query.get(edit_id)
+            new_entry = Waypoints()
+
+            new_entry.id = len(waypoints)+1 #already obtained before
+            new_entry.lat = entry.lat
+            new_entry.lon = entry.lon
+            new_entry.z = entry.z
+
+            db.session.add(new_entry)
+            db.session.commit()
+            return redirect(url_for('mission_page'))
         
     ##render the mission site
     return render_template("mission.html", items=waypoints, items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
