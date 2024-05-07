@@ -1,0 +1,143 @@
+
+<div id="map" class="map"></div>
+
+<!-- Include the script.js file -->
+<script>
+
+const jsonData = {{ items_jsn | safe }};
+const vehicleData = {{ vehicle_jsn | safe }};
+
+const coordinates = document.getElementById('coordinates');
+const map = new maplibregl.Map({
+    container: 'map',
+    zoom: 9,
+    center: [-71.421376, 41.491393], //long lat
+    style:
+        'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
+});
+map.addControl(new maplibregl.NavigationControl()); 
+
+map.on('load', () =>{
+    //make lines
+    const coordinates = jsonData.map(entry => ({
+        latitude: entry.lat,
+        longitude: entry.lon
+    }));
+    const geojson = {
+        type: 'FeatureCollection',
+        features: [
+            {
+                type: 'Feature',
+                geometry: {
+                    type: 'LineString',
+                    coordinates: coordinates.map(coord => [coord.longitude, coord.latitude])
+                },
+                properties: {
+                    // You can add additional properties here if needed
+                }
+            }
+        ]
+    };
+    map.addSource('route', {
+        type: 'geojson',
+        data: geojson
+    });
+
+    map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+        },
+        paint: {
+            'line-color': '#F7455D',
+            'line-width': 4
+        }
+    });
+    
+    ///add AUV marker
+    const marker = new maplibregl.Marker({ draggable: false})
+        .setLngLat([vehicleData.lon, vehicleData.lat])
+        .addTo(map);
+    ///add marker
+    function createMarker(item, color) {
+    const marker = new maplibregl.Marker({ draggable: true, color: color })
+        .setLngLat([item.lon, item.lat])
+        .addTo(map);
+
+    function onDragEnd() {
+        const coordinates = marker.getLngLat();
+        fetch('/waypoint_drag', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                id: item.id,
+                lng: coordinates.lng,
+                lat: coordinates.lat
+            })
+        });
+    }
+
+    marker.on('dragend', onDragEnd);
+    }
+
+    jsonData.forEach(item => {
+        if (item.id == 1) {
+            createMarker(item, "#e50112");
+        } else if (item.id > 1) {
+            createMarker(item, "#00FF00");
+        }
+    });
+    // jsonData.forEach(item => {
+    //     if (item.id==1)
+    //     {
+    //         const marker = new maplibregl.Marker({draggable: true, color: "#e50112"})
+    //         .setLngLat([item.lon, item.lat])
+    //         .addTo(map);
+    //         function onDragEnd() {
+    //         const coordinates = marker.getLngLat();
+    //         fetch('/waypoint_drag', {
+    //         method: 'POST',
+    //         headers: {
+    //             'Content-Type': 'application/json',
+    //         },
+    //         body: JSON.stringify({
+    //             id: item.id,
+    //             lng: coordinates.lng,
+    //             lat: coordinates.lat
+    //         })
+    //         });
+    //     }
+    //     marker.on('dragend', onDragEnd);
+    //     }
+
+    //     if (item.id > 1){
+    //         const marker2 = new maplibregl.Marker({draggable: true, color: "#00FF00"})
+    //             .setLngLat([item.lon, item.lat])
+    //             .addTo(map);
+    //             function onDragEnd2() {
+    //             const coordinates = marker2.getLngLat();
+    //             fetch('/waypoint_drag', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json',
+    //             },
+    //             body: JSON.stringify({
+    //                 id: item.id,
+    //                 lng: coordinates.lng,
+    //                 lat: coordinates.lat
+    //             })
+    //             });
+    //     }
+    //     marker2.on('dragend', onDragEnd2);
+    //     }
+    // });
+});
+
+
+</script>
+<!-- </html> -->

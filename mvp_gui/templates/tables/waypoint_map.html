@@ -3,15 +3,20 @@
     <table class="table table-hover table-dark">
         <tbody>
             <td>
+            <h3>Red Marker: First Waypoint</h3>
+            <!-- </td> -->
+            <!-- <td> -->
             <form action="/mission" method="post">
-                <input type="hidden" name="landmark"  value ="landmark">
-                <button type="submit"> Add landmark </button>
-            </form>
-            </td>
-            <td>
-            <form action="/mission" method="post">
-                <input type="hidden" name="reset_map" value="reset_map" >
-                <button type="submit"> Reset map center </button>  
+                <!-- <input type="hidden" name="refressh_map" value="refresh_map" > -->
+                <!-- <button type="submit"> Update Map </button>   -->
+                <button onclick="refreshPage()"> Update Map</button>
+                <!-- JavaScript function to refresh the page -->
+                <script>
+                    function refreshPage() {
+                        // Use the location object to reload the current page
+                        location.reload();
+                    }
+                </script>
             </form>
             </td>
         </tbody>

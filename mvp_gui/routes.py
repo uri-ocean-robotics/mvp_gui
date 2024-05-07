@@ -41,8 +41,8 @@ def random_pose():
             poses.q = random.random()
             poses.r = random.random()
 
-            poses.lat = random.random()
-            poses.lon = random.random()
+            poses.lat = 41.5 + random.random()*0.1
+            poses.lon = -71.6 + random.random()*0.1
 
             vitals.voltage = random.random()
             vitals.current = random.random()
@@ -55,7 +55,7 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/health_table.html"), 'power_health'))
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
-            # turbo.push(turbo.replace(render_template("map.html"), 'map'))
+            # turbo.push(turbo.replace(render_template("tables/map.html"), 'map'))
             # turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
             # turbo.push(turbo.replace(render_template("tables/map_table.html"), 'map'))
 
@@ -111,6 +111,14 @@ def waypoint_drag():
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
+    poses = Poses.query.first()
+    # vehicle_data = []
+    vehicle_data = {
+            "lat": float(poses.lat),
+            "lon": float(poses.lon)
+        }
+    # vehicle_data.append(vehicle_dict)
+
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     
@@ -153,8 +161,8 @@ def mission_page():
             edit_id = request.form['edit']
             return redirect(url_for('edit_waypoint_page', edit_id=edit_id)) 
         
-    ##render the mission site      
-    return render_template("mission.html", items=waypoints, items_jsn=waypoints_data)
+    ##render the mission site
+    return render_template("mission.html", items=waypoints, items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
 
 
 @app.route('/mission/edit_waypoint', methods=['GET','POST'])
