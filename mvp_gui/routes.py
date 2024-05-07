@@ -111,24 +111,8 @@ def waypoint_drag():
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
-
-    ##get vehilce lat lon for map
-    poses = Poses.query.first()
-    vehicle_data = {
-            "lat": float(poses.lat),
-            "lon": float(poses.lon)
-        }
-
     ## sort the waypoints by id
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
-    waypoints_data = []
-    for waypoint in waypoints:
-        waypoint_dict = {
-            "id": waypoint.id,
-            "lat": float(waypoint.lat),
-            "lon": float(waypoint.lon)
-        }
-        waypoints_data.append(waypoint_dict)
 
     ##reassign the ID from 1 to N
     count = 1
@@ -175,8 +159,7 @@ def mission_page():
             return redirect(url_for('mission_page'))
         
     ##render the mission site
-    return render_template("mission.html", items=waypoints, items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
-
+    return render_template("mission.html", items=waypoints)
 
 @app.route('/mission/edit_waypoint', methods=['GET','POST'])
 def edit_waypoint_page():
@@ -214,6 +197,28 @@ def add_waypoint_page():
         db.session.commit()
         return redirect(url_for('mission_page'))
     return render_template('add_waypoints.html', form=form)
+
+
+@app.route('/map', methods=['GET','POST'])
+def map_page():
+     ##get vehilce lat lon for map
+    poses = Poses.query.first()
+    vehicle_data = {
+            "lat": float(poses.lat),
+            "lon": float(poses.lon)
+        }
+
+    ## sort the waypoints by id
+    waypoints = Waypoints.query.order_by(Waypoints.id).all()
+    waypoints_data = []
+    for waypoint in waypoints:
+        waypoint_dict = {
+            "id": waypoint.id,
+            "lat": float(waypoint.lat),
+            "lon": float(waypoint.lon)
+        }
+        waypoints_data.append(waypoint_dict)
+    return render_template("map.html", items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
 
 
 @app.route("/monitor")
