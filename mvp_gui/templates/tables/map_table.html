@@ -10,12 +10,19 @@ const vehicleData = {{ vehicle_jsn | safe }};
 const coordinates = document.getElementById('coordinates');
 const map = new maplibregl.Map({
     container: 'map',
-    zoom: 14,
+    zoom: 12,
     center: [vehicleData.lon, vehicleData.lat], //long lat
     style:
         'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
 });
 map.addControl(new maplibregl.NavigationControl()); 
+
+map.addControl(new maplibregl.ScaleControl({
+        maxWidth: 80,
+        unit: 'metric', // You can also use 'metric' or 'nautical'
+        // position: 'top-left'
+    }));
+
 
 map.on('load', () =>{
     //make lines
