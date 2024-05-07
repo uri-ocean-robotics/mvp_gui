@@ -1,32 +1,27 @@
-
 <div id="map" class="map"></div>
 
 <!-- Include the script.js file -->
 <script>
+    // Simulating `jsonData` and `vehicleData` server-provided data
+    const jsonData = {{ items_jsn | safe }};
+    const vehicleData = {{ vehicle_jsn | safe }};
 
-const jsonData = {{ items_jsn | safe }};
-const vehicleData = {{ vehicle_jsn | safe }};
-
-const coordinates = document.getElementById('coordinates');
-const map = new maplibregl.Map({
-    container: 'map',
-    zoom: 12,
-    center: [vehicleData.lon, vehicleData.lat], //long lat
-    style:
-        'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
-});
-map.addControl(new maplibregl.NavigationControl()); 
-
-map.addControl(new maplibregl.ScaleControl({
+    const coordinates = document.getElementById('coordinates');
+    const map = new maplibregl.Map({
+        container: 'map',
+        zoom: 12,
+        center: [vehicleData.lon, vehicleData.lat], //long lat
+        style:
+            'https://api.maptiler.com/maps/hybrid/style.json?key=get_your_own_OpIi9ZULNHzrESv6T2vL'
+    });
+    map.addControl(new maplibregl.NavigationControl());
+    map.addControl(new maplibregl.ScaleControl({
         maxWidth: 80,
-        unit: 'metric', // You can also use 'metric' or 'nautical'
-        // position: 'top-left'
+        unit: 'metric' // 'metric' or 'nautical'
     }));
 
-
-map.on('load', () =>{
-    //make lines
-    const coordinates = jsonData.map(entry => ({
+    // Prepare GeoJSON data for the route
+    let coordinatesData = jsonData.map(entry => ({
         latitude: entry.lat,
         longitude: entry.lon
     }));
@@ -37,71 +32,85 @@ map.on('load', () =>{
                 type: 'Feature',
                 geometry: {
                     type: 'LineString',
-                    coordinates: coordinates.map(coord => [coord.longitude, coord.latitude])
-                },
-                properties: {
-                    // You can add additional properties here if needed
+                    coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
                 }
             }
         ]
     };
-    map.addSource('route', {
-        type: 'geojson',
-        data: geojson
-    });
 
-    map.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-        },
-        paint: {
-            'line-color': '#F7455D',
-            'line-width': 4
-        }
-    });
-    
-    ///add AUV marker
-    const marker = new maplibregl.Marker({ draggable: false})
-        .setLngLat([vehicleData.lon, vehicleData.lat])
-        .addTo(map);
-    ///add marker
-    function createMarker(item, color) {
-    const marker = new maplibregl.Marker({ draggable: true, color: color })
-        .setLngLat([item.lon, item.lat])
-        .addTo(map);
-
-    function onDragEnd() {
-        const coordinates = marker.getLngLat();
-        fetch('/waypoint_drag', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                id: item.id,
-                lng: coordinates.lng,
-                lat: coordinates.lat
-            })
+    // Initialize the map and add the route
+    map.on('load', () => {
+        map.addSource('route', {
+            type: 'geojson',
+            data: geojson
         });
-    }
 
-    marker.on('dragend', onDragEnd);
-    }
+        map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#F7455D',
+                'line-width': 4
+            }
+        });
 
-    jsonData.forEach(item => {
-        if (item.id == 1) {
-            createMarker(item, "#e50112");
-        } else if (item.id > 1) {
-            createMarker(item, "#00FF00");
+        // Add the AUV marker (non-draggable)
+        const markerAUV = new maplibregl.Marker({ draggable: false })
+            .setLngLat([vehicleData.lon, vehicleData.lat])
+            .addTo(map);
+
+        // Function to handle marker drag end
+        function onDragEnd(marker, item, index) {
+            return function() {
+                const coordinates = marker.getLngLat();
+                fetch('/waypoint_drag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id: item.id,
+                        lng: coordinates.lng,
+                        lat: coordinates.lat
+                    })
+                });
+
+                // Update GeoJSON data for the line
+                coordinatesData[index] = { longitude: coordinates.lng, latitude: coordinates.lat };
+                map.getSource('route').setData({
+                    type: 'FeatureCollection',
+                    features: [
+                        {
+                            type: 'Feature',
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
+                            }
+                        }
+                    ]
+                });
+            };
         }
-    });
-    
-});
 
+        // Function to create a marker with drag functionality
+        function createMarker(item, color, index) {
+            const marker = new maplibregl.Marker({ draggable: true, color: color })
+                .setLngLat([item.lon, item.lat])
+                .addTo(map);
+
+            marker.on('dragend', onDragEnd(marker, item, index));
+        }
+
+        // Create markers and ensure the route is updated on drag
+        jsonData.forEach((item, index) => {
+            const color = item.id === 1 ? "#e50112" : "#00FF00";
+            createMarker(item, color, index);
+        });
+    });
 
 </script>
-<!-- </html> -->

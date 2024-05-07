@@ -1,6 +1,6 @@
 import json
 from mvp_gui import *
-
+from mvp_gui.forms import WaypointForm
 @app.context_processor
 def inject_load():
     vitals = Vitals.query.first()
@@ -49,7 +49,8 @@ def waypoint_drag():
     entry.lat= js_lat
     entry.lon = js_lon
     db.session.commit()
-    return redirect(url_for('mission_page'))
+
+    return redirect(url_for('map_page'))
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
@@ -116,7 +117,6 @@ def edit_waypoint_page():
         entry.lon = form.lon.data
         entry.z = form.z.data
         db.session.commit()
-
         return redirect(url_for('mission_page'))
     return render_template('edit_waypoints.html', form=form, entry=entry)
 
