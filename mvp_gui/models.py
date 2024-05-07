@@ -1,5 +1,6 @@
-from mvp_gui import db
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
 
 class Vitals(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
