@@ -1,63 +1,6 @@
-from mvp_gui import app, turbo
 import json
-from flask import render_template, request, redirect, url_for
-from mvp_gui.models import PowerItems, Vitals, Poses, Waypoints
-from mvp_gui import db
-import time
-import threading
-import random
-from datetime import datetime
+from mvp_gui import *
 from mvp_gui.forms import WaypointForm
-
-counter_fr = 0
-# flask turbo setup
-@app.before_request
-def before_first_request():
-    global counter_fr
-    print("INIT: ", counter_fr)
-    if counter_fr == 0 :
-        update_t = threading.Thread(target=update_load).start()
-        random_t = threading.Thread(target=random_pose).start()
-    counter_fr += 1    
-
-def random_pose():
-    with app.app_context():
-        while True:
-            time.sleep(1)
-            # print("random_pose: ", datetime.now())
-            vitals = Vitals.query.first()
-            poses = Poses.query.first()
-            poses.roll = random.random()
-            poses.pitch = random.random()
-            poses.yaw = random.random()
-            poses.x = random.random()
-            poses.y = random.random()
-            poses.z = random.random()
-
-            poses.u = random.random()
-            poses.v = random.random()   
-            poses.w = random.random()
-            poses.p = random.random()
-            poses.q = random.random()
-            poses.r = random.random()
-            poses.lat = 41.42947277 + random.random()*0.01
-            poses.lon = -71.56783571 + random.random()*0.01
-            
-            vitals.voltage = random.random()
-            vitals.current = random.random()
-            db.session.commit()  
-    
-def update_load():
-    with app.app_context():
-        while True:
-            time.sleep(1)
-            turbo.push(turbo.replace(render_template("tables/health_table.html"), 'power_health'))
-            turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
-            turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
-            # turbo.push(turbo.replace(render_template("tables/map.html"), 'map'))
-            # turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
-            # turbo.push(turbo.replace(render_template("tables/map_table.html"), 'map'))
-
 @app.context_processor
 def inject_load():
     vitals = Vitals.query.first()
@@ -106,7 +49,8 @@ def waypoint_drag():
     entry.lat= js_lat
     entry.lon = js_lon
     db.session.commit()
-    return redirect(url_for('mission_page'))
+
+    return redirect(url_for('map_page'))
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
@@ -173,7 +117,6 @@ def edit_waypoint_page():
         entry.lon = form.lon.data
         entry.z = form.z.data
         db.session.commit()
-
         return redirect(url_for('mission_page'))
     return render_template('edit_waypoints.html', form=form, entry=entry)
 

@@ -1,9 +1,6 @@
-from flask import Flask, render_template
-from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, render_template, request, redirect, url_for
 from turbo_flask import Turbo
-import time
-import threading
-import random
+from mvp_gui.models import *
 
 
 app = Flask(__name__)
@@ -12,7 +9,8 @@ app.config['SECRET_KEY'] = 'd5036a36d957701b9048179e'
 
 turbo = Turbo(app)
 
-db = SQLAlchemy(app)
+db.init_app(app)
 app.app_context().push()
 
+from mvp_gui import utils
 from mvp_gui import routes
