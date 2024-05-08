@@ -3,11 +3,17 @@
   Mission
 {% endblock %}
 
-{% block content%}  
-    {% include "tables/states_table.html" %}
+{% block content%} 
+<h4>Mission State machine Managers</h4>
+{% include "tables/states_table.html" %}
    
 {% endblock %}
 
 {% block script%}
-    {% include "tables/waypoints_table.html" %}
+<h4>Waypoints mananger</h4>
+<h6>Generate waypoints from a KML File</h6>
+{% include "tables/kml_waypoints_table.html" %}
+<h6>Manual Waypoints Entry</h6>
+{% include "tables/waypoints_table.html" %}
+
 {% endblock %}

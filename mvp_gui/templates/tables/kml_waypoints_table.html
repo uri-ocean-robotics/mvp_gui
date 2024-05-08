@@ -1,0 +1,21 @@
+<div id="kml_waypoints" class="kml_waypoints">
+    <table class="table table-hover table-dark">
+        <tbody>
+            <td>
+            <form action="/mission/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="fileToUpload" id="fileToUpload">
+                <!-- <input type="hidden" name="replace"  value ="replace"> -->
+                <!-- <button type="submit"> Replace </button> -->
+                <button type="submit" name="action" value="replace">Replace</button>
+                <button type="submit" name="action" value="append">Append</button>
+            </form>
+            <!-- <form action="/mission/upload" method="post" enctype="multipart/form-data">
+                <input type="file" name="fileToUpload" id="fileToUpload">
+                <input type="hidden" name="append"  value ="append">
+                <button type="submit"> Append </button>
+            </form> -->
+            </td>
+        </tbody>
+    </table>
+    
+</div>

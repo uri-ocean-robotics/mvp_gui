@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 {% block title%}
-  Map
+  Map View
 {% endblock %}
 
 {% block content%}  
-    {% include "tables/waypoint_map.html" %}
+  <h4>Color indicators</h4>
+  <h6><span style="color: red;">First Waypoint</span></h6>
+  <h6><span style="color: green;">Last Waypoint</h6>
+  <h6><span style="color: lightskyblue;">Vehicle Position</h6>
     {% include "tables/map_table.html" %}
 {% endblock %}
