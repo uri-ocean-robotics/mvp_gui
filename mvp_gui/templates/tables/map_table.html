@@ -108,7 +108,10 @@
 
         // Create markers and ensure the route is updated on drag
         jsonData.forEach((item, index) => {
-            const color = item.id === 1 ? "#e50112" : "#00FF00";
+            let color = item.id === 1 ? "#e50112" : "#808080";
+            if (index === jsonData.length - 1) {
+                color = "#00FF00";
+            }
             createMarker(item, color, index);
         });
     });
