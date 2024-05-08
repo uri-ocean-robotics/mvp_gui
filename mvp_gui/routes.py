@@ -1,6 +1,9 @@
 import json
 from mvp_gui import *
 from mvp_gui.forms import WaypointForm
+import xml.etree.ElementTree as ET
+
+
 @app.context_processor
 def inject_load():
     vitals = Vitals.query.first()
@@ -91,7 +94,6 @@ def mission_page():
             edit_id = request.form['copy']
             entry = Waypoints.query.get(edit_id)
             new_entry = Waypoints()
-
             new_entry.id = len(waypoints)+1 #already obtained before
             new_entry.lat = entry.lat
             new_entry.lon = entry.lon
@@ -103,6 +105,66 @@ def mission_page():
         
     ##render the mission site
     return render_template("mission.html", items=waypoints)
+
+def generat_waypoints_from_kml(file_name, replace_flag):
+    tree = ET.parse(file_name)
+    root = tree.getroot()
+
+    waypoints = Waypoints.query.all()
+    id_data = len(waypoints)+1
+
+    if replace_flag ==1:
+        id_data=1
+    new_waypoints = []
+    for placemark in root.findall('.//{http://www.opengis.net/kml/2.2}Placemark'):
+        coordinates = placemark.find('.//{http://www.opengis.net/kml/2.2}coordinates').text
+        # Splitting coordinates into latitude, longitude, and altitude
+        lon, lat, z = map(float, coordinates.split(','))
+        new_waypoints.append({'id': id_data, 'lat': lat, 'lon': lon, 'z': z})
+        id_data = id_data +1
+    if replace_flag == 1:
+        db.session.query(Waypoints).delete()
+
+    for waypoint_data in new_waypoints:
+        waypoint = Waypoints(id=waypoint_data['id'],
+                            lat=waypoint_data['lat'],
+                            lon=waypoint_data['lon'],
+                            z=waypoint_data['z'])
+        db.session.add(waypoint)
+    db.session.commit()
+    
+
+@app.route('/mission/upload', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'replace':
+        # if request.form.get('replace'):
+            # print("replace pressed")
+            if 'fileToUpload' not in request.files:
+                return 'No file part'
+            file = request.files['fileToUpload']
+            if file.filename == '':
+                return 'No selected file'
+            ##do something
+            if file:
+                file.save('uploads/' + file.filename)
+                generat_waypoints_from_kml('uploads/' + file.filename, 1)
+
+        elif action == 'append':
+        # elif request.form.get('append'):
+            # print("append pressed")
+            if 'fileToUpload' not in request.files:
+                return 'No file part'
+            file = request.files['fileToUpload']
+            if file.filename == '':
+                return 'No selected file'
+            if file:
+                file.save('uploads/' + file.filename)
+                generat_waypoints_from_kml('uploads/' + file.filename, 0)
+    return redirect(url_for('mission_page'))
+    
+
 
 @app.route('/mission/edit_waypoint', methods=['GET','POST'])
 def edit_waypoint_page():

@@ -1,15 +1,10 @@
 <div id="mission_waypoints" class="mission_waypoints">
-    <h4>Mission Manager Commands</h4>
     <table class="table table-hover table-dark">
         <tbody>
             <td>
             <form action="/mission" method="post">
                 <input type="hidden" name="add"  value ="add">
                 <button type="submit"> Add Wayponts </button>
-            </form>
-            <form action="/mission" method="post">
-                <input type="hidden" name="publish" value="publish" >
-                <button type="submit"> Publish waypoints </button>  
             </form>
             </td>
         </tbody>
@@ -22,7 +17,7 @@
                 <th scope="col">ID</th>
                 <th scope="col">Laitude [deg]</th>
                 <th scope="col">Longitude[deg]</th>
-                <th scope="col">z [m]</th>
+                <th scope="col">altitude [m]</th>
             </tr>
         </thead>
         <tbody>
@@ -41,10 +36,10 @@
                         </form>
                         </td>
                         <td>
-                            <form action="/mission" method="post">
-                                <input type="hidden" name="copy" value= "{{ item.id }}" >
-                                <button type="submit"> Copy </button>
-                            </form>
+                        <form action="/mission" method="post">
+                            <input type="hidden" name="copy" value= "{{ item.id }}" >
+                            <button type="submit"> Copy </button>
+                        </form>
                         </td>
                         <td>
                         <form action="/mission" method="post">
@@ -67,4 +62,8 @@
             {% endif %}
         </tbody>
     </table>
+    <form action="/mission" method="post">
+        <input type="hidden" name="publish" value="publish" >
+        <button type="submit"> Publish waypoints </button>  
+    </form>
 </div>
