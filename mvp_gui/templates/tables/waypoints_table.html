@@ -1,4 +1,4 @@
-
+<div id="mission_waypoints" class="mission_waypoints">
 <table class="table table-hover table-dark">
     <thead>
         <tr>
@@ -9,9 +9,9 @@
             <th scope="col">altitude [m]</th>
         </tr>
     </thead>
-    <tbody>
-    <div id="mission_waypoints" class="mission_waypoints"></div>
     
+    
+    <tbody>
         <!-- Your rows inside the table HERE: -->
         {% if waypoints|length >=1 %}
             {% for item in waypoints%}
@@ -52,7 +52,7 @@
             </tr>
         {% endif %}
     </tbody>
-    </div>
+   
 </table>
-
+</div>
 
