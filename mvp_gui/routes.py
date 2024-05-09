@@ -45,16 +45,18 @@ def power_manager_page():
 
 @app.route('/waypoint_drag', methods=['POST'])
 def waypoint_drag():
-    ##map actions
-    js_data = request.json
-    js_lon = js_data['lng']
-    js_lat = js_data['lat']
-    entry = Waypoints.query.get(js_data['id'])
-    entry.lat= js_lat
-    entry.lon = js_lon
-    db.session.commit()
+    data = request.json
+    waypoint_id = data['id']
+    new_lon = data['lng']
+    new_lat = data['lat']
 
-    return redirect(url_for('map_page'))
+    waypoint = Waypoints.query.get(waypoint_id)
+    if waypoint:
+        waypoint.lon = new_lon
+        waypoint.lat = new_lat
+        db.session.commit()
+
+    return jsonify({"success": True})
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
@@ -204,26 +206,39 @@ def add_waypoint_page():
     return render_template('add_waypoints.html', form=form)
 
 
-@app.route('/map', methods=['GET','POST'])
+@app.route('/map', methods=['GET', 'POST'])
 def map_page():
-     ##get vehilce lat lon for map
+    # Get vehicle lat lon for map
     poses = Poses.query.first()
     vehicle_data = {
-            "lat": float(poses.lat),
-            "lon": float(poses.lon)
-        }
+        "lat": float(poses.lat),
+        "lon": float(poses.lon)
+    }
 
-    ## sort the waypoints by id
+    # Sort the waypoints by ID
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
-    waypoints_data = []
-    for waypoint in waypoints:
-        waypoint_dict = {
-            "id": waypoint.id,
-            "lat": float(waypoint.lat),
-            "lon": float(waypoint.lon)
-        }
-        waypoints_data.append(waypoint_dict)
+    waypoints_data = [
+        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon)}
+        for waypoint in waypoints
+    ]
+
     return render_template("map.html", items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
+
+@app.route('/latest_data', methods=['GET'])
+def latest_data():
+    poses = Poses.query.first()
+    vehicle_data = {
+        "lat": float(poses.lat),
+        "lon": float(poses.lon)
+    }
+
+    waypoints = Waypoints.query.order_by(Waypoints.id).all()
+    waypoints_data = [
+        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon)}
+        for waypoint in waypoints
+    ]
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data})
 
 
 @app.route("/monitor")

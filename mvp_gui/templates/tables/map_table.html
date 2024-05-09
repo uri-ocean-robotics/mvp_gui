@@ -2,6 +2,9 @@
 
 <!-- Include the script.js file -->
 <script>
+    const updateInterval = 1000; // Update interval in milliseconds
+    let isDragging = false; // Dragging flag
+
     // Simulating `jsonData` and `vehicleData` server-provided data
     const jsonData = {{ items_jsn | safe }};
     const vehicleData = {{ vehicle_jsn | safe }};
@@ -27,6 +30,11 @@
         latitude: entry.lat,
         longitude: entry.lon
     }));
+
+    let vehicleMarker = new maplibregl.Marker({ draggable: false, color: "lightskyblue" })
+        .setLngLat([vehicleData.lon, vehicleData.lat])
+        .addTo(map);
+
     const geojson = {
         type: 'FeatureCollection',
         features: [
@@ -61,14 +69,27 @@
             }
         });
 
-        // Add the AUV marker (non-draggable)
-        const markerAUV = new maplibregl.Marker({ draggable: false })
-            .setLngLat([vehicleData.lon, vehicleData.lat])
-            .addTo(map);
+        function updateRoute() {
+            map.getSource('route').setData({
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
+                        }
+                    }
+                ]
+            });
+        }
 
-        // Function to handle marker drag end
-        function onDragEnd(marker, item, index) {
-            return function() {
+        function onDragStart() {
+            isDragging = true; // Set dragging flag
+        }
+
+        function onDragEnd(marker, item) {
+            return function () {
                 const coordinates = marker.getLngLat();
                 fetch('/waypoint_drag', {
                     method: 'POST',
@@ -82,40 +103,81 @@
                     })
                 });
 
-                // Update GeoJSON data for the line
-                coordinatesData[index] = { longitude: coordinates.lng, latitude: coordinates.lat };
-                map.getSource('route').setData({
-                    type: 'FeatureCollection',
-                    features: [
-                        {
-                            type: 'Feature',
-                            geometry: {
-                                type: 'LineString',
-                                coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
-                            }
-                        }
-                    ]
-                });
+                // Update coordinates data
+                const index = coordinatesData.findIndex(coord => coord.id === item.id);
+                if (index !== -1) {
+                    coordinatesData[index] = { id: item.id, longitude: coordinates.lng, latitude: coordinates.lat };
+                }
+
+                // Update the GeoJSON data for the line
+                updateRoute();
+                isDragging = false; // Reset dragging flag
             };
         }
 
-        // Function to create a marker with drag functionality
-        function createMarker(item, color, index) {
+        let markers = [];
+
+        function createMarker(item, color) {
             const marker = new maplibregl.Marker({ draggable: true, color: color })
                 .setLngLat([item.lon, item.lat])
                 .addTo(map);
-
-            marker.on('dragend', onDragEnd(marker, item, index));
+            
+            marker.on('dragstart', onDragStart)
+            marker.on('dragend', onDragEnd(marker, item));
+            markers.push(marker);
         }
 
-        // Create markers and ensure the route is updated on drag
+        function updateMarkers() {
+            if (isDragging) {
+                return; // Skip updating markers if a marker is being dragged
+            }
+
+            fetch('/latest_data')
+                .then(response => response.json())
+                .then(data => {
+                    const newJsonData = data.waypoints;
+                    const newVehicleData = data.vehicle;
+
+                    // Update vehicle marker position
+                    vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
+
+                    // Clear all existing waypoint markers
+                    markers.forEach(marker => marker.remove());
+                    markers = [];
+
+                    // Reset coordinates data
+                    coordinatesData = newJsonData.map(entry => ({
+                        id: entry.id,
+                        latitude: entry.lat,
+                        longitude: entry.lon
+                    }));
+
+                    // Create new markers and add them to the map
+                    newJsonData.forEach((item, index) => {
+                        let color = item.id === 1 ? "#e50112" : "#808080";
+                        if (index === newJsonData.length - 1) {
+                            color = "#00FF00";
+                        }
+                        createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+                    });
+
+                    // Update the GeoJSON data for the line
+                    updateRoute();
+                });
+        }
+
+        // Initialize markers with the existing data
         jsonData.forEach((item, index) => {
             let color = item.id === 1 ? "#e50112" : "#808080";
             if (index === jsonData.length - 1) {
                 color = "#00FF00";
             }
-            createMarker(item, color, index);
+            createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
         });
+
+        setInterval(updateMarkers, updateInterval);
+
     });
+
 
 </script>

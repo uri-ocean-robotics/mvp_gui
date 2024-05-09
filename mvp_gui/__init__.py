@@ -1,9 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from turbo_flask import Turbo
 from mvp_gui.models import *
-
-
-
 
 app = Flask(__name__)
 

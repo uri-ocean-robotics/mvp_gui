@@ -17,8 +17,7 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
             turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
-            
-
+           
 # def update_pose():
 #     rospy.init_node('get_gt', anonymous=True, disable_signals=True)
 #     odom_sf_sub = message_filters.Subscriber('/bluerov2/odom_sf', Odometry)
