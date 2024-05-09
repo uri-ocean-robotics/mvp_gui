@@ -13,4 +13,7 @@
     ```
     pip3 install turbo-flask
     ```
-
+- [Flask WTF](https://flask-wtf.readthedocs.io/en/1.2.x/)
+    ```
+    pip3 install Flask-WTF
+    ```
