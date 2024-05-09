@@ -9,7 +9,8 @@ def inject_load():
     vitals = Vitals.query.first()
     poses = Poses.query.first()
     items = PowerItems.query.all()
-    return {'vitals': vitals, 'poses': poses, 'items': items}
+    waypoints = Waypoints.query.all()
+    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints}
 
 
 # routes
@@ -104,7 +105,7 @@ def mission_page():
             return redirect(url_for('mission_page'))
         
     ##render the mission site
-    return render_template("mission.html", items=waypoints)
+    return render_template("mission.html", waypoints=waypoints)
 
 def generat_waypoints_from_kml(file_name, replace_flag):
     tree = ET.parse(file_name)

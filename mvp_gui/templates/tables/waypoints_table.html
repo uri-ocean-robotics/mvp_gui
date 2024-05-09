@@ -1,69 +1,58 @@
-<div id="mission_waypoints" class="mission_waypoints">
-    <table class="table table-hover table-dark">
-        <tbody>
-            <td>
-            <form action="/mission" method="post">
-                <input type="hidden" name="add"  value ="add">
-                <button type="submit"> Add Wayponts </button>
-            </form>
-            </td>
-        </tbody>
-    </table>
-    <h4>Waypoints in the Database</h4>
-    <table class="table table-hover table-dark">
-        <thead>
-            <tr>
-                <!-- Your Columns HERE -->
-                <th scope="col">ID</th>
-                <th scope="col">Laitude [deg]</th>
-                <th scope="col">Longitude[deg]</th>
-                <th scope="col">altitude [m]</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Your rows inside the table HERE: -->
-            {% if items|length >=1 %}
-                {% for item in items%}
-                    <tr>
-                        <td>{{ item.id }}</td>
-                        <td>{{ item.lat }}</td>
-                        <td>{{ item.lon }}</td>
-                        <td>{{ item.z }}</td>
-                        <td>
-                        <form action="/mission" method="post">
-                            <input type="hidden" name="edit" value= "{{ item.id }}" >
-                            <button type="submit"> Edit </button>
-                        </form>
-                        </td>
-                        <td>
-                        <form action="/mission" method="post">
-                            <input type="hidden" name="copy" value= "{{ item.id }}" >
-                            <button type="submit"> Copy </button>
-                        </form>
-                        </td>
-                        <td>
-                        <form action="/mission" method="post">
-                            <input type="hidden" name="delete" value= "{{ item.id }}" >
-                            <button type="submit"> Delete </button>                            
-                        </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            {% else %}
+
+<table class="table table-hover table-dark">
+    <thead>
+        <tr>
+            <!-- Your Columns HERE -->
+            <th scope="col">ID</th>
+            <th scope="col">Laitude [deg]</th>
+            <th scope="col">Longitude[deg]</th>
+            <th scope="col">altitude [m]</th>
+        </tr>
+    </thead>
+    <tbody>
+    <div id="mission_waypoints" class="mission_waypoints"></div>
+    
+        <!-- Your rows inside the table HERE: -->
+        {% if waypoints|length >=1 %}
+            {% for item in waypoints%}
                 <tr>
-                    <td>None</td>
-                    <td>None</td>
-                    <td>None</td>
-                    <td>None</td>
-                    <td>None</td>
-                    <td>None</td>
-                    <td>None</td>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.lat }}</td>
+                    <td>{{ item.lon }}</td>
+                    <td>{{ item.z }}</td>
+                    <td>
+                    <form action="/mission" method="post">
+                        <input type="hidden" name="edit" value= "{{ item.id }}" >
+                        <button type="submit"> Edit </button>
+                    </form>
+                    </td>
+                    <td>
+                    <form action="/mission" method="post">
+                        <input type="hidden" name="copy" value= "{{ item.id }}" >
+                        <button type="submit"> Copy </button>
+                    </form>
+                    </td>
+                    <td>
+                    <form action="/mission" method="post">
+                        <input type="hidden" name="delete" value= "{{ item.id }}" >
+                        <button type="submit"> Delete </button>                            
+                    </form>
+                    </td>
                 </tr>
-            {% endif %}
-        </tbody>
-    </table>
-    <form action="/mission" method="post">
-        <input type="hidden" name="publish" value="publish" >
-        <button type="submit"> Publish waypoints </button>  
-    </form>
-</div>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td>None</td>
+                <td>None</td>
+                <td>None</td>
+                <td>None</td>
+                <td>None</td>
+                <td>None</td>
+                <td>None</td>
+            </tr>
+        {% endif %}
+    </tbody>
+    </div>
+</table>
+
+
