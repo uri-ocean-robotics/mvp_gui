@@ -14,6 +14,30 @@
 <h6>Generate waypoints from a KML File</h6>
 {% include "tables/kml_waypoints_table.html" %}
 <h6>Manual Waypoints Entry</h6>
+<table class="table table-hover table-dark">
+  <tbody>
+      <td>
+      <form action="/mission" method="post">
+          <input type="hidden" name="add"  value ="add">
+          <button type="submit"> Add Wayponts </button>
+      </form>
+      <form action="/mission" method="post">
+        <button onclick="refreshPage()"> Refresh Waypoints</button>
+                <!-- JavaScript function to refresh the page -->
+          <script>
+              function refreshPage() {
+                  // Use the location object to reload the current page
+                  location.reload();
+              }
+          </script>
+      </form>
+      </td>
+  </tbody>
+</table>
+<h4>Waypoints in the Database</h4>
 {% include "tables/waypoints_table.html" %}
-
+<form action="/mission" method="post">
+  <input type="hidden" name="publish" value="publish" >
+  <button type="submit"> Publish waypoints </button>  
+</form>
 {% endblock %}
