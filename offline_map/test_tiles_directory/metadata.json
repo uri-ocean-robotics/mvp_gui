@@ -1,0 +1,9 @@
+{
+    "format": "png",
+    "name": "test",
+    "version": "1.1",
+    "type": "overlay",
+    "minzoom": "12",
+    "maxzoom": "18",
+    "bounds": "-71.6047,41.4247,-71.5532,41.4553"
+}

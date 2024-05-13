@@ -16,5 +16,6 @@ def get_ip():
 if __name__ == '__main__':
     
     host_ip = get_ip()
+    app.config['HOST_IP'] = host_ip
     app.run(debug=False, host=host_ip, port=5000)
     # app.run(debug=False)

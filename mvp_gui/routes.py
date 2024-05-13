@@ -1,8 +1,8 @@
 import json
+import os
 from mvp_gui import *
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
-
 
 @app.context_processor
 def inject_load():
@@ -57,6 +57,7 @@ def waypoint_drag():
         db.session.commit()
 
     return jsonify({"success": True})
+
 
 @app.route("/mission", methods=['GET', 'POST'])
 def mission_page():
@@ -168,7 +169,6 @@ def upload_file():
     return redirect(url_for('mission_page'))
     
 
-
 @app.route('/mission/edit_waypoint', methods=['GET','POST'])
 def edit_waypoint_page():
     edit_id = request.args.get('edit_id')
@@ -208,6 +208,7 @@ def add_waypoint_page():
 
 @app.route('/map', methods=['GET', 'POST'])
 def map_page():
+    host_ip = app.config['HOST_IP']
     # Get vehicle lat lon for map
     poses = Poses.query.first()
     vehicle_data = {
@@ -222,7 +223,8 @@ def map_page():
         for waypoint in waypoints
     ]
 
-    return render_template("map.html", items_jsn=waypoints_data, vehicle_jsn=vehicle_data)
+    return render_template("map.html", items_jsn=waypoints_data, vehicle_jsn=vehicle_data, host_ip=host_ip)
+
 
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
@@ -245,6 +247,11 @@ def latest_data():
 def monitor_page():
     return render_template("monitor.html")
 
+
+@app.route('/tiles/<path:filename>')
+def serve_tiles(filename):
+    print(f"Request for tile: {filename}, {TILES_DIR}")
+    return send_from_directory(TILES_DIR, filename)
 
 
 
