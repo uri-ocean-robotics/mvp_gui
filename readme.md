@@ -17,3 +17,13 @@
     ```
     pip3 install Flask-WTF
     ```
+    
+### Offline Map (mbtiles)
+A test map is provided, if you want to load your own map
+- Download the .mbtiles file for the region of interest
+- Put the .mbtiles file into offline_map directory
+- Extract the .mbtiles using [mb-util](https://github.com/mapbox/mbutil)
+    ```
+    mb-util your_file.mbtiles your_file_tiles_directory
+    ```
+- set the `TILES_DIR` in `__init__.py` to the correct directory
