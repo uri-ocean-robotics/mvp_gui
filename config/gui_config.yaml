@@ -1,0 +1,7 @@
+poses_source: /alpha_rise/odometry/local/filtered
+vitals_source: /alpha_rise/power
+waypoint_topic: /alpha_rise/path3d/update_geo_path
+get_states_service: helm/get_states
+get_state_service: helm/get_state
+change_state_service:
+power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]

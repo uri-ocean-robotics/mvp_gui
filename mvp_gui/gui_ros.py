@@ -6,13 +6,16 @@ import message_filters
 from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped
-from msgs.msg import Power
+from mvp_msgs.msg import Power
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
+import yaml
 
-class BlueRoboticsPressure():
+
+
+class gui_ros():
     def __init__(self):
-        self.node_name = rospy.get_name()
+        # self.node_name = rospy.get_name()
 
         self.helm_state = 'start'
         self.helm_connected_states = []
@@ -23,15 +26,20 @@ class BlueRoboticsPressure():
         # ros subscribers and publishers
         self.setup_ros()
 
-
+        
         # Main while loop.
-        while not rospy.is_shutdown():
-            
-            rospy.sleep(1.0/self.rate)
+        # while not rospy.is_shutdown():
+            # rospy.sleep(0.1)
     
 
     def get_params(self):
-        self.poses_source = rospy.get_param('poses_source', 'odom')
+        
+        dataset_config = yaml.safe_load(open(global_file_name, 'r'))
+
+        # make lookup table for mapping
+        self.poses_source =dataset_config['poses_source']
+
+        # self.poses_source = rospy.get_param('poses_source', 'odom')
         self.vitals_source = rospy.get_param('vitals_source', 'power')
 
         self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
@@ -41,9 +49,10 @@ class BlueRoboticsPressure():
 
         self.change_state_srv = rospy.get_param('change_state_service', 'helm/change_state')
 
-    
+
         self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
-                                                                 'power_manager/24v' ])
+                                                                 'power_manager/24v',
+                                                                 'power_manager/lumen'])
 
     
     def setup_ros(self):
@@ -53,7 +62,7 @@ class BlueRoboticsPressure():
 
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.vitals_sub], 10, 0.1)
 
-        self.ts.registerCallback(self.callback)
+        # self.ts.registerCallback(self.callback)
 
         self.geo_wpt_pub = rospy.Publisher("helm/path3d/update_geo_points", GeoPath, queue_size=10)
         self.geo_wpt_msg = GeoPath()
@@ -105,4 +114,21 @@ class BlueRoboticsPressure():
             count = count +1
 
         self.geo_wpt_pub.publish(self.geo_wpt_msg)
+
+def shutdown_node():    
+    rospy.loginfo("Shutting down subscriber!")
+    rospy.signal_shutdown("Shutting down subscriber!")
+
+
+def gui_ros_start():
+    rospy.init_node('mvp_gui_node', disable_signals=True)
+    node = gui_ros()
+
+global_file_name = './config/gui_config.yaml'
+
+pose_t = threading.Thread(target = gui_ros_start)
+pose_t.daemon = True
+pose_t.start()
+# except rospy.ROSInterruptException: pass
+rospy.on_shutdown(shutdown_node)
 
