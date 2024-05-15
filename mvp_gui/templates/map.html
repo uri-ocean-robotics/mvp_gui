@@ -8,5 +8,10 @@
   <h6><span style="color: red;">First Waypoint</span></h6>
   <h6><span style="color: green;">Last Waypoint</h6>
   <h6><span style="color: lightskyblue;">Vehicle Position</h6>
+
+  <form action="/map" method="post">
+    <input type="hidden" name="publish" value="publish" >
+    <button type="submit"> Publish waypoints </button>  
+  </form>
     {% include "tables/map_table.html" %}
 {% endblock %}
