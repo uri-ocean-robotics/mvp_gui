@@ -10,16 +10,14 @@
         <tbody>
             <!-- Your rows inside the table HERE: -->
             <tr>
-                <td>Idle</td>
-                <td>
-                <form action="/mission" method="post">
-                    <input type="hidden" name="states" value= "survey_global" >
-                    <button type="submit"> survey_global </button>
-                    <input type="hidden" name="states" value= "kill" >
-                    <button type="submit"> kill </button>
-                    <input type="hidden" name="states" value= "idle" >
-                    <button type="submit"> idle </button>
-                </form>
+                <td>{{ states[0].name }}</td>
+                 <td>
+                    <form action="/mission" method="post">
+                        {% for state in states[1:] %}
+                        <input type="hidden" name="states" value="{{ state.name }}">
+                        <button type="submit">{{ state.name }}</button>
+                        {% endfor %}
+                    </form>
                 </td>
             </tr>
         </tbody>

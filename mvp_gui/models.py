@@ -45,6 +45,14 @@ class Waypoints(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     lat = db.Column(db.Numeric(10,8), nullable=True)
     lon = db.Column(db.Numeric(10,8), nullable=True)
-    z = db.Column(db.Numeric(10,2), nullable=True)
+    alt = db.Column(db.Numeric(10,2), nullable=True)
     def __repr__(self):
         return f'waypoints {self}'
+
+
+class HelmStates(db.Model):
+    ## the first entry will be the current state the rest will be the connected states
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=20), nullable=True)
+    def __repr__(self):
+        return f'states {self}'
