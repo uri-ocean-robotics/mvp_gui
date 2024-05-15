@@ -87,6 +87,8 @@ class gui_ros():
 
         with app.app_context():
             poses = Poses.query.first()
+            poses.frame_id = poses_sub.header.frame_id
+            poses.child_frame_id = poses_sub.child_frame_id
             poses.roll = euler_angles[0] * 180 / np.pi
             poses.pitch = euler_angles[1] * 180 / np.pi 
             poses.yaw = euler_angles[2] * 180 / np.pi
