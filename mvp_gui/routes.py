@@ -258,6 +258,13 @@ def serve_tiles(filename):
     return send_from_directory(TILES_DIR, filename)
 
 
+@app.route('/path/to/api/endpoint')
+def get_latest_yaw():
+    pose = Poses.query.first()  # Or however you fetch the latest pose    
+    yaw_data = {
+        'yaw': pose.yaw
+    }
+    return jsonify(yaw_data)
 
 
 
