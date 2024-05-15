@@ -55,7 +55,6 @@ class BlueRoboticsPressure():
 
         self.ts.registerCallback(self.callback)
 
-
         self.geo_wpt_pub = rospy.Publisher("helm/path3d/update_geo_points", GeoPath, queue_size=10)
         self.geo_wpt_msg = GeoPath()
 

@@ -10,7 +10,8 @@ def inject_load():
     poses = Poses.query.first()
     items = PowerItems.query.all()
     waypoints = Waypoints.query.all()
-    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints}
+    states = HelmStates.query.all()
+    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states}
 
 
 # routes
@@ -71,6 +72,8 @@ def mission_page():
         count = count + 1
         db.session.commit()
 
+    states = HelmStates.query.all()
+
     #button actiions
     if request.method == 'POST':
         # action = request.form.get('action')
@@ -108,7 +111,7 @@ def mission_page():
             return redirect(url_for('mission_page'))
         
     ##render the mission site
-    return render_template("mission.html", waypoints=waypoints)
+    return render_template("mission.html", waypoints=waypoints, states=states)
 
 def generat_waypoints_from_kml(file_name, replace_flag):
     tree = ET.parse(file_name)
