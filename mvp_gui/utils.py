@@ -12,6 +12,8 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/pose_table.html"), 'pose_info'))
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
             turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
+            turbo.push(turbo.replace(render_template("tables/states_table.html"), 'mission_state'))
+            
 
 
 # thread

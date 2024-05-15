@@ -104,7 +104,7 @@ def mission_page():
             new_entry.id = len(waypoints)+1 #already obtained before
             new_entry.lat = entry.lat
             new_entry.lon = entry.lon
-            new_entry.z = entry.z
+            new_entry.alt = entry.alt
 
             db.session.add(new_entry)
             db.session.commit()
@@ -126,8 +126,8 @@ def generat_waypoints_from_kml(file_name, replace_flag):
     for placemark in root.findall('.//{http://www.opengis.net/kml/2.2}Placemark'):
         coordinates = placemark.find('.//{http://www.opengis.net/kml/2.2}coordinates').text
         # Splitting coordinates into latitude, longitude, and altitude
-        lon, lat, z = map(float, coordinates.split(','))
-        new_waypoints.append({'id': id_data, 'lat': lat, 'lon': lon, 'z': z})
+        lon, lat, alt = map(float, coordinates.split(','))
+        new_waypoints.append({'id': id_data, 'lat': lat, 'lon': lon, 'alt': alt})
         id_data = id_data +1
     if replace_flag == 1:
         db.session.query(Waypoints).delete()
@@ -136,13 +136,14 @@ def generat_waypoints_from_kml(file_name, replace_flag):
         waypoint = Waypoints(id=waypoint_data['id'],
                             lat=waypoint_data['lat'],
                             lon=waypoint_data['lon'],
-                            z=waypoint_data['z'])
+                            alt=waypoint_data['alt'])
         db.session.add(waypoint)
     db.session.commit()
     
 
 @app.route('/mission/upload', methods=['POST'])
 def upload_file():
+    fold_name = 'kml_uploads/'
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'replace':
@@ -155,8 +156,8 @@ def upload_file():
                 return 'No selected file'
             ##do something
             if file:
-                file.save('uploads/' + file.filename)
-                generat_waypoints_from_kml('uploads/' + file.filename, 1)
+                file.save(fold_name + file.filename)
+                generat_waypoints_from_kml(fold_name + file.filename, 1)
 
         elif action == 'append':
         # elif request.form.get('append'):
@@ -167,8 +168,8 @@ def upload_file():
             if file.filename == '':
                 return 'No selected file'
             if file:
-                file.save('uploads/' + file.filename)
-                generat_waypoints_from_kml('uploads/' + file.filename, 0)
+                file.save(fold_name + file.filename)
+                generat_waypoints_from_kml(fold_name + file.filename, 0)
     return redirect(url_for('mission_page'))
     
 
@@ -183,7 +184,7 @@ def edit_waypoint_page():
         entry.id = form.id.data
         entry.lat = form.lat.data
         entry.lon = form.lon.data
-        entry.z = form.z.data
+        entry.alt = form.alt.data
         db.session.commit()
         return redirect(url_for('mission_page'))
     return render_template('edit_waypoints.html', form=form, entry=entry)
@@ -201,7 +202,7 @@ def add_waypoint_page():
         waypoint = Waypoints(id=id_data,
                            lat=form.lat.data,
                            lon=form.lon.data,
-                           z=form.z.data,
+                           alt=form.alt.data,
                            )
         db.session.add(waypoint)
         db.session.commit()

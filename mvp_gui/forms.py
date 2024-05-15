@@ -6,6 +6,6 @@ class WaypointForm(FlaskForm):
     id = IntegerField(label='id')
     lat = FloatField(label='latitude')
     lon = FloatField(label='longitude')
-    z = FloatField(label='depth')
+    alt = FloatField(label='altitude')
     
 

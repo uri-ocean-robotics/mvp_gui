@@ -45,7 +45,7 @@ class Waypoints(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     lat = db.Column(db.Numeric(10,8), nullable=True)
     lon = db.Column(db.Numeric(10,8), nullable=True)
-    z = db.Column(db.Numeric(10,2), nullable=True)
+    alt = db.Column(db.Numeric(10,2), nullable=True)
     def __repr__(self):
         return f'waypoints {self}'
 

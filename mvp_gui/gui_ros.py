@@ -10,7 +10,7 @@ from mvp_msgs.msg import Power
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
-
+from mvp_msgs.srv import GetStateRequest, GetState
 
 
 class gui_ros():
@@ -28,8 +28,9 @@ class gui_ros():
 
         
         # Main while loop.
-        # while not rospy.is_shutdown():
-            # rospy.sleep(0.1)
+        while not rospy.is_shutdown():
+            self.get_state()
+            rospy.sleep(1.0)
     
 
     def get_params(self):
@@ -37,15 +38,18 @@ class gui_ros():
         dataset_config = yaml.safe_load(open(global_file_name, 'r'))
 
         # make lookup table for mapping
-        self.poses_source =dataset_config['poses_source']
+        self.poses_source = dataset_config['poses_source']
 
-        # self.poses_source = rospy.get_param('poses_source', 'odom')
-        self.vitals_source = rospy.get_param('vitals_source', 'power')
+        self.geo_pose_source = dataset_config['geo_pose_source']
+
+        self.vitals_source = dataset_config['vitals_source']
+
+        self.get_state_srv  = dataset_config['get_state_service']
 
         self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
 
         self.get_states_srv = rospy.get_param('get_states_service', 'helm/get_states')
-        self.get_state_srv  = rospy.get_param('get_state_service', 'helm/get_state')
+
 
         self.change_state_srv = rospy.get_param('change_state_service', 'helm/change_state')
 
@@ -57,12 +61,14 @@ class gui_ros():
     
     def setup_ros(self):
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
+        self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
+
         self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
-    
 
-        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.vitals_sub], 10, 0.1)
 
-        # self.ts.registerCallback(self.callback)
+        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
+
+        self.ts.registerCallback(self.callback)
 
         self.geo_wpt_pub = rospy.Publisher("helm/path3d/update_geo_points", GeoPath, queue_size=10)
         self.geo_wpt_msg = GeoPath()
@@ -72,11 +78,11 @@ class gui_ros():
         rospy.signal_shutdown("Shutting down subscriber!")
 
     #obtain pose and power information and store in the database 
-    def callback(self):
-        quad = [self.poses_sub.pose.pose.orientation.x, 
-                self.poses_sub.pose.pose.orientation.y, 
-                self.poses_sub.pose.pose.orientation.z, 
-                self.poses_sub.pose.pose.orientation.w]
+    def callback(self, poses_sub, geo_pose_sub):
+        quad = [poses_sub.pose.pose.orientation.x, 
+                poses_sub.pose.pose.orientation.y, 
+                poses_sub.pose.pose.orientation.z, 
+                poses_sub.pose.pose.orientation.w]
         euler_angles = euler_from_quaternion(quad)
 
         with app.app_context():
@@ -84,21 +90,47 @@ class gui_ros():
             poses.roll = euler_angles[0] * 180 / np.pi
             poses.pitch = euler_angles[1] * 180 / np.pi 
             poses.yaw = euler_angles[2] * 180 / np.pi
-            poses.x = self.poses_sub.pose.pose.position.x
-            poses.y = self.poses_sub.pose.pose.position.y
-            poses.z = self.poses_sub.pose.pose.position.z
-            poses.u = self.poses_sub.twist.twist.linear.x
-            poses.v = self.poses_sub.twist.twist.linear.y
-            poses.w = self.poses_sub.twist.twist.linear.z
-            poses.p = self.poses_sub.twist.twist.angular.x
-            poses.q = self.poses_sub.twist.twist.angular.y
-            poses.r = self.poses_sub.twist.twist.angular.z
-            
-            vitals = Vitals.query.first()
-            vitals.voltage = self.vitals_sub.voltage
-            vitals.current = self.vitals_sub.current
+            poses.x = poses_sub.pose.pose.position.x
+            poses.y = poses_sub.pose.pose.position.y
+            poses.z = poses_sub.pose.pose.position.z
+            poses.u = poses_sub.twist.twist.linear.x
+            poses.v = poses_sub.twist.twist.linear.y
+            poses.w = poses_sub.twist.twist.linear.z
+            poses.p = poses_sub.twist.twist.angular.x
+            poses.q = poses_sub.twist.twist.angular.y
+            poses.r = poses_sub.twist.twist.angular.z
+            poses.lat = geo_pose_sub.pose.position.latitude
+            poses.lon = geo_pose_sub.pose.position.longitude
+
+            # print(poses.roll)
+
+            # vitals = Vitals.query.first()
+            # vitals.voltage = self.vitals_sub.voltage
+            # vitals.current = self.vitals_sub.current
 
             db.session.commit() 
+
+
+    ##state info
+    def get_state(self):
+        with app.app_context():
+            self.start_time = time.time()
+            service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
+            request = GetStateRequest("")
+            response = service_client_get_state(request)
+            # state = HelmStates.query.all()
+            db.session.query(HelmStates).delete()
+
+            state = HelmStates(id=0,name = str(response.state.name))
+        # print(helmstate)
+            db.session.add(state)
+            db.session.commit()
+            count = 1
+            for state_name in response.state.transitions:
+                state = HelmStates(id=count,name = state_name)
+                db.session.add(state)
+                count = count +1
+            db.session.commit()
 
     ##publishing waypoints 
     def publish_wpt(self):
@@ -109,7 +141,7 @@ class gui_ros():
             gpose.header.seq = count
             gpose.pose.position.latitude = entry.lat
             gpose.pose.position.longitude = entry.lon
-            gpose.pose.position.altitude = - entry.z
+            gpose.pose.position.altitude =  entry.z
             self.geo_wpt_msg.poses.append(gpose)
             count = count +1
 
