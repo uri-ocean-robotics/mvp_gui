@@ -13,8 +13,6 @@ import yaml
 from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState
 
 
-node = None
-
 
 class gui_ros():
     def __init__(self):
@@ -143,6 +141,7 @@ class gui_ros():
      ##state info
     def change_state(self, target_state):
         with app.app_context():
+            
             self.start_time = time.time()
             service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
             request = ChangeStateRequest(target_state)
@@ -168,8 +167,7 @@ def shutdown_node():
     rospy.signal_shutdown("Shutting down subscriber!")
 
 
-def gui_ros_start():
-    global node
+def gui_ros_start():  
     rospy.init_node('mvp_gui_node', disable_signals=True)
     node = gui_ros()
 
