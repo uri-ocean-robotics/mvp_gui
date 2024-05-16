@@ -120,35 +120,40 @@ class gui_ros():
     ##state info
     def get_state(self):
         with app.app_context():
-            self.start_time = time.time()
-            service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
-            request = GetStateRequest("")
-            response = service_client_get_state(request)
-            # state = HelmStates.query.all()
-            db.session.query(HelmStates).delete()
+            rospy.wait_for_service(self.get_state_srv)
+            try:
+                service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
+                request = GetStateRequest("")
+                response = service_client_get_state(request)
+                # state = HelmStates.query.all()
+                db.session.query(HelmStates).delete()
 
-            state = HelmStates(id=0,name = str(response.state.name))
-            self.helm_state = response.state.name
-        # print(helmstate)
-            db.session.add(state)
-            db.session.commit()
-            count = 1
-            for state_name in response.state.transitions:
-                state = HelmStates(id=count,name = state_name)
+                state = HelmStates(id=0,name = str(response.state.name))
+                self.helm_state = response.state.name
+            # print(helmstate)
                 db.session.add(state)
-                count = count +1
-            db.session.commit()
+                db.session.commit()
+                count = 1
+                for state_name in response.state.transitions:
+                    state = HelmStates(id=count,name = state_name)
+                    db.session.add(state)
+                    count = count +1
+                db.session.commit()
+            except rospy.ServiceException as e:
+                print("Service call failed: %s"%e)
 
      ##state info
     def change_state(self):
         with app.app_context():
             current_state = HelmCurrentState.query.first()
             if current_state.name != self.helm_state:
-                print("new state = ", current_state.name)
-                self.start_time = time.time()
-                service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
-                request = ChangeStateRequest(current_state.name)
-                response = service_client_change_state(request)
+                rospy.wait_for_service(self.get_state_srv)
+                try:
+                    service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
+                    request = ChangeStateRequest(current_state.name)
+                    response = service_client_change_state(request)
+                except rospy.ServiceException as e:
+                    print("Service call failed: %s"%e)
             
     ##publishing waypoints 
     def publish_wpt(self):
