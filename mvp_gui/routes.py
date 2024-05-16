@@ -258,7 +258,15 @@ def map_page():
         for waypoint in waypoints
     ]
 
-    return render_template("map.html", items_jsn=waypoints_data, vehicle_jsn=vehicle_data, host_ip=host_ip)
+    ##current waypoint list
+    cwaypoints = CurrentWaypoints.query.all()
+    current_waypoints_data = [
+        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon)}
+        for cwaypoint in cwaypoints
+    ]
+
+    return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
+                                        vehicle_jsn=vehicle_data, host_ip=host_ip)
 
 
 @app.route('/latest_data', methods=['GET'])

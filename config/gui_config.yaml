@@ -1,14 +1,22 @@
 name_space: alpha_rise
+
+##vehicle status
 poses_source: odometry/filtered/local
 geo_pose_source: odometry/geopose
 vitals_source: power
-waypoint_topic: path3d/update_geo_path
 
+#state services
 get_state_service: helm/get_state
+get_states_service: helm/get_states
 change_state_service: helm/change_state
 
+
+#mvp_controller service
 controller_service: controller
 
+##waypoints services
 get_waypoints_service: helm/path_3d/get_next_waypoints
-get_states_service: helm/get_states
+update_waypoints_service: path3d/update_geo_path
+
+##power manager
 power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]

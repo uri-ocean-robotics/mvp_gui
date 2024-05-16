@@ -10,8 +10,9 @@ from mvp_msgs.msg import Power
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
-from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState
+from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest
 from std_srvs.srv import Empty
+from std_msgs.msg import Int16
 
 
 class gui_ros():
@@ -32,6 +33,7 @@ class gui_ros():
             self.get_state()
             self.change_state()
             self.change_controller_state()
+            self.get_waypoints()
             rospy.sleep(1.0)
     
 
@@ -53,13 +55,7 @@ class gui_ros():
 
         self.controller_srv  = self.name_space + dataset_config['controller_service']
 
-
-        # self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
-
-        # self.get_states_srv = rospy.get_param('get_states_service', 'helm/get_states')
-
-
-        # self.change_state_srv = rospy.get_param('change_state_service', 'helm/change_state')
+        self.get_waypoint_srv  = self.name_space + dataset_config['get_waypoints_service']
 
 
         # self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
@@ -182,6 +178,28 @@ class gui_ros():
                 except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
     
+    ##get current waypoints
+    def get_waypoints(self):
+        with app.app_context():
+            rospy.wait_for_service(self.get_waypoint_srv)
+            try:
+                service_client_get_waypoint_srv= rospy.ServiceProxy(self.get_waypoint_srv, GetWaypoints)
+                request = GetWaypointsRequest(Int16(0)) ##get all waypoints
+                response = service_client_get_waypoint_srv(request)
+   
+                db.session.query(CurrentWaypoints).delete()
+                count = 0
+                for wpt in response.wpt:
+                    p = CurrentWaypoints(id=count, 
+                                            lat = wpt.ll_wpt.latitude, 
+                                            lon = wpt.ll_wpt.longitude, 
+                                            alt = wpt.ll_wpt.altitude)
+                    db.session.add(p)
+                    count = count +1
+                db.session.commit()
+            except rospy.ServiceException as e:
+                print("Service call failed: %s"%e)
+
     ##publishing waypoints 
     def publish_wpt(self):
         waypoints = Waypoints.query.order_by(Waypoints.id).all()

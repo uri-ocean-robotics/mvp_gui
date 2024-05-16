@@ -8,7 +8,9 @@
 
     // Simulating `jsonData` and `vehicleData` server-provided data
     const jsonData = {{ items_jsn | safe }};
+    const cWptData ={{citems_jsn | safe}};
     const vehicleData = {{ vehicle_jsn | safe }};
+
 
     const coordinates = document.getElementById('coordinates');
 
