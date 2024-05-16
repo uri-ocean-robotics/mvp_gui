@@ -10,7 +10,10 @@ from mvp_msgs.msg import Power
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
-from mvp_msgs.srv import GetStateRequest, GetState
+from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState
+
+
+node = None
 
 
 class gui_ros():
@@ -38,25 +41,28 @@ class gui_ros():
         dataset_config = yaml.safe_load(open(global_file_name, 'r'))
 
         # make lookup table for mapping
-        self.poses_source = dataset_config['poses_source']
+        self.name_space = '/' + dataset_config['name_space'] + '/'
+        self.poses_source = self.name_space + dataset_config['poses_source']
 
-        self.geo_pose_source = dataset_config['geo_pose_source']
+        self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
 
-        self.vitals_source = dataset_config['vitals_source']
+        self.vitals_source = self.name_space + dataset_config['vitals_source']
 
-        self.get_state_srv  = dataset_config['get_state_service']
+        self.get_state_srv  = self.name_space + dataset_config['get_state_service']
 
-        self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
+        self.change_state_srv  = self.name_space + dataset_config['change_state_service']
 
-        self.get_states_srv = rospy.get_param('get_states_service', 'helm/get_states')
+        # self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
+
+        # self.get_states_srv = rospy.get_param('get_states_service', 'helm/get_states')
 
 
-        self.change_state_srv = rospy.get_param('change_state_service', 'helm/change_state')
+        # self.change_state_srv = rospy.get_param('change_state_service', 'helm/change_state')
 
 
-        self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
-                                                                 'power_manager/24v',
-                                                                 'power_manager/lumen'])
+        # self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
+        #                                                          'power_manager/24v',
+        #                                                          'power_manager/lumen'])
 
     
     def setup_ros(self):
@@ -134,6 +140,14 @@ class gui_ros():
                 count = count +1
             db.session.commit()
 
+     ##state info
+    def change_state(self, target_state):
+        with app.app_context():
+            self.start_time = time.time()
+            service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
+            request = ChangeStateRequest(target_state)
+            response = service_client_change_state(request)
+            
     ##publishing waypoints 
     def publish_wpt(self):
         waypoints = Waypoints.query.order_by(Waypoints.id).all()
@@ -155,6 +169,7 @@ def shutdown_node():
 
 
 def gui_ros_start():
+    global node
     rospy.init_node('mvp_gui_node', disable_signals=True)
     node = gui_ros()
 
@@ -163,6 +178,7 @@ global_file_name = './config/gui_config.yaml'
 pose_t = threading.Thread(target = gui_ros_start)
 pose_t.daemon = True
 pose_t.start()
+
 # except rospy.ROSInterruptException: pass
 rospy.on_shutdown(shutdown_node)
 

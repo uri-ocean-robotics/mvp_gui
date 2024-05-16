@@ -12,12 +12,12 @@
             <tr>
                 <td>{{ states[0].name }}</td>
                  <td>
+                    {% for state in states[1:] %}
                     <form action="/mission" method="post">
-                        {% for state in states[1:] %}
                         <input type="hidden" name="states" value="{{ state.name }}">
                         <button type="submit">{{ state.name }}</button>
-                        {% endfor %}
                     </form>
+                    {% endfor %}
                 </td>
             </tr>
         </tbody>

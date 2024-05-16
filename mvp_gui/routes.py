@@ -3,6 +3,7 @@ import os
 from mvp_gui import *
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
+from mvp_gui.gui_ros import node
 
 @app.context_processor
 def inject_load():
@@ -109,7 +110,15 @@ def mission_page():
             db.session.add(new_entry)
             db.session.commit()
             return redirect(url_for('mission_page'))
-        
+
+        ##state change
+        elif 'states' in request.form:
+            selected_state = request.form.get('states')
+            print(selected_state)
+            node.change_state(str(selected_state))
+            return redirect(url_for('mission_page'))
+
+
     ##render the mission site
     return render_template("mission.html", waypoints=waypoints, states=states)
 
