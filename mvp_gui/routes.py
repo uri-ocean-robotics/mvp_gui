@@ -14,7 +14,8 @@ def inject_load():
     items = PowerItems.query.all()
     waypoints = Waypoints.query.all()
     states = HelmStates.query.all()
-    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states}
+    controller_state = ControllerState.query.first()
+    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states, 'controller_state':controller_state}
 
 # routes
 @app.route("/", methods=['GET', 'POST'])
@@ -76,6 +77,9 @@ def mission_page():
 
     states = HelmStates.query.all()
 
+    #get controller mode
+    controller_state =ControllerState.query.first()
+
     #button actiions
     if request.method == 'POST':
         # action = request.form.get('action')
@@ -115,8 +119,24 @@ def mission_page():
         ##state change
         elif 'states' in request.form:
             selected_state = request.form.get('states')
-            current_state = HelmCurrentState.query.first()
-            current_state.name = selected_state
+            change_state = RosActions.query.filter_by(action='change_state').first()
+            change_state.value = selected_state
+            change_state.pending = 1
+            db.session.commit()
+            return redirect(url_for('mission_page'))
+
+        ##controller state change
+        elif 'controller_disable' in request.form:
+            change_state = RosActions.query.filter_by(action='controller_state').first()
+            change_state.value = "disable"
+            change_state.pending = 1
+            db.session.commit()
+            return redirect(url_for('mission_page'))
+
+        elif 'controller_enable' in request.form:
+            change_state = RosActions.query.filter_by(action='controller_state').first()
+            change_state.value = "enable"
+            change_state.pending = 1
             db.session.commit()
             return redirect(url_for('mission_page'))
 

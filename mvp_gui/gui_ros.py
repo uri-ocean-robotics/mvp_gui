@@ -11,7 +11,7 @@ from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
 from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState
-
+from std_srvs.srv import Empty
 
 
 class gui_ros():
@@ -31,6 +31,7 @@ class gui_ros():
         while not rospy.is_shutdown():
             self.get_state()
             self.change_state()
+            self.change_controller_state()
             rospy.sleep(1.0)
     
 
@@ -49,6 +50,9 @@ class gui_ros():
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
 
         self.change_state_srv  = self.name_space + dataset_config['change_state_service']
+
+        self.controller_srv  = self.name_space + dataset_config['controller_service']
+
 
         # self.waypoints_topic = rospy.get_param('waypoint_topic', 'update_geo_wpt')
 
@@ -145,16 +149,39 @@ class gui_ros():
      ##state info
     def change_state(self):
         with app.app_context():
-            current_state = HelmCurrentState.query.first()
-            if current_state.name != self.helm_state:
+            change_state = RosActions.query.filter_by(action='change_state').first()
+            if change_state.pending == 1:
                 rospy.wait_for_service(self.get_state_srv)
                 try:
                     service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
-                    request = ChangeStateRequest(current_state.name)
+                    request = ChangeStateRequest(change_state.value)
                     response = service_client_change_state(request)
+                    change_state.pending = 0
+                    db.session.commit()
                 except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
             
+    ##change controller state action
+    def change_controller_state(self):
+        with app.app_context():
+            controller_state = RosActions.query.filter_by(action='controller_state').first()
+            if controller_state.pending == 1:
+                rospy.wait_for_service(self.controller_srv + '/' + controller_state.value)
+                try:
+                    service_client_change_controller_state = rospy.ServiceProxy(self.controller_srv + '/' + controller_state.value, Empty)
+                    service_client_change_controller_state()
+                    controller_state.pending = 0
+                    db.session.commit()
+                    print(self.controller_srv + '/' + controller_state.value)
+
+
+                    controller_set_state = ControllerState.query.first()
+                    controller_set_state.state = controller_state.value
+                    db.session.commit()
+
+                except rospy.ServiceException as e:
+                    print("Service call failed: %s"%e)
+    
     ##publishing waypoints 
     def publish_wpt(self):
         waypoints = Waypoints.query.order_by(Waypoints.id).all()

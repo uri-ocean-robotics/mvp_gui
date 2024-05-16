@@ -57,8 +57,17 @@ class HelmStates(db.Model):
     def __repr__(self):
         return f'states {self}'
 
-class HelmCurrentState(db.Model):
+class ControllerState(db.Model):
+    ## the first entry will be the current state the rest will be the connected states
     id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(length=20), nullable=True)
+    state = db.Column(db.Integer(), nullable=False)
     def __repr__(self):
-        return f'currentstates {self}'
+        return f'controllerstates {self}'
+
+class RosActions(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    action = db.Column(db.String(length=20), nullable=False)
+    value = db.Column(db.String(length=20), nullable=True)
+    pending = db.Column(db.Integer(), nullable=False)
+    def __repr__(self):
+        return f'rosactions {self}'

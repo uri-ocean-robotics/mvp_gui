@@ -1,0 +1,30 @@
+<div id="controller_table" class="controller_table">
+    <table class="table table-hover table-dark">
+        <thead>
+            <tr>
+                <!-- Your Columns HERE -->
+                <th scope="col">Controller state</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Your rows inside the table HERE: -->
+            <tr>
+                <td>{{ controller_state.state}}</td>
+                 <td>
+                    <form action="/mission" method="post">
+                        <input type="hidden" name="controller_disable">
+                        <button type="submit">Disable</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/mission" method="post">
+                        <input type="hidden" name="controller_enable">
+                        <button type="submit">Enable</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

@@ -7,6 +7,8 @@ waypoint_topic: path3d/update_geo_path
 get_state_service: helm/get_state
 change_state_service: helm/change_state
 
+controller_service: controller
+
 get_waypoints_service: helm/path_3d/get_next_waypoints
 get_states_service: helm/get_states
 power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]

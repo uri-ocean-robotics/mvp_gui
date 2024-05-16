@@ -13,7 +13,7 @@ def update_load():
             turbo.push(turbo.replace(render_template("tables/power_manager_table.html"), 'power_manager'))
             turbo.push(turbo.replace(render_template("tables/waypoints_table.html"), 'mission_waypoints'))
             turbo.push(turbo.replace(render_template("tables/states_table.html"), 'mission_state'))
-            
+            turbo.push(turbo.replace(render_template("tables/controller_table.html"), 'controller_table'))
 
 
 # thread
