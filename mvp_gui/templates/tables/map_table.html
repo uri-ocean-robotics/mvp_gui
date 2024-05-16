@@ -64,6 +64,7 @@
         longitude: entry.lon
     }));
 
+
     let vehicleMarker = new maplibregl.Marker({ draggable: false, color: "lightskyblue" })
         .setLngLat([vehicleData.lon, vehicleData.lat])
         .addTo(map);
@@ -82,6 +83,7 @@
     };
 
     let markers = [];
+    let current_wpt_markers = [];
     function updateRoute() {
         map.getSource('route').setData({
             type: 'FeatureCollection',
@@ -139,6 +141,15 @@
         markers.push(marker);
     }
 
+    function createMarker_nondraggable(item, color) {
+        // console.log(item.id)
+        const marker = new maplibregl.Marker({ draggable: false, color: color })
+            .setLngLat([item.lon, item.lat])
+            .addTo(map);
+        marker.getElement().dataset.id = item.id; // Store the id in the marker's element dataset
+        current_wpt_markers.push(marker);
+    }
+
     function updateMarkers() {
         if (isDragging) {
             return; // Skip updating markers if a marker is being dragged
@@ -173,6 +184,11 @@
                     }
                 });
 
+                cWptData.forEach((item, index) => {
+                    let current_wpt_markers = []
+                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
+                });
+
                 // Remove markers that are no longer in the new data
                 markers = markers.filter(marker => {
                     const markerId = marker.getElement().dataset.id;
@@ -183,6 +199,7 @@
                     }
                     return true;
                 });
+
 
                 // Reset coordinates data
                 coordinatesData = newJsonData.map(entry => ({
@@ -225,6 +242,11 @@
                 color = "#00FF00";
             }
             createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+        });
+
+        // Initialize markers with the existing data
+        cWptData.forEach((item, index) => {
+            createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
         });
     });
 
