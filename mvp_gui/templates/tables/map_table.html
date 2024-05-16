@@ -4,6 +4,7 @@
 <script>
     const updateInterval = 1000; // Update interval in milliseconds
     let isDragging = false; // Dragging flag
+    let intervalId_map = null;
 
     // Simulating `jsonData` and `vehicleData` server-provided data
     const jsonData = {{ items_jsn | safe }};
@@ -78,6 +79,122 @@
         ]
     };
 
+    let markers = [];
+    function updateRoute() {
+        map.getSource('route').setData({
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
+                    }
+                }
+            ]
+        });
+    }
+
+    function onDragStart() {
+        isDragging = true; // Set dragging flag
+    }
+
+    function onDragEnd(marker, item) {
+        return function () {
+            const coordinates = marker.getLngLat();
+            fetch('/waypoint_drag', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    id: item.id,
+                    lng: coordinates.lng,
+                    lat: coordinates.lat
+                })
+            }).catch(error => console.error('Error:', error));
+
+            // Update coordinates data
+            const index = coordinatesData.findIndex(coord => coord.id === item.id);
+            if (index !== -1) {
+                coordinatesData[index] = { id: item.id, longitude: coordinates.lng, latitude: coordinates.lat };
+            }
+
+            // Update the GeoJSON data for the line
+            updateRoute();
+            isDragging = false; // Reset dragging flag
+        };
+    }
+
+    function createMarker(item, color) {
+        const marker = new maplibregl.Marker({ draggable: true, color: color })
+            .setLngLat([item.lon, item.lat])
+            .addTo(map);
+        
+        marker.getElement().dataset.id = item.id; // Store the id in the marker's element dataset
+        marker.on('dragstart', onDragStart);
+        marker.on('dragend', onDragEnd(marker, item));
+        markers.push(marker);
+    }
+
+    function updateMarkers() {
+        if (isDragging) {
+            return; // Skip updating markers if a marker is being dragged
+        }
+
+        fetch('/latest_data')
+            .then(response => response.json())
+            .then(data => {
+                const newJsonData = data.waypoints;
+                const newVehicleData = data.vehicle;
+
+                // Update vehicle marker position or create it if not exists
+                if (vehicleMarker) {
+                    vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
+                } else {
+                    vehicleMarker = new maplibregl.Marker({ color: "#0000FF" })
+                        .setLngLat([newVehicleData.lon, newVehicleData.lat])
+                        .addTo(map);
+                }
+
+                // Update or create markers
+                newJsonData.forEach((item, index) => {
+                    const existingMarker = markers.find(marker => marker.getElement().dataset.id == item.id);
+                    if (existingMarker) {
+                        existingMarker.setLngLat([item.lon, item.lat]);
+                    } else {
+                        let color = item.id === 1 ? "#e50112" : "#808080";
+                        if (index === newJsonData.length - 1) {
+                            color = "#00FF00";
+                        }
+                        createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+                    }
+                });
+
+                // Remove markers that are no longer in the new data
+                markers = markers.filter(marker => {
+                    const markerId = marker.getElement().dataset.id;
+                    const existsInNewData = newJsonData.some(item => item.id == markerId);
+                    if (!existsInNewData) {
+                        marker.remove();
+                        return false;
+                    }
+                    return true;
+                });
+
+                // Reset coordinates data
+                coordinatesData = newJsonData.map(entry => ({
+                    id: entry.id,
+                    latitude: entry.lat,
+                    longitude: entry.lon
+                }));
+
+                // Update the GeoJSON data for the line
+                updateRoute();
+            })
+            .catch(error => console.error('Error:', error));
+    }
+
     // Initialize the map and add the route
     map.on('load', () => {
         map.addSource('route', {
@@ -99,103 +216,6 @@
             }
         });
 
-        function updateRoute() {
-            map.getSource('route').setData({
-                type: 'FeatureCollection',
-                features: [
-                    {
-                        type: 'Feature',
-                        geometry: {
-                            type: 'LineString',
-                            coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
-                        }
-                    }
-                ]
-            });
-        }
-
-        function onDragStart() {
-            isDragging = true; // Set dragging flag
-        }
-
-        function onDragEnd(marker, item) {
-            return function () {
-                const coordinates = marker.getLngLat();
-                fetch('/waypoint_drag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        id: item.id,
-                        lng: coordinates.lng,
-                        lat: coordinates.lat
-                    })
-                });
-
-                // Update coordinates data
-                const index = coordinatesData.findIndex(coord => coord.id === item.id);
-                if (index !== -1) {
-                    coordinatesData[index] = { id: item.id, longitude: coordinates.lng, latitude: coordinates.lat };
-                }
-
-                // Update the GeoJSON data for the line
-                updateRoute();
-                isDragging = false; // Reset dragging flag
-            };
-        }
-
-        let markers = [];
-
-        function createMarker(item, color) {
-            const marker = new maplibregl.Marker({ draggable: true, color: color })
-                .setLngLat([item.lon, item.lat])
-                .addTo(map);
-            
-            marker.on('dragstart', onDragStart)
-            marker.on('dragend', onDragEnd(marker, item));
-            markers.push(marker);
-        }
-
-        function updateMarkers() {
-            if (isDragging) {
-                return; // Skip updating markers if a marker is being dragged
-            }
-
-            fetch('/latest_data')
-                .then(response => response.json())
-                .then(data => {
-                    const newJsonData = data.waypoints;
-                    const newVehicleData = data.vehicle;
-
-                    // Update vehicle marker position
-                    vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
-
-                    // Clear all existing waypoint markers
-                    markers.forEach(marker => marker.remove());
-                    markers = [];
-
-                    // Reset coordinates data
-                    coordinatesData = newJsonData.map(entry => ({
-                        id: entry.id,
-                        latitude: entry.lat,
-                        longitude: entry.lon
-                    }));
-
-                    // Create new markers and add them to the map
-                    newJsonData.forEach((item, index) => {
-                        let color = item.id === 1 ? "#e50112" : "#808080";
-                        if (index === newJsonData.length - 1) {
-                            color = "#00FF00";
-                        }
-                        createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
-                    });
-
-                    // Update the GeoJSON data for the line
-                    updateRoute();
-                });
-        }
-
         // Initialize markers with the existing data
         jsonData.forEach((item, index) => {
             let color = item.id === 1 ? "#e50112" : "#808080";
@@ -204,9 +224,30 @@
             }
             createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
         });
+    });
 
-        setInterval(updateMarkers, updateInterval);
+    // Function to start the update interval
+    function startUpdateInterval() {
+        if (intervalId_map === null) {
+            intervalId_map = setInterval(updateMarkers, updateInterval);
+        }
+    }
 
+    // Function to stop the update interval
+    function stopUpdateInterval() {
+        if (intervalId_map !== null) {
+            clearInterval(intervalId_map);
+        }
+    }
+
+    // Set up the interval to call updateMarkers when the page is loaded
+    document.addEventListener('turbo:load', () => {
+        startUpdateInterval();
+    });
+
+    // // Stop the interval when navigating away from the page
+    document.addEventListener('turbo:before-render', () => {
+        stopUpdateInterval();
     });
 
 
