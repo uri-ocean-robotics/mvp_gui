@@ -20,7 +20,6 @@ class gui_ros():
 
         self.helm_state = 'start'
         self.helm_connected_states = []
-
         # ros parameters
         self.get_params()
 
@@ -31,6 +30,7 @@ class gui_ros():
         # Main while loop.
         while not rospy.is_shutdown():
             self.get_state()
+            self.change_state()
             rospy.sleep(1.0)
     
 
@@ -128,6 +128,7 @@ class gui_ros():
             db.session.query(HelmStates).delete()
 
             state = HelmStates(id=0,name = str(response.state.name))
+            self.helm_state = response.state.name
         # print(helmstate)
             db.session.add(state)
             db.session.commit()
@@ -139,13 +140,15 @@ class gui_ros():
             db.session.commit()
 
      ##state info
-    def change_state(self, target_state):
+    def change_state(self):
         with app.app_context():
-            
-            self.start_time = time.time()
-            service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
-            request = ChangeStateRequest(target_state)
-            response = service_client_change_state(request)
+            current_state = HelmCurrentState.query.first()
+            if current_state.name != self.helm_state:
+                print("new state = ", current_state.name)
+                self.start_time = time.time()
+                service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
+                request = ChangeStateRequest(current_state.name)
+                response = service_client_change_state(request)
             
     ##publishing waypoints 
     def publish_wpt(self):
@@ -162,6 +165,8 @@ class gui_ros():
 
         self.geo_wpt_pub.publish(self.geo_wpt_msg)
 
+
+
 def shutdown_node():    
     rospy.loginfo("Shutting down subscriber!")
     rospy.signal_shutdown("Shutting down subscriber!")
@@ -170,8 +175,10 @@ def shutdown_node():
 def gui_ros_start():  
     rospy.init_node('mvp_gui_node', disable_signals=True)
     node = gui_ros()
+    return node
 
 global_file_name = './config/gui_config.yaml'
+
 
 pose_t = threading.Thread(target = gui_ros_start)
 pose_t.daemon = True

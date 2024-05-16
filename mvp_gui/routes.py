@@ -2,10 +2,9 @@ import json
 import os
 
 from mvp_gui import *
+import threading
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
-
-
 
 
 @app.context_processor
@@ -16,7 +15,6 @@ def inject_load():
     waypoints = Waypoints.query.all()
     states = HelmStates.query.all()
     return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states}
-
 
 # routes
 @app.route("/", methods=['GET', 'POST'])
@@ -117,8 +115,9 @@ def mission_page():
         ##state change
         elif 'states' in request.form:
             selected_state = request.form.get('states')
-            print(selected_state)
-            # node.change_state(str(selected_state))
+            current_state = HelmCurrentState.query.first()
+            current_state.name = selected_state
+            db.session.commit()
             return redirect(url_for('mission_page'))
 
 
