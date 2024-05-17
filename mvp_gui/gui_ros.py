@@ -65,6 +65,7 @@ class gui_ros():
 
     
     def setup_ros(self):
+        
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
 
@@ -74,8 +75,18 @@ class gui_ros():
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
         self.ts.registerCallback(self.callback)
+        with app.app_context():
+            action = RosActions.query.filter_by(action='change_state').first()
+            action.pending = 0
+            db.session.commit()
 
-        self.geo_wpt =  SendWaypointsRequest()
+            action = RosActions.query.filter_by(action='controller_state').first()
+            action.pending = 0
+            db.session.commit()
+        
+            action = RosActions.query.filter_by(action='publish_waypoints').first()
+            action.pending = 0
+            db.session.commit()
 
     def shutdown_node():    
         rospy.loginfo("Shutting down subscriber!")
@@ -199,6 +210,7 @@ class gui_ros():
                 response = service_client_get_waypoint_srv(request)
    
                 db.session.query(CurrentWaypoints).delete()
+                db.session.commit()
                 count = 0
                 for wpt in response.wpt:
                     p = CurrentWaypoints(id=count, 
@@ -219,10 +231,9 @@ class gui_ros():
 
             if pub_wpt_action.pending == 1:
                 waypoints = Waypoints.query.order_by(Waypoints.id).all()
+                geo_wpt =  SendWaypointsRequest()
+                geo_wpt.type = 'geopath'
                 count = 0
-                self.geo_wpt.type = 'geopath'
-                print("sending waypoints", self.geo_wpt.type)
-                
                 for entry in waypoints:
                     wpt = Waypoint()
                     wpt.header.seq = count
@@ -230,12 +241,13 @@ class gui_ros():
                     wpt.ll_wpt.longitude = entry.lon
                     wpt.ll_wpt.altitude =  entry.alt
                     count = count +1
-                    self.geo_wpt.wpt.append(wpt)
+                    geo_wpt.wpt.append(wpt)
                 # print(self.geo_wpt)
+                # print("sending waypoints number = ", count)
                 try:
                     service_client_pub_waypoint_srv= rospy.ServiceProxy(self.pub_waypoint_srv, SendWaypoints)
-                    response = service_client_pub_waypoint_srv(self.geo_wpt)
-                    print("wpt_function:" , response)
+                    response = service_client_pub_waypoint_srv(geo_wpt)
+                    # print("wpt_function:" , response)
                     pub_wpt_action.pending = 0
                     db.session.commit()
                 except rospy.ServiceException as e:

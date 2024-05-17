@@ -10,14 +10,14 @@
     .cWpt-triangle {
         width: 0;
         height: 0;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 25px solid red; /* Default color, can be overridden */
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 10px solid red; /* Default color, can be overridden */
     }
 
     .cWpt-id-display {
         margin-top: 5px;
-        font-size: 15px;
+        font-size: 12px;
         color: yellow;
         background: transparent;
         padding: 2px 5px;
@@ -255,7 +255,7 @@
         idDisplay.innerText = item.id + 1;
 
         // Append the triangle and ID display to the marker element
-        markerElement.appendChild(triangle);
+        // markerElement.appendChild(triangle);
         markerElement.appendChild(idDisplay);
 
         // Create the marker using the custom HTML element
@@ -287,6 +287,12 @@
                     arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;                    
                 } 
 
+                current_wpt_markers.forEach(marker => marker.remove());
+                current_wpt_markers = [];
+                newcWptData.forEach((item, index) => {
+                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
+                });
+
                 // Update or create markers
                 newJsonData.forEach((item, index) => {
                     const existingMarker = markers.find(marker => marker.getElement().dataset.id == item.id);
@@ -301,11 +307,7 @@
                     }
                 });
 
-                current_wpt_markers.forEach(marker => marker.remove());
-                current_wpt_markers = [];
-                newcWptData.forEach((item, index) => {
-                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
-                });
+                
 
                 // Remove markers that are no longer in the new data
                 markers = markers.filter(marker => {
