@@ -282,7 +282,7 @@
                 const newVehicleData = data.vehicle;
                 // Create or update the vehicle marker
                 if (vehicleMarker) {
-                    vehicleMarker.setLngLat([vehicleData.lon, vehicleData.lat]);
+                    vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
                     const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
                     arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;                    
                 } 
