@@ -301,8 +301,9 @@
                     }
                 });
 
+                current_wpt_markers.forEach(marker => marker.remove());
+                current_wpt_markers = [];
                 newcWptData.forEach((item, index) => {
-                    let current_wpt_markers = []
                     createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
                 });
 
@@ -323,6 +324,13 @@
                     latitude: entry.lat,
                     longitude: entry.lon
                 }));
+
+                coordinatesData_cWpt = newcWptData.map(entry => ({
+                    id: entry.id,
+                    latitude: entry.lat,
+                    longitude: entry.lon
+                }));
+
 
                 // Update the GeoJSON data for the line
                 updateRoute();
