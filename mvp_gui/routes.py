@@ -248,7 +248,8 @@ def map_page():
     poses = Poses.query.first()
     vehicle_data = {
         "lat": float(poses.lat),
-        "lon": float(poses.lon)
+        "lon": float(poses.lon),
+        "yaw": float(poses.yaw)
     }
 
     # Sort the waypoints by ID
@@ -274,7 +275,8 @@ def latest_data():
     poses = Poses.query.first()
     vehicle_data = {
         "lat": float(poses.lat),
-        "lon": float(poses.lon)
+        "lon": float(poses.lon),
+        "yaw": float(poses.yaw)
     }
 
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
@@ -283,7 +285,14 @@ def latest_data():
         for waypoint in waypoints
     ]
 
-    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data})
+        ##current waypoint list
+    cwaypoints = CurrentWaypoints.query.all()
+    current_waypoints_data = [
+        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon)}
+        for cwaypoint in cwaypoints
+    ]
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data})
 
 
 @app.route("/monitor")
