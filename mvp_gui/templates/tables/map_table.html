@@ -75,41 +75,41 @@
     const coordinates = document.getElementById('coordinates');
 
     // online////////////////////////////////////////
-    const map = new maplibregl.Map({
-        container: 'map',
-        zoom: 12,
-        center: [vehicleData.lon, vehicleData.lat], //long lat
-        style:
-            'https://api.maptiler.com/maps/hybrid/style.json?key=XiFHd4BzZGlB2Dsix5mK'
-    });
-    //////////////////////////////////////////////////////
-
-    // offline////////////////////////////////////////////
-    // const serverIp = "{{ host_ip }}";  // Injected server IP
     // const map = new maplibregl.Map({
     //     container: 'map',
     //     zoom: 12,
-    //     center: [vehicleData.lon, vehicleData.lat], // long lat
-    //     style: {
-    //         "version": 8,
-    //         "sources": {
-    //             "local-tiles": {
-    //                 "type": "raster",
-    //                 "tiles": [
-    //                     `http://${serverIp}:5000/tiles/{z}/{x}/{y}.png`
-    //                 ],
-    //                 "tileSize": 256
-    //             }
-    //         },
-    //         "layers": [
-    //             {
-    //                 "id": "local-tiles-layer",
-    //                 "type": "raster",
-    //                 "source": "local-tiles"
-    //             }
-    //         ]
-    //     }
+    //     center: [vehicleData.lon, vehicleData.lat], //long lat
+    //     style:
+    //         'https://api.maptiler.com/maps/hybrid/style.json?key=XiFHd4BzZGlB2Dsix5mK'
     // });
+    //////////////////////////////////////////////////////
+
+    // offline////////////////////////////////////////////
+    const serverIp = "{{ host_ip }}";  // Injected server IP
+    const map = new maplibregl.Map({
+        container: 'map',
+        zoom: 15,
+        center: [vehicleData.lon, vehicleData.lat], // long lat
+        style: {
+            "version": 8,
+            "sources": {
+                "local-tiles": {
+                    "type": "raster",
+                    "tiles": [
+                        `http://${serverIp}:5000/tiles/{z}/{x}/{y}.png`
+                    ],
+                    "tileSize": 256
+                }
+            },
+            "layers": [
+                {
+                    "id": "local-tiles-layer",
+                    "type": "raster",
+                    "source": "local-tiles"
+                }
+            ]
+        }
+    });
     //////////////////////////////////////////////////////
     map.setCenter([vehicleData.lon, vehicleData.lat]);
     map.addControl(new maplibregl.NavigationControl());

@@ -1,0 +1,9 @@
+{
+    "format": "png",
+    "name": "beach_pond",
+    "version": "1.1",
+    "type": "overlay",
+    "minzoom": "12",
+    "maxzoom": "20",
+    "bounds": "-71.8006,41.5719,-71.7842,41.5816"
+}
