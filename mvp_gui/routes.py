@@ -265,12 +265,12 @@ def map_page():
             db.session.commit()
             # return redirect(url_for('map_page'))
 
-        elif 'publish' in request.form:
+        elif 'publish_waypoints' in request.form:
             publish_waypoints = RosActions.query.filter_by(action='publish_waypoints').first()
-            change_state.pending = 1
+            publish_waypoints.pending = 1
             db.session.commit()
             # return redirect(url_for('map_page'))
-
+        
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
                                         vehicle_jsn=vehicle_data, host_ip=host_ip, states=states)
 
