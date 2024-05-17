@@ -75,11 +75,6 @@ def mission_page():
         count = count + 1
         db.session.commit()
 
-    states = HelmStates.query.all()
-
-    #get controller mode
-    controller_state =ControllerState.query.first()
-
     #button actiions
     if request.method == 'POST':
         # action = request.form.get('action')
@@ -116,38 +111,8 @@ def mission_page():
             db.session.commit()
             return redirect(url_for('mission_page'))
 
-        ##state change
-        elif 'states' in request.form:
-            selected_state = request.form.get('states')
-            change_state = RosActions.query.filter_by(action='change_state').first()
-            change_state.value = selected_state
-            change_state.pending = 1
-            db.session.commit()
-            return redirect(url_for('mission_page'))
-
-        ##controller state change
-        elif 'controller_disable' in request.form:
-            change_state = RosActions.query.filter_by(action='controller_state').first()
-            change_state.value = "disable"
-            change_state.pending = 1
-            db.session.commit()
-            return redirect(url_for('mission_page'))
-
-        elif 'controller_enable' in request.form:
-            change_state = RosActions.query.filter_by(action='controller_state').first()
-            change_state.value = "enable"
-            change_state.pending = 1
-            db.session.commit()
-            return redirect(url_for('mission_page'))
-
-        elif 'publish' in request.form:
-            publish_waypoints = RosActions.query.filter_by(action='publish_waypoints').first()
-            change_state.pending = 1
-            db.session.commit()
-            return redirect(url_for('mission_page'))
-
     ##render the mission site
-    return render_template("mission.html", waypoints=waypoints, states=states)
+    return render_template("mission.html", waypoints=waypoints)
 
 def generat_waypoints_from_kml(file_name, replace_flag):
     tree = ET.parse(file_name)
@@ -271,8 +236,43 @@ def map_page():
         for cwaypoint in cwaypoints
     ]
 
+    states = HelmStates.query.all()
+
+    #get controller mode
+    controller_state =ControllerState.query.first()
+    #button actiions
+    if request.method == 'POST':
+        ##state change
+        if 'states' in request.form:
+            selected_state = request.form.get('states')
+            change_state = RosActions.query.filter_by(action='change_state').first()
+            change_state.value = selected_state
+            change_state.pending = 1
+            db.session.commit()
+            # return redirect(url_for('map_page'))
+
+        ##controller state change
+        elif 'controller_disable' in request.form:
+            change_state = RosActions.query.filter_by(action='controller_state').first()
+            change_state.value = "disable"
+            change_state.pending = 1
+            db.session.commit()
+
+        elif 'controller_enable' in request.form:
+            change_state = RosActions.query.filter_by(action='controller_state').first()
+            change_state.value = "enable"
+            change_state.pending = 1
+            db.session.commit()
+            # return redirect(url_for('map_page'))
+
+        elif 'publish' in request.form:
+            publish_waypoints = RosActions.query.filter_by(action='publish_waypoints').first()
+            change_state.pending = 1
+            db.session.commit()
+            # return redirect(url_for('map_page'))
+
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
-                                        vehicle_jsn=vehicle_data, host_ip=host_ip)
+                                        vehicle_jsn=vehicle_data, host_ip=host_ip, states=states)
 
 
 @app.route('/latest_data', methods=['GET'])
