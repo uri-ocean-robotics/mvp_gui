@@ -30,6 +30,7 @@ class gui_ros():
 
         # Main while loop.
         while not rospy.is_shutdown():
+            self.log_poses()
             self.get_state()
             self.change_state()
             self.change_controller_state()
@@ -126,7 +127,43 @@ class gui_ros():
             # vitals.current = self.vitals_sub.current
 
             db.session.commit() 
+            
+    def log_poses(self):
+        decay = 20
+        with app.app_context():
+            new_pose = db.session.query(Poses).first()
 
+            num_entries = db.session.query(PoseHistory).count()
+            print(num_entries)
+            #increase id by 1
+            db.session.query(PoseHistory).update({PoseHistory.id: PoseHistory.id + 1})
+            db.session.query(PoseHistory).filter(PoseHistory.id > decay).delete()
+            db.session.commit()
+
+            # Create a new instance of PoseHistory with the values from new_pose
+            
+            new_pose_history = PoseHistory()
+            new_pose_history.id = 1
+            new_pose_history.frame_id = new_pose.frame_id
+            new_pose_history.child_frame_id = new_pose.child_frame_id
+            new_pose_history.roll = new_pose.roll
+            new_pose_history.pitch = new_pose.pitch
+            new_pose_history.yaw = new_pose.yaw
+            new_pose_history.x = new_pose.x
+            new_pose_history.y = new_pose.y
+            new_pose_history.z = new_pose.z
+            new_pose_history.u = new_pose.u
+            new_pose_history.v = new_pose.v
+            new_pose_history.w = new_pose.w
+            new_pose_history.p = new_pose.p
+            new_pose_history.q = new_pose.q
+            new_pose_history.r = new_pose.r
+            new_pose_history.lat = new_pose.lat
+            new_pose_history.lon = new_pose.lon
+
+            # Add the new entry to the session and commit
+            db.session.add(new_pose_history)
+            db.session.commit()
 
     ##state info
     def get_state(self):
