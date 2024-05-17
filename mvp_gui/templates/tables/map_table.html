@@ -10,14 +10,14 @@
     .cWpt-triangle {
         width: 0;
         height: 0;
-        border-left: 12px solid transparent;
-        border-right: 12px solid transparent;
-        border-top: 25px solid red; /* Default color, can be overridden */
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 10px solid red; /* Default color, can be overridden */
     }
 
     .cWpt-id-display {
         margin-top: 5px;
-        font-size: 15px;
+        font-size: 12px;
         color: yellow;
         background: transparent;
         padding: 2px 5px;
@@ -75,41 +75,41 @@
     const coordinates = document.getElementById('coordinates');
 
     // online////////////////////////////////////////
-    const map = new maplibregl.Map({
-        container: 'map',
-        zoom: 12,
-        center: [vehicleData.lon, vehicleData.lat], //long lat
-        style:
-            'https://api.maptiler.com/maps/hybrid/style.json?key=XiFHd4BzZGlB2Dsix5mK'
-    });
-    //////////////////////////////////////////////////////
-
-    // offline////////////////////////////////////////////
-    // const serverIp = "{{ host_ip }}";  // Injected server IP
     // const map = new maplibregl.Map({
     //     container: 'map',
     //     zoom: 12,
-    //     center: [vehicleData.lon, vehicleData.lat], // long lat
-    //     style: {
-    //         "version": 8,
-    //         "sources": {
-    //             "local-tiles": {
-    //                 "type": "raster",
-    //                 "tiles": [
-    //                     `http://${serverIp}:5000/tiles/{z}/{x}/{y}.png`
-    //                 ],
-    //                 "tileSize": 256
-    //             }
-    //         },
-    //         "layers": [
-    //             {
-    //                 "id": "local-tiles-layer",
-    //                 "type": "raster",
-    //                 "source": "local-tiles"
-    //             }
-    //         ]
-    //     }
+    //     center: [vehicleData.lon, vehicleData.lat], //long lat
+    //     style:
+    //         'https://api.maptiler.com/maps/hybrid/style.json?key=XiFHd4BzZGlB2Dsix5mK'
     // });
+    //////////////////////////////////////////////////////
+
+    // offline////////////////////////////////////////////
+    const serverIp = "{{ host_ip }}";  // Injected server IP
+    const map = new maplibregl.Map({
+        container: 'map',
+        zoom: 17,
+        center: [vehicleData.lon, vehicleData.lat], // long lat
+        style: {
+            "version": 8,
+            "sources": {
+                "local-tiles": {
+                    "type": "raster",
+                    "tiles": [
+                        `http://${serverIp}:5000/tiles/{z}/{x}/{y}.png`
+                    ],
+                    "tileSize": 256
+                }
+            },
+            "layers": [
+                {
+                    "id": "local-tiles-layer",
+                    "type": "raster",
+                    "source": "local-tiles"
+                }
+            ]
+        }
+    });
     //////////////////////////////////////////////////////
     map.setCenter([vehicleData.lon, vehicleData.lat]);
     map.addControl(new maplibregl.NavigationControl());
@@ -252,10 +252,10 @@
         // Create the ID display element
         const idDisplay = document.createElement('div');
         idDisplay.className = 'cWpt-id-display';
-        idDisplay.innerText = item.id + 1;
+        idDisplay.innerText = item.id;
 
         // Append the triangle and ID display to the marker element
-        markerElement.appendChild(triangle);
+        // markerElement.appendChild(triangle);
         markerElement.appendChild(idDisplay);
 
         // Create the marker using the custom HTML element
@@ -282,10 +282,16 @@
                 const newVehicleData = data.vehicle;
                 // Create or update the vehicle marker
                 if (vehicleMarker) {
-                    vehicleMarker.setLngLat([vehicleData.lon, vehicleData.lat]);
+                    vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
                     const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
                     arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;                    
                 } 
+
+                current_wpt_markers.forEach(marker => marker.remove());
+                current_wpt_markers = [];
+                newcWptData.forEach((item, index) => {
+                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
+                });
 
                 // Update or create markers
                 newJsonData.forEach((item, index) => {
@@ -301,10 +307,7 @@
                     }
                 });
 
-                newcWptData.forEach((item, index) => {
-                    let current_wpt_markers = []
-                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
-                });
+                
 
                 // Remove markers that are no longer in the new data
                 markers = markers.filter(marker => {
@@ -324,6 +327,13 @@
                     longitude: entry.lon
                 }));
 
+                coordinatesData_cWpt = newcWptData.map(entry => ({
+                    id: entry.id,
+                    latitude: entry.lat,
+                    longitude: entry.lon
+                }));
+
+
                 // Update the GeoJSON data for the line
                 updateRoute();
 
@@ -333,29 +343,6 @@
 
     // Initialize the map and add the route
     map.on('load', () => {
-
-        // Add the first route source and layer
-        map.addSource('route1', {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: []
-            }
-        });
-
-        map.addLayer({
-            id: 'routeLayer1',
-            type: 'line',
-            source: 'route1',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#F7455D', // Red color for the first route
-                'line-width': 3
-            }
-        });
 
         // Add the second route source and layer
         map.addSource('route2', {
@@ -379,7 +366,28 @@
                 'line-width': 3
             }
         });
+        // Add the first route source and layer
+        map.addSource('route1', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
 
+        map.addLayer({
+            id: 'routeLayer1',
+            type: 'line',
+            source: 'route1',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#F7455D', // Red color for the first route
+                'line-width': 3
+            }
+        });
         // Initialize markers with the existing data
         jsonData.forEach((item, index) => {
             let color = item.id === 1 ? "#e50112" : "#808080";
@@ -388,6 +396,7 @@
             }
             createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
         });
+
 
     });
 

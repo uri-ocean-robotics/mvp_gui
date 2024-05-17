@@ -17,7 +17,7 @@ controller_state_service: controller/get_state
 
 ##waypoints services
 get_waypoints_service: helm/path_3d/get_next_waypoints
-update_waypoints_service: path3d/update_geo_path
+pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
 power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]

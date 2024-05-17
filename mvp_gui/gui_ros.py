@@ -6,11 +6,11 @@ import message_filters
 from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped
-from mvp_msgs.msg import Power
+from mvp_msgs.msg import Power, Waypoint
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
-from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest
+from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest, SendWaypoints, SendWaypointsRequest
 from std_srvs.srv import Empty, Trigger
 from std_msgs.msg import Int16
 
@@ -27,7 +27,7 @@ class gui_ros():
         # ros subscribers and publishers
         self.setup_ros()
 
-        
+
         # Main while loop.
         while not rospy.is_shutdown():
             self.get_state()
@@ -35,6 +35,7 @@ class gui_ros():
             self.change_controller_state()
             self.get_controller_state()
             self.get_waypoints()
+            self.publish_wpt()
             rospy.sleep(1.0)
     
 
@@ -47,18 +48,16 @@ class gui_ros():
         self.poses_source = self.name_space + dataset_config['poses_source']
 
         self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
-
         self.vitals_source = self.name_space + dataset_config['vitals_source']
 
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
-
         self.change_state_srv  = self.name_space + dataset_config['change_state_service']
 
         self.controller_srv  = self.name_space + dataset_config['controller_service']
         self.controller_state_srv  = self.name_space + dataset_config['controller_state_service']
 
         self.get_waypoint_srv  = self.name_space + dataset_config['get_waypoints_service']
-
+        self.pub_waypoint_srv = self.name_space + dataset_config['pub_waypoints_service']
 
         # self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
         #                                                          'power_manager/24v',
@@ -66,6 +65,7 @@ class gui_ros():
 
     
     def setup_ros(self):
+        
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
 
@@ -75,9 +75,18 @@ class gui_ros():
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
         self.ts.registerCallback(self.callback)
+        with app.app_context():
+            action = RosActions.query.filter_by(action='change_state').first()
+            action.pending = 0
+            db.session.commit()
 
-        self.geo_wpt_pub = rospy.Publisher("helm/path3d/update_geo_points", GeoPath, queue_size=10)
-        self.geo_wpt_msg = GeoPath()
+            action = RosActions.query.filter_by(action='controller_state').first()
+            action.pending = 0
+            db.session.commit()
+        
+            action = RosActions.query.filter_by(action='publish_waypoints').first()
+            action.pending = 0
+            db.session.commit()
 
     def shutdown_node():    
         rospy.loginfo("Shutting down subscriber!")
@@ -201,6 +210,7 @@ class gui_ros():
                 response = service_client_get_waypoint_srv(request)
    
                 db.session.query(CurrentWaypoints).delete()
+                db.session.commit()
                 count = 0
                 for wpt in response.wpt:
                     p = CurrentWaypoints(id=count, 
@@ -215,20 +225,35 @@ class gui_ros():
 
     ##publishing waypoints 
     def publish_wpt(self):
-        waypoints = Waypoints.query.order_by(Waypoints.id).all()
-        count = 0
-        for entry in waypoints:
-            gpose = GeoPoseStamped()
-            gpose.header.seq = count
-            gpose.pose.position.latitude = entry.lat
-            gpose.pose.position.longitude = entry.lon
-            gpose.pose.position.altitude =  entry.z
-            self.geo_wpt_msg.poses.append(gpose)
-            count = count +1
+        with app.app_context():
+            # print("publishing waypoints")
+            pub_wpt_action = RosActions.query.filter_by(action='publish_waypoints').first()
 
-        self.geo_wpt_pub.publish(self.geo_wpt_msg)
+            if pub_wpt_action.pending == 1:
+                waypoints = Waypoints.query.order_by(Waypoints.id).all()
+                geo_wpt =  SendWaypointsRequest()
+                geo_wpt.type = 'geopath'
+                count = 0
+                for entry in waypoints:
+                    wpt = Waypoint()
+                    wpt.header.seq = count
+                    wpt.ll_wpt.latitude = entry.lat
+                    wpt.ll_wpt.longitude = entry.lon
+                    wpt.ll_wpt.altitude =  entry.alt
+                    count = count +1
+                    geo_wpt.wpt.append(wpt)
+                # print(self.geo_wpt)
+                # print("sending waypoints number = ", count)
+                try:
+                    service_client_pub_waypoint_srv= rospy.ServiceProxy(self.pub_waypoint_srv, SendWaypoints)
+                    response = service_client_pub_waypoint_srv(geo_wpt)
+                    # print("wpt_function:" , response)
+                    pub_wpt_action.pending = 0
+                    db.session.commit()
+                except rospy.ServiceException as e:
+                    print("Service call failed: %s"%e)
 
-
+                
 
 def shutdown_node():    
     rospy.loginfo("Shutting down subscriber!")

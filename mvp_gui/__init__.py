@@ -13,7 +13,7 @@ db.init_app(app)
 app.app_context().push()
 
 # Path to the directory where tiles are stored
-TILES_DIR = "../offline_map/test_tiles_directory/"
+TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
 
 from mvp_gui import utils
 from mvp_gui import gui_ros
