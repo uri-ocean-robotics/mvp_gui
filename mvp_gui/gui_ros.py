@@ -11,7 +11,7 @@ from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
 from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest
-from std_srvs.srv import Empty
+from std_srvs.srv import Empty, Trigger
 from std_msgs.msg import Int16
 
 
@@ -33,6 +33,7 @@ class gui_ros():
             self.get_state()
             self.change_state()
             self.change_controller_state()
+            self.get_controller_state()
             self.get_waypoints()
             rospy.sleep(1.0)
     
@@ -54,6 +55,7 @@ class gui_ros():
         self.change_state_srv  = self.name_space + dataset_config['change_state_service']
 
         self.controller_srv  = self.name_space + dataset_config['controller_service']
+        self.controller_state_srv  = self.name_space + dataset_config['controller_state_service']
 
         self.get_waypoint_srv  = self.name_space + dataset_config['get_waypoints_service']
 
@@ -158,6 +160,22 @@ class gui_ros():
                     print("Service call failed: %s"%e)
             
     ##change controller state action
+    def get_controller_state(self):
+        with app.app_context():
+            rospy.wait_for_service(self.controller_state_srv)
+            try:
+                service_client_get_controller_state = rospy.ServiceProxy(self.controller_state_srv, Trigger)
+                response = service_client_get_controller_state()
+
+                controller_state = ControllerState.query.first()
+                controller_state.state = response.message
+                # print(response.message)
+                db.session.commit()
+                
+            except rospy.ServiceException as e:
+                print("Service call failed: %s"%e)
+
+
     def change_controller_state(self):
         with app.app_context():
             controller_state = RosActions.query.filter_by(action='controller_state').first()
@@ -169,11 +187,6 @@ class gui_ros():
                     controller_state.pending = 0
                     db.session.commit()
                     print(self.controller_srv + '/' + controller_state.value)
-
-
-                    controller_set_state = ControllerState.query.first()
-                    controller_set_state.state = controller_state.value
-                    db.session.commit()
 
                 except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)

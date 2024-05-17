@@ -67,7 +67,7 @@ class HelmStates(db.Model):
 class ControllerState(db.Model):
     ## the first entry will be the current state the rest will be the connected states
     id = db.Column(db.Integer(), primary_key=True)
-    state = db.Column(db.Integer(), nullable=False)
+    state = db.Column(db.String(length=20), nullable=False)
     def __repr__(self):
         return f'controllerstates {self}'
 

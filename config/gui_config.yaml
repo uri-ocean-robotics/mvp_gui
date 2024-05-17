@@ -13,6 +13,7 @@ change_state_service: helm/change_state
 
 #mvp_controller service
 controller_service: controller
+controller_state_service: controller/get_state
 
 ##waypoints services
 get_waypoints_service: helm/path_3d/get_next_waypoints

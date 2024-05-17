@@ -140,6 +140,11 @@ def mission_page():
             db.session.commit()
             return redirect(url_for('mission_page'))
 
+        elif 'publish' in request.form:
+            publish_waypoints = RosActions.query.filter_by(action='publish_waypoints').first()
+            change_state.pending = 1
+            db.session.commit()
+            return redirect(url_for('mission_page'))
 
     ##render the mission site
     return render_template("mission.html", waypoints=waypoints, states=states)
@@ -284,8 +289,6 @@ def latest_data():
         {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon)}
         for waypoint in waypoints
     ]
-
-        ##current waypoint list
     cwaypoints = CurrentWaypoints.query.all()
     current_waypoints_data = [
         {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon)}
