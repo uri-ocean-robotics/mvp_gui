@@ -342,29 +342,6 @@
     // Initialize the map and add the route
     map.on('load', () => {
 
-        // Add the first route source and layer
-        map.addSource('route1', {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: []
-            }
-        });
-
-        map.addLayer({
-            id: 'routeLayer1',
-            type: 'line',
-            source: 'route1',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#F7455D', // Red color for the first route
-                'line-width': 3
-            }
-        });
-
         // Add the second route source and layer
         map.addSource('route2', {
             type: 'geojson',
@@ -395,6 +372,29 @@
                 color = "#00FF00";
             }
             createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+        });
+
+                // Add the first route source and layer
+                map.addSource('route1', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        map.addLayer({
+            id: 'routeLayer1',
+            type: 'line',
+            source: 'route1',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#F7455D', // Red color for the first route
+                'line-width': 3
+            }
         });
 
     });
