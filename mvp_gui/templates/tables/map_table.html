@@ -71,6 +71,7 @@
     const jsonData = {{ items_jsn | safe }};
     const cWptData ={{citems_jsn | safe}};
     const vehicleData = {{ vehicle_jsn | safe }};
+    const poseData = {{pose_jsn | safe}};
 
     const coordinates = document.getElementById('coordinates');
 
@@ -130,6 +131,12 @@
         longitude: entry.lon
     }));
 
+     // Prepare GeoJSON data for the route
+     let coordinatesData_pose = poseData.map(entry => ({
+        latitude: entry.lat,
+        longitude: entry.lon
+    }));
+
     // Create a custom HTML element for the arrow marker
     const markerContainer = document.createElement('div');
     markerContainer.className = 'marker-container';
@@ -167,6 +174,19 @@
                     geometry: {
                         type: 'LineString',
                         coordinates: coordinatesData_cWpt.map(coord => [coord.longitude, coord.latitude])
+                    }
+                }
+            ]
+        });
+
+        map.getSource('route3').setData({
+            type: 'FeatureCollection',
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: coordinatesData_pose.map(coord => [coord.longitude, coord.latitude])
                     }
                 }
             ]
@@ -280,6 +300,7 @@
                 const newJsonData = data.waypoints;  
                 const newcWptData = data.current_waypoints;     
                 const newVehicleData = data.vehicle;
+                const newPoseData = data.pose;
                 // Create or update the vehicle marker
                 if (vehicleMarker) {
                     vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
@@ -333,6 +354,11 @@
                     longitude: entry.lon
                 }));
 
+                coordinatesData_pose = newPoseData.map(entry => ({
+                    id: entry.id,
+                    latitude: entry.lat,
+                    longitude: entry.lon
+                }));
 
                 // Update the GeoJSON data for the line
                 updateRoute();
@@ -388,6 +414,29 @@
                 'line-width': 3
             }
         });
+
+        // Add the first route source and layer
+        map.addSource('route3', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        map.addLayer({
+            id: 'routeLayer3',
+            type: 'line',
+            source: 'route3',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#00FF00', // Red color for the first route
+                'line-width': 3
+            }
+        });
         // Initialize markers with the existing data
         jsonData.forEach((item, index) => {
             let color = item.id === 1 ? "#e50112" : "#808080";
@@ -395,6 +444,20 @@
                 color = "#00FF00";
             }
             createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+        });
+
+        map.addLayer({
+            id: 'routeLayer3',
+            type: 'line',
+            source: 'route3',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#F7455D', // Red color for the first route
+                'line-width': 3
+            }
         });
 
 
