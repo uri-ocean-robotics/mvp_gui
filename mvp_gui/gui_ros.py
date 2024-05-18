@@ -134,7 +134,7 @@ class gui_ros():
             new_pose = db.session.query(Poses).first()
 
             num_entries = db.session.query(PoseHistory).count()
-            print(num_entries)
+            # print(num_entries)
             #increase id by 1
             db.session.query(PoseHistory).update({PoseHistory.id: PoseHistory.id + 1})
             db.session.query(PoseHistory).filter(PoseHistory.id > decay).delete()

@@ -282,7 +282,7 @@ def map_page():
                                         pose_jsn =pose_data)
 
 
-@app.route('/latest_data', methods=['GET'])
+@app.route('/latest_data', methods=['GET', 'POST'])
 def latest_data():
     poses = Poses.query.first()
     vehicle_data = {
