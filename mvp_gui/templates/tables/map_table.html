@@ -415,6 +415,15 @@
             }
         });
 
+        // Initialize markers with the existing data
+        jsonData.forEach((item, index) => {
+            let color = item.id === 1 ? "#e50112" : "#808080";
+            if (index === jsonData.length - 1) {
+                color = "#00FF00";
+            }
+            createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+        });
+
         // Add the first route source and layer
         map.addSource('route3', {
             type: 'geojson',
@@ -434,28 +443,6 @@
             },
             paint: {
                 'line-color': '#00FF00', // Red color for the first route
-                'line-width': 3
-            }
-        });
-        // Initialize markers with the existing data
-        jsonData.forEach((item, index) => {
-            let color = item.id === 1 ? "#e50112" : "#808080";
-            if (index === jsonData.length - 1) {
-                color = "#00FF00";
-            }
-            createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
-        });
-
-        map.addLayer({
-            id: 'routeLayer3',
-            type: 'line',
-            source: 'route3',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#F7455D', // Red color for the first route
                 'line-width': 3
             }
         });

@@ -302,7 +302,13 @@ def latest_data():
         for cwaypoint in cwaypoints
     ]
 
-    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data})
+    pose_history = PoseHistory.query.order_by(PoseHistory.id).all()
+    pose_data = [
+        {"id": pose.id, "lat": float(pose.lat), "lon": float(pose.lon)}
+        for pose in pose_history
+    ]
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data})
 
 
 @app.route("/monitor")
