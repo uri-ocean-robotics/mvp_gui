@@ -236,6 +236,12 @@ def map_page():
         for cwaypoint in cwaypoints
     ]
 
+    pose_history = PoseHistory.query.order_by(PoseHistory.id).all()
+    pose_data = [
+        {"id": pose.id, "lat": float(pose.lat), "lon": float(pose.lon)}
+        for pose in pose_history
+    ]
+
     states = HelmStates.query.all()
 
     #get controller mode
@@ -272,10 +278,11 @@ def map_page():
             # return redirect(url_for('map_page'))
         
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
-                                        vehicle_jsn=vehicle_data, host_ip=host_ip, states=states)
+                                        vehicle_jsn=vehicle_data, host_ip=host_ip, states=states,
+                                        pose_jsn =pose_data)
 
 
-@app.route('/latest_data', methods=['GET'])
+@app.route('/latest_data', methods=['GET', 'POST'])
 def latest_data():
     poses = Poses.query.first()
     vehicle_data = {
@@ -295,7 +302,13 @@ def latest_data():
         for cwaypoint in cwaypoints
     ]
 
-    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data})
+    pose_history = PoseHistory.query.order_by(PoseHistory.id).all()
+    pose_data = [
+        {"id": pose.id, "lat": float(pose.lat), "lon": float(pose.lon)}
+        for pose in pose_history
+    ]
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data})
 
 
 @app.route("/monitor")
