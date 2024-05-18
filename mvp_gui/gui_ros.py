@@ -173,12 +173,9 @@ class gui_ros():
                 service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
                 request = GetStateRequest("")
                 response = service_client_get_state(request)
-                # state = HelmStates.query.all()
                 db.session.query(HelmStates).delete()
-
                 state = HelmStates(id=0,name = str(response.state.name))
                 self.helm_state = response.state.name
-            # print(helmstate)
                 db.session.add(state)
                 db.session.commit()
                 count = 1

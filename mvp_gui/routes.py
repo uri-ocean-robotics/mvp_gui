@@ -9,13 +9,14 @@ import xml.etree.ElementTree as ET
 
 @app.context_processor
 def inject_load():
-    vitals = Vitals.query.first()
-    poses = Poses.query.first()
-    items = PowerItems.query.all()
-    waypoints = Waypoints.query.all()
-    states = HelmStates.query.all()
-    controller_state = ControllerState.query.first()
-    return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states, 'controller_state':controller_state}
+    with app.app_context():
+        vitals = Vitals.query.first()
+        poses = Poses.query.first()
+        items = PowerItems.query.all()
+        waypoints = Waypoints.query.all()
+        states = HelmStates.query.all()
+        controller_state = ControllerState.query.first()
+        return {'vitals': vitals, 'poses': poses, 'items': items, 'waypoints': waypoints, 'states':states, 'controller_state':controller_state}
 
 # routes
 @app.route("/", methods=['GET', 'POST'])
@@ -279,7 +280,7 @@ def map_page():
         
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
                                         vehicle_jsn=vehicle_data, host_ip=host_ip, states=states,
-                                        pose_jsn =pose_data)
+                                        pose_jsn =pose_data, controller_state = controller_state)
 
 
 @app.route('/latest_data', methods=['GET', 'POST'])
