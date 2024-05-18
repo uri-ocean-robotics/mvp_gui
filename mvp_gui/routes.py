@@ -332,4 +332,19 @@ def get_latest_yaw():
     return jsonify(yaw_data)
 
 
+@app.route('/mission/states')
+def controller_data():
+    controller_state = ControllerState.query.first()
+    controller_data = {
+        "state" : str(controller_state.state)
+    }
+
+    helm_state = HelmStates.query.all()
+    helm_state_data = [
+        {"id": state.id, "name": str(state.name)}
+        for state in helm_state
+    ]
+
+    return jsonify({"controller_data": controller_data, "helm_state_data": helm_state_data})
+
 

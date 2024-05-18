@@ -31,13 +31,19 @@ class gui_ros():
         # Main while loop.
         while not rospy.is_shutdown():
             self.log_poses()
+            rospy.sleep(0.1)
             self.get_state()
+            rospy.sleep(0.1)
             self.change_state()
+            rospy.sleep(0.1)
             self.change_controller_state()
+            rospy.sleep(0.1)
             self.get_controller_state()
+            rospy.sleep(0.1)
             self.get_waypoints()
+            rospy.sleep(0.1)
             self.publish_wpt()
-            rospy.sleep(1.0)
+            rospy.sleep(0.5)
     
 
     def get_params(self):
@@ -174,6 +180,7 @@ class gui_ros():
                 request = GetStateRequest("")
                 response = service_client_get_state(request)
                 db.session.query(HelmStates).delete()
+                db.session.commit()
                 state = HelmStates(id=0,name = str(response.state.name))
                 self.helm_state = response.state.name
                 db.session.add(state)
@@ -302,9 +309,9 @@ def gui_ros_start():
 global_file_name = './config/gui_config.yaml'
 
 
-pose_t = threading.Thread(target = gui_ros_start)
-pose_t.daemon = True
-pose_t.start()
+ros_t = threading.Thread(target = gui_ros_start)
+ros_t.daemon = True
+ros_t.start()
 
 # except rospy.ROSInterruptException: pass
 rospy.on_shutdown(shutdown_node)
