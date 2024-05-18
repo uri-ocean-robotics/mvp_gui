@@ -45,7 +45,7 @@
     let intervalId = null;
 
     document.addEventListener('turbo:load', () => {
-        if (intervalId_map === null) {
+        if (intervalId === null) {
             // Start a new interval for fetching data
             intervalId = setInterval(function() {
                 fetch('/mission/states') // Update with your API endpoint
@@ -55,14 +55,13 @@
                     })
                     .catch(error => console.error('Error fetching controller state:', error));
             }, 1000); // Update every second
-        }
+        }        
 
     });
 
     // Stop the interval when navigating away from the page
     document.addEventListener('turbo:before-render', () => {
         clearInterval(intervalId);
-        intervalId_heading = null;
     });
 
 
