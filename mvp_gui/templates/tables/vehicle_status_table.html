@@ -86,63 +86,58 @@
         </tr>
     </tbody>
 </table>
-</div>
 
 <script>
+    let intervalId = null;
 
-   // Function to update the tables with fetched data
-   function updateTables(data) {
-            const { pose_data, vital_data } = data;
-            // Populate vital data
-            document.getElementById('voltage').textContent = vital_data.voltage;
-            document.getElementById('current').textContent = vital_data.current;
-
-            // Populate position data
-            document.getElementById('latitude').textContent = pose_data.lat;
-            document.getElementById('longitude').textContent = pose_data.lon;
-            document.getElementById('altitude').textContent = pose_data.z;
-
-            // Populate pose data
-            document.getElementById('frame_id').textContent = pose_data.frame_id;
-            document.getElementById('x').textContent = pose_data.x;
-            document.getElementById('y').textContent = pose_data.y;
-            document.getElementById('z').textContent = pose_data.z;
-            document.getElementById('roll').textContent = pose_data.roll;
-            document.getElementById('pitch').textContent = pose_data.pitch;
-            document.getElementById('yaw').textContent = pose_data.yaw;
-
-            // Populate child frame data
-            document.getElementById('child_frame_id').textContent = pose_data.child_frame_id;
-            document.getElementById('u').textContent = pose_data.u;
-            document.getElementById('v').textContent = pose_data.v;
-            document.getElementById('w').textContent = pose_data.w;
-            document.getElementById('p').textContent = pose_data.p;
-            document.getElementById('q').textContent = pose_data.q;
-            document.getElementById('r').textContent = pose_data.r;
-        }
-
-        // Start a new interval for fetching data
-        let intervalId = setInterval(function() {
-            fetch('/home/states') // Ensure the endpoint matches your Flask route
-                .then(response => response.json())
-                .then(data => {
-                    updateTables(data); // Call the function to update the tables
-                })
-                .catch(error => console.error('Error fetching controller state:', error));
-        }, 1000); // Update every second
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Ensure data is fetched and updated when the page is shown
-            window.addEventListener('pageshow', function() {
-                fetch('/home/states') // Ensure the endpoint matches your Flask route
+    document.addEventListener('turbo:load', () => {
+        if (intervalId === null) {
+            // Start a new interval for fetching data
+            intervalId = setInterval(function() {
+                fetch('/home/states') // Update with your API endpoint
                     .then(response => response.json())
                     .then(data => {
                         updateTables(data); // Call the function to update the tables
                     })
-                    .catch(error => console.error('Error fetching controller state:', error));
-            });
-        });
+                    .catch(error => console.error('Error fetching vehicle state:', error));
+            }, 1000); // Update every second
+        }
+    });
 
+    // Stop the interval when navigating away from the page
+    document.addEventListener('turbo:before-render', () => {
+        clearInterval(intervalId);
+        intervalId = null;
+    });
 
+    function updateTables(data) {
+        const { pose_data, vital_data } = data;
 
+        // Populate vital data
+        document.getElementById('voltage').textContent = vital_data.voltage;
+        document.getElementById('current').textContent = vital_data.current;
+
+        // Populate position data
+        document.getElementById('latitude').textContent = pose_data.lat;
+        document.getElementById('longitude').textContent = pose_data.lon;
+        document.getElementById('altitude').textContent = pose_data.z;
+
+        // Populate pose data
+        document.getElementById('frame_id').textContent = pose_data.frame_id;
+        document.getElementById('x').textContent = pose_data.x;
+        document.getElementById('y').textContent = pose_data.y;
+        document.getElementById('z').textContent = pose_data.z;
+        document.getElementById('roll').textContent = pose_data.roll;
+        document.getElementById('pitch').textContent = pose_data.pitch;
+        document.getElementById('yaw').textContent = pose_data.yaw;
+
+        // Populate child frame data
+        document.getElementById('child_frame_id').textContent = pose_data.child_frame_id;
+        document.getElementById('u').textContent = pose_data.u;
+        document.getElementById('v').textContent = pose_data.v;
+        document.getElementById('w').textContent = pose_data.w;
+        document.getElementById('p').textContent = pose_data.p;
+        document.getElementById('q').textContent = pose_data.q;
+        document.getElementById('r').textContent = pose_data.r;
+    }
 </script>
