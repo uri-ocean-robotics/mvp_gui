@@ -333,7 +333,7 @@ def get_latest_yaw():
 
 
 @app.route('/mission/states')
-def controller_data():
+def controller_helm_state_data():
     controller_state = ControllerState.query.first()
     controller_data = {
         "state" : str(controller_state.state)
@@ -346,5 +346,36 @@ def controller_data():
     ]
 
     return jsonify({"controller_data": controller_data, "helm_state_data": helm_state_data})
+
+
+
+@app.route('/home/states')
+def home_state_data():
+    poses = Poses.query.first()
+    pose_data = {
+        "x": float(poses.x),
+        "y": float(poses.y),
+        "z": float(poses.z),
+        "roll": float(poses.roll),
+        "pitch": float(poses.pitch),
+        "yaw": float(poses.yaw),
+        "u": float(poses.u),
+        "v": float(poses.v),
+        "w": float(poses.w),
+        "p": float(poses.p),
+        "q": float(poses.q),
+        "r": float(poses.r),
+        "lat": float(poses.lat),
+        "lon": float(poses.lon),
+        "frame_id": str(poses.frame_id),
+        "child_frame_id": str(poses.child_frame_id)
+    }
+
+    vitals = Vitals.query.first()
+    vital_data ={
+        "voltage": float(vitals.voltage),
+        "current": float(vitals.current)
+    }
+    return jsonify({"pose_data": pose_data, "vital_data": vital_data})
 
 
