@@ -220,20 +220,21 @@ def map_page():
     vehicle_data = {
         "lat": float(poses.lat),
         "lon": float(poses.lon),
-        "yaw": float(poses.yaw)
+        "yaw": float(poses.yaw),
+        "alt": float(poses.z)
     }
 
     # Sort the waypoints by ID
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
-        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon)}
+        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon), "alt": float(waypoint.alt)}
         for waypoint in waypoints
     ]
 
     ##current waypoint list
     cwaypoints = CurrentWaypoints.query.all()
     current_waypoints_data = [
-        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon)}
+        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon), "alt": float(cwaypoint.alt)}
         for cwaypoint in cwaypoints
     ]
 
@@ -289,17 +290,18 @@ def latest_data():
     vehicle_data = {
         "lat": float(poses.lat),
         "lon": float(poses.lon),
-        "yaw": float(poses.yaw)
+        "yaw": float(poses.yaw),
+        "alt": float(poses.z)
     }
 
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
-        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon)}
+        {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon), "alt": float(waypoint.alt)}
         for waypoint in waypoints
     ]
     cwaypoints = CurrentWaypoints.query.all()
     current_waypoints_data = [
-        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon)}
+        {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon), "alt": float(cwaypoint.alt)}
         for cwaypoint in cwaypoints
     ]
 

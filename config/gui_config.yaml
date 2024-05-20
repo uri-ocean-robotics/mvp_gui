@@ -1,4 +1,4 @@
-name_space: alpha_rise
+name_space: race
 
 ##vehicle status
 poses_source: odometry/filtered/local

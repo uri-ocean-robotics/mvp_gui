@@ -2,9 +2,9 @@
 
 <style>
     .cWpt-custom-marker {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     .cWpt-triangle {
@@ -12,16 +12,24 @@
         height: 0;
         border-left: 5px solid transparent;
         border-right: 5px solid transparent;
-        border-top: 10px solid red; /* Default color, can be overridden */
+        border-top: 10px solid #f9f10c; /* Default color, can be overridden */
     }
 
     .cWpt-id-display {
-        margin-top: 5px;
-        font-size: 12px;
-        color: yellow;
+        margin-top: 0px;
+        font-size: 15px;
+        color: #ffeb85 ;
         background: transparent;
-        padding: 2px 5px;
+        padding: 0px 10px;
     }  
+
+    .cWpt-altitude-display {
+        margin-top: 0px;
+        font-size: 12px;
+        color: #ffeb85 ;
+        background: transparent;
+        padding: 0px 10px;
+    } 
 
     .wpt-custom-marker {
         display: flex;
@@ -32,23 +40,37 @@
     .wpt-diamond {
         width: 20px;
         height: 20px;
-        background-color: red; /* Default color, can be overridden */
+        background-color:#ff190a ; /* Default color, can be overridden */
         transform: rotate(45deg);
         position: relative;
+        margin-bottom: 0px;
     }
 
     .wpt-id-display {
-        margin-top: 5px;
+        margin-top: -42px;
         font-size: 15px;
-        color: black;
+        color: #fba5b0 ;
         background: transparent; /* Make the background transparent */
-        padding: 2px 5px;
+        padding: 0px 10px;
+        text-align: center; /* Center align the text */
+    }
+
+    .wpt-altitude-display {
+        margin-top: 35px;
+        font-size: 13px;
+        color: #fba5b0  ;
+        background: transparent; /* Make the background transparent */
+        padding: 0px 1px;
+        text-align: center; /* Center align the text */
+        /* margin-top: -5px; Adjust margin to control spacing */
     }
 
     .marker-container {
         display: flex;
-        justify-content: center;
+        flex-direction: column;
+        /* justify-content: center; */
         align-items: center;
+        position: relative;
     }
 
     .arrow-marker {
@@ -58,6 +80,17 @@
         background-size: contain;
         transform-origin: center;
     }
+
+    .vehicle-altitude-display {
+        margin-top: -5px; /* Adjust negative margin to bring text closer to the arrow */
+        font-size: 13px;
+        color: #d1feb3;
+        background: transparent;
+        padding: 0px 0px;
+        text-align: center; /* Center align the text */
+        position: absolute;
+        top: 100%; /* Position text just below the arrow */
+    }  
 
 </style>
 
@@ -144,7 +177,13 @@
     const arrowElement = document.createElement('div');
     arrowElement.className = 'arrow-marker';
 
+    // Create the ID display element
+    const vehiclealtitudeDisplay = document.createElement('div');
+    vehiclealtitudeDisplay.className = 'vehicle-altitude-display';
+    vehiclealtitudeDisplay.innerText = 'Altitude: ' + vehicleData.alt + "m";
+
     markerContainer.appendChild(arrowElement);
+    markerContainer.appendChild(vehiclealtitudeDisplay);
 
     vehicleMarker = new maplibregl.Marker({ element: markerContainer, draggable: false })
         .setLngLat([vehicleData.lon, vehicleData.lat])
@@ -232,17 +271,24 @@
         // Create the diamond element
         const diamond = document.createElement('div');
         diamond.className = 'wpt-diamond';
-        diamond.style.backgroundColor = color;
+        // diamond.style.backgroundColor = color;
 
         // Create the ID display element
         const idDisplay = document.createElement('div');
         idDisplay.className = 'wpt-id-display';
-        idDisplay.style.color = color;
-        idDisplay.innerText = item.id;
+        // idDisplay.style.color = color;
+        idDisplay.innerText = item.id ;
+
+        // Create the ID display element
+        const wptAltDisplay = document.createElement('div');
+        wptAltDisplay.className = 'wpt-altitude-display';
+        // wptAltDisplay.style.color = color;
+        wptAltDisplay.innerText = 'Altitude: ' + item.alt + "m";
 
         // Append the diamond and ID display to the marker element
         markerElement.appendChild(diamond);
         markerElement.appendChild(idDisplay);
+        markerElement.appendChild(wptAltDisplay);
 
         // Create the marker using the custom HTML element
         const marker = new maplibregl.Marker({ element: markerElement, draggable: true })
@@ -267,16 +313,22 @@
         // Create the triangle element
         const triangle = document.createElement('div');
         triangle.className = 'cWpt-triangle';
-        triangle.style.borderTopColor = color;
+        // triangle.style.borderTopColor = color;
 
         // Create the ID display element
         const idDisplay = document.createElement('div');
         idDisplay.className = 'cWpt-id-display';
         idDisplay.innerText = item.id;
 
+        // Create the wptAltDisplay display element
+        const wptAltDisplay = document.createElement('div');
+        wptAltDisplay.className = 'cWpt-altitude-display';
+        wptAltDisplay.innerText = 'Altitude: ' + item.alt + "m";
+
         // Append the triangle and ID display to the marker element
         // markerElement.appendChild(triangle);
         markerElement.appendChild(idDisplay);
+        markerElement.appendChild(wptAltDisplay);
 
         // Create the marker using the custom HTML element
         const marker = new maplibregl.Marker({ element: markerElement, draggable: false })
@@ -305,13 +357,14 @@
                 if (vehicleMarker) {
                     vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
                     const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
-                    arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;                    
+                    arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;  
+                    vehiclealtitudeDisplay.innerText = 'Altitude: ' + newVehicleData.alt + "m";                  
                 } 
 
                 current_wpt_markers.forEach(marker => marker.remove());
                 current_wpt_markers = [];
                 newcWptData.forEach((item, index) => {
-                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat }, "#FFFF00");
+                    createMarker_nondraggable({ id: item.id, lon: item.lon, lat: item.lat, alt:item.alt}, "#FFFF00");
                 });
 
                 // Update or create markers
@@ -324,7 +377,7 @@
                         if (index === newJsonData.length - 1) {
                             color = "#00FF00";
                         }
-                        createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+                        createMarker({ id: item.id, lon: item.lon, lat: item.lat, alt:item.alt }, color);
                     }
                 });
 
@@ -388,8 +441,9 @@
                 'line-cap': 'round'
             },
             paint: {
-                'line-color': '#ff9900', // Orange color for the second route
-                'line-width': 3
+                'line-color': '#ffd500', // Orange color for the second route
+                'line-width': 3,
+                'line-dasharray': [4, 2] // Dash pattern: 4px dash, 2px gap
             }
         });
         // Add the first route source and layer
@@ -410,8 +464,9 @@
                 'line-cap': 'round'
             },
             paint: {
-                'line-color': '#F7455D', // Red color for the first route
-                'line-width': 3
+                'line-color': '#ff190a ', // Red color for the first route
+                'line-width': 3,
+                'line-dasharray': [2, 4] // Dash pattern: 4px dash, 2px gap
             }
         });
 
@@ -421,7 +476,7 @@
             if (index === jsonData.length - 1) {
                 color = "#00FF00";
             }
-            createMarker({ id: item.id, lon: item.lon, lat: item.lat }, color);
+            createMarker({ id: item.id, lon: item.lon, lat: item.lat, alt: item.alt }, color);
         });
 
         // Add the first route source and layer
@@ -442,7 +497,7 @@
                 'line-cap': 'round'
             },
             paint: {
-                'line-color': '#00FF00', // Red color for the first route
+                'line-color': '#44e215', // Red color for the first route
                 'line-width': 3
             }
         });
