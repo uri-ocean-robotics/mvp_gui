@@ -42,12 +42,12 @@
 
 <script>
 
-    let intervalId = null;
+    let intervalId_heml = null;
 
     document.addEventListener('turbo:load', () => {
-        if (intervalId === null) {
+        if (intervalId_heml === null) {
             // Start a new interval for fetching data
-            intervalId = setInterval(function() {
+            intervalId_heml = setInterval(function() {
                 fetch('/mission/states') // Update with your API endpoint
                     .then(response => response.json())
                     .then(data => {
@@ -61,7 +61,7 @@
 
     // Stop the interval when navigating away from the page
     document.addEventListener('turbo:before-render', () => {
-        clearInterval(intervalId);
+        clearInterval(intervalId_heml);
     });
 
 

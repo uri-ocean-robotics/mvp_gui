@@ -3,19 +3,23 @@
 <div id="heading_plot" style="width:300px;height:300px;"></div>
 
 <script>
-
     let intervalId_heading = null;
-
+    const updateInterval_heading = 1000
+    const plotSettings = initializePlot();
+    
+    // Start the interval when on the page
     document.addEventListener('turbo:load', () => {
-        initializePlot();
+        if (intervalId_heading === null){
+            intervalId_heading = setInterval(() => updatePlot(plotSettings), updateInterval_heading)
+        }
     });
 
     // Stop the interval when navigating away from the page
     document.addEventListener('turbo:before-render', () => {
-        clearInterval(intervalId_heading);
-        intervalId_heading = null;
+        if (intervalId_heading !== null) {
+            clearInterval(intervalId_heading);
+        }
     });
-
 
     // Initial setup for the plot
     function initializePlot() { 
@@ -85,8 +89,7 @@
             ],
             showlegend: false,
             margin: { t: 50, b: 20, l: 50, r: 50 },
-            // plot_bgcolor: 'rgba(0,0,0,0)', // transparent plot background
-            // paper_bgcolor: 'rgba(0,0,0,0)'  // transparent paper background
+
         };
 
         const config = {
@@ -97,50 +100,50 @@
         };
 
         Plotly.newPlot('heading_plot', [], layout, config);
-
-        function updatePlot(yaw) {
-
-            // Ensure "North" and "East" labels are not removed during updates
-            const northLabel = layout.annotations[0];
-            const eastLabel = layout.annotations[1];
-
-            // Clear previous annotations
-            layout.annotations = [northLabel, eastLabel];
-
-            // Calculate the end of the arrow
-            const lineLength = 0.8;
-            const endX = lineLength * Math.cos(yaw * Math.PI / 180);
-            const endY = lineLength * Math.sin(yaw * Math.PI / 180);
-
-            // Add the arrow annotation
-            layout.annotations.push({
-                x: endX,
-                y: endY,
-                ax: 0,
-                ay: 0,
-                axref: 'x',
-                ayref: 'y',
-                xref: 'x',
-                yref: 'y',
-                showarrow: true,
-                arrowhead: 2,
-                arrowsize: 1,
-                arrowwidth: 3,
-                arrowcolor: 'blue'
-            });
-
-            // Redraw the plot with the new arrow
-            Plotly.redraw('heading_plot');
-        }
         
-        // Start a new interval for fetching data
-        intervalId_heading = setInterval(function() {
-            fetch('/path/to/api/endpoint') // Update with your API endpoint
-                .then(response => response.json())
-                .then(data => {
-                    updatePlot(data.yaw);
-                });
-        }, 1000); // Update every second
+        // Return layout and config
+        return { layout, config };
     }
+
+    function updatePlot(layout){
+        fetch('/path/to/api/endpoint')
+            .then(response => response.json())
+            .then(data => {
+                const yaw = data.heading_data.yaw
+                const layout = plotSettings.layout
+                const config = plotSettings.config
+                // Ensure "North" and "East" labels are not removed during updates
+                const northLabel = layout.annotations[0];
+                const eastLabel = layout.annotations[1];
+                // Clear previous annotations
+                layout.annotations = [northLabel, eastLabel];
+
+                // Calculate the end of the arrow
+                const lineLength = 0.8;
+                const endX = lineLength * Math.cos(yaw * Math.PI / 180);
+                const endY = lineLength * Math.sin(yaw * Math.PI / 180);
+
+                // Add the arrow annotation
+                layout.annotations.push({
+                    x: endX,
+                    y: endY,
+                    ax: 0,
+                    ay: 0,
+                    axref: 'x',
+                    ayref: 'y',
+                    xref: 'x',
+                    yref: 'y',
+                    showarrow: true,
+                    arrowhead: 2,
+                    arrowsize: 1,
+                    arrowwidth: 3,
+                    arrowcolor: 'blue'
+                });
+
+                // Update the plot with the new arrow
+                Plotly.react('heading_plot', [], layout, config);
+            })
+    }
+    
 
 </script>

@@ -469,7 +469,7 @@
         startUpdateInterval();
     });
 
-    // // Stop the interval when navigating away from the page
+    // Stop the interval when navigating away from the page
     document.addEventListener('turbo:before-render', () => {
         stopUpdateInterval();
     });

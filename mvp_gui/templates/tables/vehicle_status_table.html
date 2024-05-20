@@ -88,56 +88,57 @@
 </table>
 
 <script>
-    let intervalId = null;
+    let intervalId_vehicle_status = null;
+    const updateInterval_vehicle_status = 1000;
 
+    // Start the interval when on the page
     document.addEventListener('turbo:load', () => {
-        if (intervalId === null) {
-            // Start a new interval for fetching data
-            intervalId = setInterval(function() {
-                fetch('/home/states') // Update with your API endpoint
-                    .then(response => response.json())
-                    .then(data => {
-                        updateTables(data); // Call the function to update the tables
-                    })
-                    .catch(error => console.error('Error fetching vehicle state:', error));
-            }, 1000); // Update every second
+        if (intervalId_vehicle_status === null){
+            intervalId_vehicle_status = setInterval(updateTables, updateInterval_vehicle_status)
         }
     });
 
     // Stop the interval when navigating away from the page
     document.addEventListener('turbo:before-render', () => {
-        clearInterval(intervalId);
-        intervalId = null;
+        if (intervalId_vehicle_status !== null) {
+            console.log("status clear")
+            clearInterval(intervalId_vehicle_status);
+        }        
     });
 
-    function updateTables(data) {
-        const { pose_data, vital_data } = data;
+    function updateTables() {
+        fetch('/home/states')
+            .then(response => response.json())
+            .then(data => {
+                const { pose_data, vital_data } = data;
 
-        // Populate vital data
-        document.getElementById('voltage').textContent = vital_data.voltage;
-        document.getElementById('current').textContent = vital_data.current;
+                // Populate vital data
+                document.getElementById('voltage').textContent = vital_data.voltage;
+                document.getElementById('current').textContent = vital_data.current;
 
-        // Populate position data
-        document.getElementById('latitude').textContent = pose_data.lat;
-        document.getElementById('longitude').textContent = pose_data.lon;
-        document.getElementById('altitude').textContent = pose_data.z;
+                // Populate position data
+                document.getElementById('latitude').textContent = pose_data.lat;
+                document.getElementById('longitude').textContent = pose_data.lon;
+                document.getElementById('altitude').textContent = pose_data.z;
 
-        // Populate pose data
-        document.getElementById('frame_id').textContent = pose_data.frame_id;
-        document.getElementById('x').textContent = pose_data.x;
-        document.getElementById('y').textContent = pose_data.y;
-        document.getElementById('z').textContent = pose_data.z;
-        document.getElementById('roll').textContent = pose_data.roll;
-        document.getElementById('pitch').textContent = pose_data.pitch;
-        document.getElementById('yaw').textContent = pose_data.yaw;
+                // Populate pose data
+                document.getElementById('frame_id').textContent = pose_data.frame_id;
+                document.getElementById('x').textContent = pose_data.x;
+                document.getElementById('y').textContent = pose_data.y;
+                document.getElementById('z').textContent = pose_data.z;
+                document.getElementById('roll').textContent = pose_data.roll;
+                document.getElementById('pitch').textContent = pose_data.pitch;
+                document.getElementById('yaw').textContent = pose_data.yaw;
 
-        // Populate child frame data
-        document.getElementById('child_frame_id').textContent = pose_data.child_frame_id;
-        document.getElementById('u').textContent = pose_data.u;
-        document.getElementById('v').textContent = pose_data.v;
-        document.getElementById('w').textContent = pose_data.w;
-        document.getElementById('p').textContent = pose_data.p;
-        document.getElementById('q').textContent = pose_data.q;
-        document.getElementById('r').textContent = pose_data.r;
+                // Populate child frame data
+                document.getElementById('child_frame_id').textContent = pose_data.child_frame_id;
+                document.getElementById('u').textContent = pose_data.u;
+                document.getElementById('v').textContent = pose_data.v;
+                document.getElementById('w').textContent = pose_data.w;
+                document.getElementById('p').textContent = pose_data.p;
+                document.getElementById('q').textContent = pose_data.q;
+                document.getElementById('r').textContent = pose_data.r;
+            }) 
     }
+
 </script>
