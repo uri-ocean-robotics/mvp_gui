@@ -94,14 +94,14 @@
     }  
 
     .altitude-marker {
-        margin-top: -20px;
+        margin-top: -25px;
         display: inline-block;
         text-align: center;
         white-space: nowrap;
         color: #87ceff;
-        font-size: 15px;
+        font-size: 13px;
         background: transparent;
-        padding: 2px 4px;
+        padding: 0px 0px;
     }
 
 </style>
@@ -308,7 +308,7 @@
         const markerElement = document.createElement('div');
         markerElement.className = 'altitude-marker';
         markerElement.style.color = color
-        markerElement.innerText = midpoint.altitude.toFixed(2) + ' m';
+        markerElement.innerText = 'Altitude:\n' + midpoint.altitude.toFixed(2) + ' m';
 
         new maplibregl.Marker({ element: markerElement })
             .setLngLat([midpoint.longitude, midpoint.latitude])
