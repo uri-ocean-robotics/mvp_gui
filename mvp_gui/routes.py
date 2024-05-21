@@ -54,11 +54,13 @@ def waypoint_drag():
     waypoint_id = data['id']
     new_lon = data['lng']
     new_lat = data['lat']
+    new_alt = data['alt']
 
     waypoint = Waypoints.query.get(waypoint_id)
     if waypoint:
         waypoint.lon = new_lon
         waypoint.lat = new_lat
+        waypoint.alt = new_alt
         db.session.commit()
 
     return jsonify({"success": True})

@@ -16,9 +16,9 @@
     }
 
     .cWpt-id-display {
-        margin-top: 0px;
+        margin-top: 20px;
         font-size: 15px;
-        color: #ffeb85 ;
+        color: #fffca0 ;
         background: transparent;
         padding: 0px 10px;
     }  
@@ -26,7 +26,7 @@
     .cWpt-altitude-display {
         margin-top: 0px;
         font-size: 12px;
-        color: #ffeb85 ;
+        color: #fffca0 ;
         background: transparent;
         padding: 0px 10px;
     } 
@@ -43,11 +43,12 @@
         background-color:#ff190a ; /* Default color, can be overridden */
         transform: rotate(45deg);
         position: relative;
-        margin-bottom: 0px;
+        margin-bottom: 3px;
     }
 
     .wpt-id-display {
-        margin-top: -42px;
+        /* margin-top: -42px; */
+        margin-top: 10px;
         font-size: 15px;
         color: #fba5b0 ;
         background: transparent; /* Make the background transparent */
@@ -92,6 +93,17 @@
         top: 100%; /* Position text just below the arrow */
     }  
 
+    .altitude-marker {
+        margin-top: -20px;
+        display: inline-block;
+        text-align: center;
+        white-space: nowrap;
+        color: #87ceff;
+        font-size: 15px;
+        background: transparent;
+        padding: 2px 4px;
+    }
+
 </style>
 
 <!-- Include the script.js file -->
@@ -107,6 +119,12 @@
     const poseData = {{pose_jsn | safe}};
 
     const coordinates = document.getElementById('coordinates');
+
+    // Define a color mapping for route IDs
+    const routeColors = {
+        'route1': '#fba5b0',  
+        'route2': '#fffca0', 
+    };
 
     // online////////////////////////////////////////
     // const map = new maplibregl.Map({
@@ -126,6 +144,7 @@
         center: [vehicleData.lon, vehicleData.lat], // long lat
         style: {
             "version": 8,
+            "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
             "sources": {
                 "local-tiles": {
                     "type": "raster",
@@ -155,13 +174,15 @@
     // Prepare GeoJSON data for the route
     let coordinatesData = jsonData.map(entry => ({
         latitude: entry.lat,
-        longitude: entry.lon
+        longitude: entry.lon,
+        altitude: entry.alt
     }));
 
     // Prepare GeoJSON data for the route
     let coordinatesData_cWpt = cWptData.map(entry => ({
         latitude: entry.lat,
-        longitude: entry.lon
+        longitude: entry.lon,
+        altitude: entry.alt
     }));
 
      // Prepare GeoJSON data for the route
@@ -192,44 +213,106 @@
     let markers = [];
     let current_wpt_markers = [];
     
-    function updateRoute() {
-        map.getSource('route1').setData({
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
-                    }
-                }
-            ]
-        });
-        map.getSource('route2').setData({
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coordinatesData_cWpt.map(coord => [coord.longitude, coord.latitude])
-                    }
-                }
-            ]
-        });
+    // function updateRoute() {
+    //     map.getSource('route1').setData({
+    //         type: 'FeatureCollection',
+    //         features: [
+    //             {
+    //                 type: 'Feature',
+    //                 geometry: {
+    //                     type: 'LineString',
+    //                     coordinates: coordinatesData.map(coord => [coord.longitude, coord.latitude])
+    //                 }
+    //             }
+    //         ]
+    //     });
 
-        map.getSource('route3').setData({
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coordinatesData_pose.map(coord => [coord.longitude, coord.latitude])
+    //     map.getSource('route2').setData({
+    //         type: 'FeatureCollection',
+    //         features: [
+    //             {
+    //                 type: 'Feature',
+    //                 geometry: {
+    //                     type: 'LineString',
+    //                     coordinates: coordinatesData_cWpt.map(coord => [coord.longitude, coord.latitude])
+    //                 }
+    //             }
+    //         ]
+    //     });
+        
+    //     map.getSource('route3').setData({
+    //         type: 'FeatureCollection',
+    //         features: [
+    //             {
+    //                 type: 'Feature',
+    //                 geometry: {
+    //                     type: 'LineString',
+    //                     coordinates: coordinatesData_pose.map(coord => [coord.longitude, coord.latitude])
+    //                 }
+    //             }
+    //         ]
+    //     });
+
+    // }
+
+    // Function to update the routes and altitude labels
+    function updateRoutesAndLabels() {
+        // Define the routes
+        const routes = [
+            { id: 'route1', coordinates: coordinatesData },
+            { id: 'route2', coordinates: coordinatesData_cWpt }
+        ];
+
+        // Remove existing altitude markers
+        const existingMarkers = document.querySelectorAll('.altitude-marker');
+        existingMarkers.forEach(marker => marker.remove());
+
+        // Update each route and calculate midpoints for each segment
+        routes.forEach(route => {
+            const coordinates = route.coordinates.map(coord => [coord.longitude, coord.latitude]);
+            map.getSource(route.id).setData({
+                type: 'FeatureCollection',
+                features: [
+                    {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: coordinates
+                        }
                     }
-                }
-            ]
+                ]
+            });
+
+            // Calculate midpoints for each segment and create HTML markers
+            for (let i = 0; i < route.coordinates.length - 1; i++) {
+                const p1 = route.coordinates[i];
+                const p2 = route.coordinates[i + 1];
+                const midpoint = calculateMidpoint(p1, p2);
+                console.log(midpoint.altitude)
+                createAltitudeMarker(midpoint, routeColors[route.id]);
+            }
         });
+    }
+
+    // Function to calculate the midpoint of a segment
+    function calculateMidpoint(p1, p2) {
+        return {
+            latitude: (p1.latitude + p2.latitude) / 2,
+            longitude: (p1.longitude + p2.longitude) / 2,
+            altitude: p2.altitude
+        };
+    }
+
+    // Function to create an HTML marker for an altitude label
+    function createAltitudeMarker(midpoint, color) {
+        const markerElement = document.createElement('div');
+        markerElement.className = 'altitude-marker';
+        markerElement.style.color = color
+        markerElement.innerText = midpoint.altitude.toFixed(2) + ' m';
+
+        new maplibregl.Marker({ element: markerElement })
+            .setLngLat([midpoint.longitude, midpoint.latitude])
+            .addTo(map);
     }
 
     function onDragStart() {
@@ -239,6 +322,7 @@
     function onDragEnd(marker, item) {
         return function () {
             const coordinates = marker.getLngLat();
+            const altitude = parseFloat(marker.getElement().dataset.altitude);  // Retrieve altitude from marker's dataset
             fetch('/waypoint_drag', {
                 method: 'POST',
                 headers: {
@@ -247,18 +331,20 @@
                 body: JSON.stringify({
                     id: item.id,
                     lng: coordinates.lng,
-                    lat: coordinates.lat
+                    lat: coordinates.lat,
+                    alt: altitude
                 })
             }).catch(error => console.error('Error:', error));
 
             // Update coordinates data
             const index = coordinatesData.findIndex(coord => coord.id === item.id);
             if (index !== -1) {
-                coordinatesData[index] = { id: item.id, longitude: coordinates.lng, latitude: coordinates.lat };
+                coordinatesData[index] = { id: item.id, longitude: coordinates.lng, latitude: coordinates.lat, altitude: altitude};
             }
 
             // Update the GeoJSON data for the line
-            updateRoute();
+            // updateRoute();
+            updateRoutesAndLabels();
             isDragging = false; // Reset dragging flag
         };
     }
@@ -288,7 +374,10 @@
         // Append the diamond and ID display to the marker element
         markerElement.appendChild(diamond);
         markerElement.appendChild(idDisplay);
-        markerElement.appendChild(wptAltDisplay);
+        // markerElement.appendChild(wptAltDisplay);
+
+        // Store the altitude in the marker's dataset
+        markerElement.dataset.altitude = item.alt;
 
         // Create the marker using the custom HTML element
         const marker = new maplibregl.Marker({ element: markerElement, draggable: true })
@@ -328,7 +417,7 @@
         // Append the triangle and ID display to the marker element
         // markerElement.appendChild(triangle);
         markerElement.appendChild(idDisplay);
-        markerElement.appendChild(wptAltDisplay);
+        // markerElement.appendChild(wptAltDisplay);
 
         // Create the marker using the custom HTML element
         const marker = new maplibregl.Marker({ element: markerElement, draggable: false })
@@ -380,9 +469,7 @@
                         createMarker({ id: item.id, lon: item.lon, lat: item.lat, alt:item.alt }, color);
                     }
                 });
-
-                
-
+            
                 // Remove markers that are no longer in the new data
                 markers = markers.filter(marker => {
                     const markerId = marker.getElement().dataset.id;
@@ -398,13 +485,15 @@
                 coordinatesData = newJsonData.map(entry => ({
                     id: entry.id,
                     latitude: entry.lat,
-                    longitude: entry.lon
+                    longitude: entry.lon,
+                    altitude: entry.alt
                 }));
 
                 coordinatesData_cWpt = newcWptData.map(entry => ({
                     id: entry.id,
                     latitude: entry.lat,
-                    longitude: entry.lon
+                    longitude: entry.lon,
+                    altitude: entry.alt
                 }));
 
                 coordinatesData_pose = newPoseData.map(entry => ({
@@ -414,7 +503,8 @@
                 }));
 
                 // Update the GeoJSON data for the line
-                updateRoute();
+                // updateRoute();
+                updateRoutesAndLabels();
 
             })
             .catch(error => console.error('Error:', error));
@@ -422,30 +512,6 @@
 
     // Initialize the map and add the route
     map.on('load', () => {
-
-        // Add the second route source and layer
-        map.addSource('route2', {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: []
-            }
-        });
-
-        map.addLayer({
-            id: 'routeLayer2',
-            type: 'line',
-            source: 'route2',
-            layout: {
-                'line-join': 'round',
-                'line-cap': 'round'
-            },
-            paint: {
-                'line-color': '#ffd500', // Orange color for the second route
-                'line-width': 3,
-                'line-dasharray': [4, 2] // Dash pattern: 4px dash, 2px gap
-            }
-        });
         // Add the first route source and layer
         map.addSource('route1', {
             type: 'geojson',
@@ -470,13 +536,28 @@
             }
         });
 
-        // Initialize markers with the existing data
-        jsonData.forEach((item, index) => {
-            let color = item.id === 1 ? "#e50112" : "#808080";
-            if (index === jsonData.length - 1) {
-                color = "#00FF00";
+        // Add the second route source and layer
+        map.addSource('route2', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
             }
-            createMarker({ id: item.id, lon: item.lon, lat: item.lat, alt: item.alt }, color);
+        });
+
+        map.addLayer({
+            id: 'routeLayer2',
+            type: 'line',
+            source: 'route2',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#ffd500', // Orange color for the second route
+                'line-width': 3,
+                'line-dasharray': [4, 2] // Dash pattern: 4px dash, 2px gap
+            }
         });
 
         // Add the first route source and layer
@@ -502,7 +583,14 @@
             }
         });
 
-
+        // Initialize markers with the existing data
+        jsonData.forEach((item, index) => {
+            let color = item.id === 1 ? "#e50112" : "#808080";
+            if (index === jsonData.length - 1) {
+                color = "#00FF00";
+            }
+            createMarker({ id: item.id, lon: item.lon, lat: item.lat, alt: item.alt }, color);
+        });
     });
 
     // Function to start the update interval
