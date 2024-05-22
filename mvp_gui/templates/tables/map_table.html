@@ -16,11 +16,11 @@
     }
 
     .cWpt-id-display {
-        margin-top: 20px;
+        margin-top: 10px;
         font-size: 15px;
         color: #fffca0 ;
         background: transparent;
-        padding: 0px 10px;
+        padding: 0px 0px;
     }  
 
     .cWpt-altitude-display {
@@ -38,12 +38,13 @@
     }
 
     .wpt-diamond {
-        width: 20px;
-        height: 20px;
+        width: 23px;
+        height: 23px;
         background-color:#ff190a ; /* Default color, can be overridden */
         transform: rotate(45deg);
         position: relative;
-        margin-bottom: 3px;
+        margin-bottom: 10px;
+        padding: 10px 10px;
     }
 
     .wpt-id-display {
@@ -260,7 +261,9 @@
         // Define the routes
         const routes = [
             { id: 'route1', coordinates: coordinatesData },
-            { id: 'route2', coordinates: coordinatesData_cWpt }
+            { id: 'route2', coordinates: coordinatesData_cWpt },
+            { id: 'route3', coordinates: coordinatesData_pose}
+
         ];
 
         // Remove existing altitude markers
@@ -284,12 +287,14 @@
             });
 
             // Calculate midpoints for each segment and create HTML markers
-            for (let i = 0; i < route.coordinates.length - 1; i++) {
-                const p1 = route.coordinates[i];
-                const p2 = route.coordinates[i + 1];
-                const midpoint = calculateMidpoint(p1, p2);
-                console.log(midpoint.altitude)
-                createAltitudeMarker(midpoint, routeColors[route.id]);
+            if (route.id !== 'route3') {
+                for (let i = 0; i < route.coordinates.length - 1; i++) {
+                    const p1 = route.coordinates[i];
+                    const p2 = route.coordinates[i + 1];
+                    const midpoint = calculateMidpoint(p1, p2);
+                    console.log(midpoint.altitude)
+                    createAltitudeMarker(midpoint, routeColors[route.id]);
+                }
             }
         });
     }
