@@ -3,7 +3,7 @@ name_space: alpha_rise
 ##vehicle status
 poses_source: odometry/filtered/local
 geo_pose_source: odometry/geopose
-vitals_source: power
+vitals_source: power_monitor/power
 
 #state services
 get_state_service: helm/get_state
