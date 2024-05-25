@@ -18,4 +18,7 @@ update_t = threading.Thread(target=update_load)
 update_t.daemon = True
 update_t.start()
 
+global_file_name = './config/gui_config.yaml'
+
+
 

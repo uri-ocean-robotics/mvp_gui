@@ -5,7 +5,8 @@ from mvp_gui import *
 import threading
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
-
+import yaml
+from mvp_gui.utils import global_file_name
 
 @app.context_processor
 def inject_load():
@@ -286,6 +287,31 @@ def map_page():
                                         pose_jsn =pose_data, controller_state = controller_state)
 
 
+## systems tools for launch files
+@app.route("/systems")
+def systems_page():
+    dataset_config = yaml.safe_load(open(global_file_name, 'r'))
+    roslaunch_info = dataset_config['roslaunch_setup']
+    db.session.query(RoslaunchConfig).delete()
+    db.session.commit()
+    count = 0
+    for key, params in roslaunch_info.items():
+        package_name = params[0]['package_name']
+        launch_file_name = params[1]['launch_file_name']
+        nodes = params[2]['nodes']
+        nodes_string = ' '.join(nodes)
+        launch_file = RoslaunchConfig(id=count, package_name = str(package_name), 
+                                      launch_name = str(launch_file_name),
+                                      node_names = nodes_string)
+        db.session.add(launch_file)
+        db.session.commit()
+        count = count + 1
+
+    roslaunch_config = RoslaunchConfig.query.all()
+    return render_template("systems.html", roslaunch_config = roslaunch_config)
+
+
+##javascaript routes
 @app.route('/latest_data', methods=['GET', 'POST'])
 def latest_data():
     poses = Poses.query.first()
@@ -315,10 +341,6 @@ def latest_data():
 
     return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data})
 
-
-@app.route("/monitor")
-def monitor_page():
-    return render_template("monitor.html")
 
 
 @app.route('/tiles/<path:filename>')

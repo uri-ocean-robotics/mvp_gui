@@ -16,7 +16,7 @@ app.app_context().push()
 TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
 
 from mvp_gui import utils
-from mvp_gui import gui_ros
+# from mvp_gui import gui_ros
 from mvp_gui import routes
 
 

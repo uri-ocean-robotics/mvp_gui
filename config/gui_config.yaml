@@ -21,3 +21,13 @@ pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
 power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]
+
+roslaunch_setup: 
+  test:
+    - package_name: alpha_rise_bringup
+    - launch_file_name: bringup_sensors
+    - nodes: [a, b, c]
+  test2:
+    - package_name: alpha_rise_bringup
+    - launch_file_name: bringup_localization
+    - nodes: [a, b, c]
