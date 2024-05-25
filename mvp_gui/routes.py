@@ -7,7 +7,7 @@ from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
 import yaml
 from mvp_gui.utils import global_file_name
-from mvp_gui.ros_manager import *
+
 
 
 @app.context_processor
@@ -310,28 +310,17 @@ def systems_page():
         db.session.commit()
         count = count + 1
 
-    ## load ssh information
-    remote_host = dataset_config['remote_host']
-    remote_user = dataset_config['remote_user']
-    remote_password = dataset_config['remote_password']
+    
 
     # print(remote_host, remote_user, remote_password)
     roslaunch_config = RoslaunchConfig.query.all()
 
-    hostname = '192.168.0.118'
-    username = 'mingxi'
-    password = 'qwer1234'
-
-    ssh_connection = SSHConnection(hostname, username, password)
-
     ## buttons
     if request.method == 'POST':
         if 'connect' in request.form:
-            print("connecting host: " + remote_host)
             ssh_connection.connect()
         
         elif 'disconnect' in request.form:
-            print("disconnecting host:" + remote_host)
             ssh_connection.close()
         
         elif 'check_connection' in request.form:
@@ -358,7 +347,7 @@ def systems_page():
             
 
     
-    return render_template("systems.html", roslaunch_config = roslaunch_config, remote_host = remote_host)
+    return render_template("systems.html", roslaunch_config = roslaunch_config)
 
 
 ##javascaript routes

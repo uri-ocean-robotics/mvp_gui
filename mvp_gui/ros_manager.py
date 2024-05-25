@@ -1,4 +1,5 @@
 import paramiko
+import time
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -16,7 +17,11 @@ class SSHConnection:
         print(self.password)
 
         self.ssh_client.connect(self.hostname, username = self.username, password = self.password)
-        # print(success)
+        # time.sleep(1)
+        # if self.is_connected():
+        #     print("SSH connection is established.")
+        # else:
+        #     print("SSH connection is not established.")
 
     def is_connected(self):
         if self.ssh_client and self.ssh_client.get_transport() and self.ssh_client.get_transport().is_active():
