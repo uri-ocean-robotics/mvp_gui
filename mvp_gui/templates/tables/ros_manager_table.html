@@ -13,21 +13,16 @@
     <br>
     <br>
     <h4> Connection management</h4>
+    Connection status: {{ remote_connection }}
+    <br>
     <form action="/systems" method="post">
         <input type="hidden" name="connect">
         <button type="submit">Connect vehicle</button>
     </form>
-
     <form action="/systems" method="post">
         <input type="hidden" name="disconnect">
         <button type="submit">Disconnect vehicle</button>
     </form>
-
-    <form action="/systems" method="post">
-        <input type="hidden" name="check_connection">
-        <button type="submit">Check Connection</button>
-    </form>
-
     <br>
     <br>
     <h4> ROS core management</h4>

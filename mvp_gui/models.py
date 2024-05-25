@@ -104,6 +104,7 @@ class RosActions(db.Model):
 class RoslaunchConfig(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     package_name = db.Column(db.String(length=20), nullable=False)
+    namespace = db.Column(db.String(length=20), nullable=False)
     launch_name = db.Column(db.String(length=20), nullable=True)
     node_names = db.Column(db.String(length=50), nullable=True)
     def __repr__(self):

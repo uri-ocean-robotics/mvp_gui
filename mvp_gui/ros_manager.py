@@ -28,11 +28,15 @@ class SSHConnection:
             return True
         return False
 
-    def execute_command(self, command):
+    def execute_command(self, command, wait=True):
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
-        output = stdout.read().decode()
-        error = stderr.read().decode()
-        return output, error
+        if wait:
+            output = stdout.read().decode()
+            error = stderr.read().decode()
+            return output, error
+        else:
+            # If we don't want to wait, we return immediately.
+            return None, None
 
     def close(self):
         if self.ssh_client:

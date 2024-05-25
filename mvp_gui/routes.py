@@ -6,7 +6,7 @@ import threading
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
 import yaml
-from mvp_gui.utils import global_file_name
+from mvp_gui.utils import global_file_name, ros_source
 
 
 
@@ -298,56 +298,63 @@ def systems_page():
     db.session.query(RoslaunchConfig).delete()
     db.session.commit()
     count = 0
+
     for key, params in roslaunch_info.items():
-        package_name = params[0]['package_name']
-        launch_file_name = params[1]['launch_file_name']
-        nodes = params[2]['nodes']
-        nodes_string = "<br>".join(nodes)
-        launch_file = RoslaunchConfig(id=count, package_name = str(package_name), 
+        package_name = params['package_name']
+        print(package_name)
+        launch_file_name = params['launch_file_name']
+        nodes = params['nodes']
+        namespace = params['namespace']
+        nodes_string = " ".join(nodes)
+        # node_display = "<br>".join(nodes)
+        launch_file = RoslaunchConfig(id=count, package_name = str(package_name), namespace = str(namespace), 
                                       launch_name = str(launch_file_name),
                                       node_names = nodes_string)
         db.session.add(launch_file)
         db.session.commit()
         count = count + 1
 
-    
-
-    # print(remote_host, remote_user, remote_password)
     roslaunch_config = RoslaunchConfig.query.all()
-
+    remote_connection  = ssh_connection.is_connected()
     ## buttons
     if request.method == 'POST':
         if 'connect' in request.form:
             ssh_connection.connect()
+            return redirect(url_for('systems_page'))
         
         elif 'disconnect' in request.form:
             ssh_connection.close()
-        
-        elif 'check_connection' in request.form:
-            if ssh_connection.is_connected():
-                print("SSH connection is established.")
-            else:
-                print("SSH connection is not established.")
+            return redirect(url_for('systems_page'))
 
         elif 'roscore_start' in request.form:
+            ssh_connection.execute_command(ros_source + "roscore", wait=False)
             print("Start ROS core")
+            return redirect(url_for('systems_page'))
         
         elif 'roscore_stop' in request.form:
+            ssh_connection.execute_command("killall -9 rosmaster")
             print("Stop ROS core")
+            return redirect(url_for('systems_page'))
 
         elif 'launch' in request.form:
             launch_id = request.form['launch']
             print("launch =")
-            print(launch_id)
+            ##get the package name and launch file
+            temp_launch = RoslaunchConfig.query.get(launch_id)
+            command = ros_source + "roslaunch " + temp_launch.package_name + " " +  temp_launch.launch_name + ".launch"
+            # print(command)
+            ssh_connection.execute_command(command, wait=False)
+            return redirect(url_for('systems_page'))
         
         elif 'kill' in request.form:
             kill_id = request.form['kill']
-            print("kill =")
-            print(kill_id)
+            temp_kill = RoslaunchConfig.query.get(kill_id)
+            command = ros_source + "rosnode kill /" + temp_kill.namespace + "/" +  temp_kill.node_names
+            print(command)
+            ssh_connection.execute_command(command, wait=False)
+            return redirect(url_for('systems_page'))
             
-
-    
-    return render_template("systems.html", roslaunch_config = roslaunch_config)
+    return render_template("systems.html", roslaunch_config = roslaunch_config, remote_connection = str(remote_connection))
 
 
 ##javascaript routes
