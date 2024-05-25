@@ -7,6 +7,8 @@ from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
 import yaml
 from mvp_gui.utils import global_file_name
+from mvp_gui.ros_manager import *
+
 
 @app.context_processor
 def inject_load():
@@ -288,8 +290,9 @@ def map_page():
 
 
 ## systems tools for launch files
-@app.route("/systems")
+@app.route('/systems', methods=['GET', 'POST'])
 def systems_page():
+    ## load roslaunch configuration from yaml file
     dataset_config = yaml.safe_load(open(global_file_name, 'r'))
     roslaunch_info = dataset_config['roslaunch_setup']
     db.session.query(RoslaunchConfig).delete()
@@ -299,7 +302,7 @@ def systems_page():
         package_name = params[0]['package_name']
         launch_file_name = params[1]['launch_file_name']
         nodes = params[2]['nodes']
-        nodes_string = ' '.join(nodes)
+        nodes_string = "<br>".join(nodes)
         launch_file = RoslaunchConfig(id=count, package_name = str(package_name), 
                                       launch_name = str(launch_file_name),
                                       node_names = nodes_string)
@@ -307,8 +310,55 @@ def systems_page():
         db.session.commit()
         count = count + 1
 
+    ## load ssh information
+    remote_host = dataset_config['remote_host']
+    remote_user = dataset_config['remote_user']
+    remote_password = dataset_config['remote_password']
+
+    # print(remote_host, remote_user, remote_password)
     roslaunch_config = RoslaunchConfig.query.all()
-    return render_template("systems.html", roslaunch_config = roslaunch_config)
+
+    hostname = '192.168.0.118'
+    username = 'mingxi'
+    password = 'qwer1234'
+
+    ssh_connection = SSHConnection(hostname, username, password)
+
+    ## buttons
+    if request.method == 'POST':
+        if 'connect' in request.form:
+            print("connecting host: " + remote_host)
+            ssh_connection.connect()
+        
+        elif 'disconnect' in request.form:
+            print("disconnecting host:" + remote_host)
+            ssh_connection.close()
+        
+        elif 'check_connection' in request.form:
+            if ssh_connection.is_connected():
+                print("SSH connection is established.")
+            else:
+                print("SSH connection is not established.")
+
+        elif 'roscore_start' in request.form:
+            print("Start ROS core")
+        
+        elif 'roscore_stop' in request.form:
+            print("Stop ROS core")
+
+        elif 'launch' in request.form:
+            launch_id = request.form['launch']
+            print("launch =")
+            print(launch_id)
+        
+        elif 'kill' in request.form:
+            kill_id = request.form['kill']
+            print("kill =")
+            print(kill_id)
+            
+
+    
+    return render_template("systems.html", roslaunch_config = roslaunch_config, remote_host = remote_host)
 
 
 ##javascaript routes

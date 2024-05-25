@@ -1,0 +1,75 @@
+<table class="table table-hover table-dark">
+
+    <!-- <h4> GUI management</h4>
+    <form action="/systems" method="post">
+        <input type="hidden" name="start_gui">
+        <button type="submit">Start GUI</button>
+    </form>
+    <form action="/systems" method="post">
+        <input type="hidden" name="stop_gui">
+        <button type="submit">Stop GUI</button>
+    </form> -->
+
+    <br>
+    <br>
+    <h4> Connection management</h4>
+    <form action="/systems" method="post">
+        <input type="hidden" name="connect">
+        <button type="submit">Connect vehicle</button>
+    </form>
+
+    <form action="/systems" method="post">
+        <input type="hidden" name="disconnect">
+        <button type="submit">Disconnect vehicle</button>
+    </form>
+
+    <form action="/systems" method="post">
+        <input type="hidden" name="check_connection">
+        <button type="submit">Check Connection</button>
+    </form>
+
+    <br>
+    <br>
+    <h4> ROS core management</h4>
+    <form action="/systems" method="post">
+        <input type="hidden" name="roscore_start">
+        <button type="submit">Start ROS Core @ @ {{remote_host}}</button>
+    </form>
+    <form action="/systems" method="post">
+        <input type="hidden" name="roscore_stop">
+        <button type="submit">Stop ROS Core @ {{remote_host}}</button>
+    </form>
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Package</th>
+            <th scope="col">Launch</th>
+            <th scope="col">Nodes</th>
+            <th scope="col">Actions</th>
+            <th scope="col"> </th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through each item in roslaunch_config list -->
+        {% for item in roslaunch_config %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.package_name }}</td>
+                <td>{{ item.launch_name }}</td>
+                <td>{{ item.node_names|safe }}</td>
+                <td>
+                    <form action="/systems" method="post">
+                        <input type="hidden" name="launch" value="{{ item.id }}">
+                        <button type="submit">Launch</button>
+                    </form>
+                </td>
+                <td>
+                    <form action="/systems" method="post">
+                        <input type="hidden" name="kill" value="{{ item.id }}">
+                        <button type="submit">Kill</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
