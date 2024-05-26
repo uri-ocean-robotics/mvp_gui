@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title%}
+SSH Failed
+{% endblock %}
+
+{% block content%}  
+
+SSH Failed
+Please try again.
+
+
+<form action="/systems" method="post">
+  <input type="hidden" name="return" >
+  <button type="submit">Return</button>
+</form>
+{% endblock %}
+

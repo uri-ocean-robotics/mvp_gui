@@ -7,9 +7,8 @@ import threading
 from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
 import yaml
-from mvp_gui.utils import global_file_name, ros_source
-
-
+from mvp_gui.utils import global_file_name
+# from mvp_gui import app, ssh_connection, ssh_password, ssh_username, ssh_hostname,ros_source
 
 @app.context_processor
 def inject_load():
@@ -313,15 +312,25 @@ def systems_page():
         #if any node listed?
         if node_output:
             roscore_status = True
-
+    
     ## buttons
     if request.method == 'POST':
          ### remote connection
-        if 'connect' in request.form:
+        if 'ssh_connect' in request.form:
+            ssh_connection.hostname = request.form['hostname']
+            ssh_connection.username = request.form['username']
+            ssh_connection.password = request.form['password']
             ssh_connection.connect()
-            return redirect(url_for('systems_page'))
+            if ssh_connection.connect():
+            # If SSH connection is successful, redirect to systems_page
+                return redirect(url_for('systems_page'))
+            else:
+                ssh_connection.close()
+            # If SSH connection fails, you can render an error page or redirect to a different route
+                # flash("SSH connection failed. Please check your credentials.")
+                return redirect(url_for('ssh_failed'))  # Redirect to login page or error page
         
-        elif 'disconnect' in request.form:
+        elif 'ssh_disconnect' in request.form:
             ssh_connection.close()
             return redirect(url_for('systems_page'))
         
@@ -396,7 +405,7 @@ def systems_page():
                     # print(item)
             else:
                 db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=count, name = 'No Connection')
+                node_ = RosNodeList(id=0, name = 'No Connection')
                 db.session.add(node_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
@@ -407,7 +416,7 @@ def systems_page():
                 ssh_connection.execute_command(command, wait=False)
             else:
                 db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=count, name = 'Clicked without Connection')
+                node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
@@ -421,7 +430,7 @@ def systems_page():
                 ssh_connection.execute_command(command, wait=False)
             else:
                 db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=count, name = 'Clicked without Connection')
+                node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
@@ -442,7 +451,7 @@ def systems_page():
                     # print(item)
             else:
                 db.session.query(RosTopicList).delete()
-                node_ = RosTopicList(id=count, name = 'No Connection')
+                node_ = RosTopicList(id=0, name = 'No Connection')
                 db.session.add(node_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
@@ -452,9 +461,19 @@ def systems_page():
                            node_list = rosnode_list, 
                            topic_list = rostopic_list,
                            remote_connection = str(remote_connection),
+                           remote_hostname  = str(ssh_connection.hostname),
+                           remote_username = str(ssh_connection.username),
                            roscore_status = str(roscore_status),
                            current_page = "systems")
 
+
+@app.route('/ssh_failed', methods=['GET', 'POST'])
+def ssh_failed():
+    if request.method == 'POST':
+         ### remote connection
+        if 'return' in request.form:
+            return redirect(url_for('systems_page'))
+    return render_template("ssh_failed.html")
 
 @app.route('/launch_file_info', methods=['GET', 'POST'])
 def launch_file_data():

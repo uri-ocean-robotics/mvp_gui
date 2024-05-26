@@ -1,22 +1,28 @@
 
-
-<h4> Connection management</h4>
-Connection status: {{ remote_connection }}
-<br>
-<table class="table table-hover table-dark">
+<h4> Connection Manager</h4>
 <form action="/systems" method="post">
-    <input type="hidden" name="connect">
-    <button type="submit">Connect vehicle</button>
+    <label for="hostname">Host Name:</label>
+    <input type="text" id="hostname" name="hostname" value="{{ remote_hostname }}">
+    
+    <label for="username">User name:</label>
+    <input type="text" id="username" name="username" value="{{ remote_username }}">
+    
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password"><br>
+    
+    <input type="submit" value="Connect" name="ssh_connect">
+    <input type="submit" value="Disconnect" name="ssh_disconnect">
 </form>
-<form action="/systems" method="post">
-    <input type="hidden" name="disconnect">
-    <button type="submit">Disconnect vehicle</button>
-</form>
-</table>
 
-<h4> ROS core management</h4>
-ROS Core status: {{ roscore_status }}
+<p style="color: lightskyblue;"> 
+    Hostname: {{ remote_hostname }} 
+    <br>
+    Connectivity: {{ remote_connection }}
+</p>
 <br>
+
+<h4> ROS Core Manager</h4>
+<p style="color: lightskyblue;"> ROS Core status: {{ roscore_status }} </p>
 <table class="table table-hover table-dark">
 <form action="/systems" method="post">
     <input type="hidden" name="roscore_start">
@@ -27,13 +33,17 @@ ROS Core status: {{ roscore_status }}
     <button type="submit">Stop ROS Core </button>
 </form>
 <form action="/systems" method="post">
+    <input type="hidden" name="kill_all_nodes">
+    <button type="submit">Kill all ROS Nodes</button>
+</form>
+<form action="/systems" method="post">
     <input type="hidden" name="rosnode_cleanup">
     <button type="submit">Cleanup ROS Nodes </button>
 </form>
 </table>
 
+<h4> ROS Process Manager</h4>
 
-<h4>ROS Launch configration</h4>
 <form action="/systems" method="post">
     <input type="hidden" name="roslaunch_list">
     <button type="submit">Get ROS Launch List</button>
@@ -69,21 +79,21 @@ ROS Core status: {{ roscore_status }}
     {% endfor %}
 </tbody>
 </table>
-
-
-<h4>ROS node lists</h4>
+<br>
 <table class="table table-hover table-dark">
 <form action="/systems" method="post">
     <input type="hidden" name="rosnode_list">
     <button type="submit">Get ROS Nodes</button>
 </form>
 
+<br>
 <form action="/systems" method="post">
-    <input type="hidden" name="kill_all_nodes">
-    <button type="submit">Kill all ROS Nodes</button>
+    <input type="hidden" name="rostopic_list">
+    <button type="submit">Get ROS Topics</button>
 </form>
+<br>
 </table>
-
+<h6>Node lists</h6>
 <table class="table table-hover table-dark">
     <thead>
     <tr>
@@ -110,13 +120,8 @@ ROS Core status: {{ roscore_status }}
 </table>
 
 
-<h4>ROS topic lists</h4>
 
-<form action="/systems" method="post">
-    <input type="hidden" name="rostopic_list">
-    <button type="submit">Get ROS Topics</button>
-</form>
-
+<h6>Topic lists</h6>
 <table class="table table-hover table-dark">
     <thead>
     <tr>

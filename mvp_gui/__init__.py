@@ -16,13 +16,13 @@ app.app_context().push()
 # Path to the directory where tiles are stored
 TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
 
-hostname = '192.168.0.118'
-username = 'mingxi'
-password = 'qwer1234'
+ssh_hostname = '192.168.0.118'
+ssh_username = 'mingxi'
+ssh_password = 'qwer1234'
 ros_source = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
 
 # Create SSHConnection instance
-ssh_connection = SSHConnection(hostname, username, password)
+ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
 
 
 from mvp_gui import utils
