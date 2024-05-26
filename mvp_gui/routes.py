@@ -318,6 +318,7 @@ def systems_page():
     remote_connection  = ssh_connection.is_connected()
     ## buttons
     if request.method == 'POST':
+         ### remote connection
         if 'connect' in request.form:
             ssh_connection.connect()
             return redirect(url_for('systems_page'))
@@ -325,7 +326,8 @@ def systems_page():
         elif 'disconnect' in request.form:
             ssh_connection.close()
             return redirect(url_for('systems_page'))
-
+        
+        ###roscore stuff
         elif 'roscore_start' in request.form:
             ssh_connection.execute_command(ros_source + "roscore", wait=False)
             print("Start ROS core")
@@ -336,6 +338,12 @@ def systems_page():
             print("Stop ROS core")
             return redirect(url_for('systems_page'))
 
+        elif 'rosnode_cleanup' in request.form:
+            cleanup_action = RosActions.query.filter_by(action='rosnode_cleanup').first()
+            cleanup_action.pending =1
+            db.session.commit()
+
+         ###roslaunch
         elif 'launch' in request.form:
             launch_id = request.form['launch']
             print("launch =")
@@ -350,7 +358,6 @@ def systems_page():
             kill_id = request.form['kill']
             temp_kill = RoslaunchConfig.query.get(kill_id)
             command = ros_source + "rosnode kill /" + temp_kill.namespace + "/" +  temp_kill.node_names
-            print(command)
             ssh_connection.execute_command(command, wait=False)
             return redirect(url_for('systems_page'))
             
