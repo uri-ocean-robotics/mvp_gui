@@ -40,3 +40,5 @@ roslaunch_setup:
     package_name: alpha_rise_bringup
     launch_file_name: bringup_localization
     nodes: [a, b, c]
+
+roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/

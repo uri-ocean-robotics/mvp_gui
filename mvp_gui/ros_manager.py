@@ -42,24 +42,3 @@ class SSHConnection:
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_state = False
-
-# # # Define SSH connection parameters
-# hostname = '192.168.0.118'
-# username = 'mingxi'
-# password = 'qwer1234'
-# # port = 22
-
-# # Create SSHConnection instance
-# ssh_connection = SSHConnection(hostname, username, password)
-
-# # Connect to SSH server
-# ssh_connection.connect()
-
-# # Check if SSH connection is established
-# if ssh_connection.is_connected():
-#     print("SSH connection is established.")
-# else:
-#     print("SSH connection is not established.")
-
-# # Close SSH connection
-# ssh_connection.close()

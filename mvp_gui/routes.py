@@ -293,31 +293,14 @@ def map_page():
 ## systems tools for launch files
 @app.route('/systems', methods=['GET', 'POST'])
 def systems_page():
-    ## load roslaunch configuration from yaml file
+    ##get roslaunch files
     dataset_config = yaml.safe_load(open(global_file_name, 'r'))
-    roslaunch_info = dataset_config['roslaunch_setup']
-    db.session.query(RoslaunchConfig).delete()
-    db.session.commit()
-    count = 0
+    roslaunch_folder = dataset_config['roslaunch_folder']
 
-    for key, params in roslaunch_info.items():
-        package_name = params['package_name']
-        print(package_name)
-        launch_file_name = params['launch_file_name']
-        nodes = params['nodes']
-        namespace = params['namespace']
-        nodes_string = "<br>".join(nodes)
-        # node_display = "<br>".join(nodes)
-        launch_file = RoslaunchConfig(id=count, package_name = str(package_name), namespace = str(namespace), 
-                                      launch_name = str(launch_file_name),
-                                      node_names = nodes_string)
-        db.session.add(launch_file)
-        db.session.commit()
-        count = count + 1
-
-    roslaunch_config = RoslaunchConfig.query.all()
+    roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
     rostopic_list = RosTopicList.query.all()
+
     remote_connection  = ssh_connection.is_connected()
     ## buttons
     if request.method == 'POST':
@@ -346,16 +329,43 @@ def systems_page():
             cleanup_action.pending =1
             db.session.commit()
 
-         ###roslaunch
+        ##roslaunch
+        elif 'roslaunch_list' in request.form:
+            if remote_connection: 
+                command = "ls " +  roslaunch_folder
+                response = ssh_connection.execute_command(command, wait=True)
+                launch_list = response[0].splitlines()
+                count = 0
+                db.session.query(RosLaunchList).delete()
+                for item in launch_list:
+                    launch_ = RosLaunchList(id=count, name = item)
+                    db.session.add(launch_)
+                    db.session.commit()
+                    count = count + 1
+                    # print(item)
+            else:
+                db.session.query(RosLaunchList).delete()
+                launch_ = RosLaunchList(id=0, name = 'Clicked without Connection')
+                db.session.add(launch_)
+                db.session.commit()
+            return redirect(url_for('systems_page'))
+
         elif 'launch' in request.form:
             launch_id = request.form['launch']
-            print("launch =")
             ##get the package name and launch file
-            temp_launch = RoslaunchConfig.query.get(launch_id)
-            command = ros_source + "roslaunch " + temp_launch.package_name + " " +  temp_launch.launch_name + ".launch"
+            temp_launch = RosLaunchList.query.get(launch_id)
+            command = ros_source + "roslaunch " + temp_launch
             # print(command)
             ssh_connection.execute_command(command, wait=False)
             return redirect(url_for('systems_page'))
+        
+        elif 'info' in request.form:
+            launch_id = request.form['info']
+            temp_launch = RosLaunchList.query.get(launch_id)
+            command = "cat " + roslaunch_folder + "/" + temp_launch.name
+            response = ssh_connection.execute_command(command, wait=True)
+            
+            return redirect(url_for('launch_file_data', response=response[0])) 
             
         ##get ros node list
         elif 'rosnode_list' in request.form:
@@ -424,12 +434,25 @@ def systems_page():
                 db.session.commit()
             return redirect(url_for('systems_page'))
             
-    return render_template("systems.html", roslaunch_config = roslaunch_config, 
+    return render_template("systems.html", 
+                           launch_list = roslaunch_list, 
                            node_list = rosnode_list, 
                            topic_list = rostopic_list,
                            remote_connection = str(remote_connection),
                            current_page = "systems")
 
+
+@app.route('/launch_file_info', methods=['GET', 'POST'])
+def launch_file_data():
+    response = request.args.get('response')
+    cat_string = response.splitlines()
+    # cat_string = response
+    if request.method == 'POST':
+         ### remote connection
+        if 'return' in request.form:
+            return redirect(url_for('systems_page'))
+    
+    return render_template("roslaunch_info.html", info = cat_string)
 
 ##javascaript routes
 @app.route('/latest_data', methods=['GET', 'POST'])

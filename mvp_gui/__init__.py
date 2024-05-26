@@ -20,8 +20,6 @@ hostname = '192.168.0.118'
 username = 'mingxi'
 password = 'qwer1234'
 ros_source = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
-# ros_source = "source ~/.bashrc && "
-# port = 22
 
 # Create SSHConnection instance
 ssh_connection = SSHConnection(hostname, username, password)

@@ -32,29 +32,35 @@ Connection status: {{ remote_connection }}
 
 
 <h4>ROS Launch configration</h4>
+<form action="/systems" method="post">
+    <input type="hidden" name="roslaunch_list">
+    <button type="submit">Get ROS Launch List</button>
+</form>
 <table class="table table-hover table-dark">
 <thead>
     <tr>
         <th scope="col">ID</th>
-        <th scope="col">Package</th>
-        <th scope="col">Launch</th>
-        <th scope="col">Nodes</th>
+        <th scope="col">Names</th>
         <th scope="col">Actions</th>
         <th scope="col"> </th>
     </tr>
 </thead>
 <tbody>
     <!-- Loop through each item in roslaunch_config list -->
-    {% for item in roslaunch_config %}
+    {% for item in launch_list %}
         <tr>
             <td>{{ item.id }}</td>
-            <td>{{ item.package_name }}</td>
-            <td>{{ item.launch_name }}</td>
-            <td>{{ item.node_names|safe }}</td>
+            <td>{{ item.name }}</td>
             <td>
                 <form action="/systems" method="post">
                     <input type="hidden" name="launch" value="{{ item.id }}">
                     <button type="submit">Launch</button>
+                </form>
+            </td>
+            <td>
+                <form action="/systems" method="post">
+                    <input type="hidden" name="info" value="{{ item.id }}">
+                    <button type="submit">Info</button>
                 </form>
             </td>
         </tr>
