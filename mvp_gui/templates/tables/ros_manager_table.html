@@ -44,9 +44,11 @@
 
 <h4> ROS Process Manager</h4>
 
+
 <form action="/systems" method="post">
-    <input type="hidden" name="roslaunch_list">
-    <button type="submit">Get ROS Launch List</button>
+    <label for="roslaunch_folder">Launch File Folder:</label>
+    <input type="roslaunch_folder" id="roslaunch_folder" name="roslaunch_folder" value="{{ roslaunch_folder }}" style="width: 600px;"><br>
+    <input type="submit" value="Get ROS Launch List" name="roslaunch_list">
 </form>
 <table class="table table-hover table-dark">
 <thead>

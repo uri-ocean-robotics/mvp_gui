@@ -354,16 +354,18 @@ def systems_page():
         ##roslaunch
         elif 'roslaunch_list' in request.form:
             if remote_connection: 
+                roslaunch_folder = request.form['roslaunch_folder']
                 command = "ls " +  roslaunch_folder
                 response = ssh_connection.execute_command(command, wait=True)
                 launch_list = response[0].splitlines()
                 count = 0
                 db.session.query(RosLaunchList).delete()
                 for item in launch_list:
-                    launch_ = RosLaunchList(id=count, name = item)
-                    db.session.add(launch_)
-                    db.session.commit()
-                    count = count + 1
+                    if item.endswith(".launch"):
+                        launch_ = RosLaunchList(id=count, name = item)
+                        db.session.add(launch_)
+                        db.session.commit()
+                        count = count + 1
                     # print(item)
             else:
                 db.session.query(RosLaunchList).delete()
@@ -464,6 +466,7 @@ def systems_page():
                            remote_hostname  = str(ssh_connection.hostname),
                            remote_username = str(ssh_connection.username),
                            roscore_status = str(roscore_status),
+                           roslaunch_folder = roslaunch_folder,
                            current_page = "systems")
 
 
