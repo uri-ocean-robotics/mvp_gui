@@ -1,4 +1,5 @@
 import paramiko
+import subprocess
 import time
 
 class SSHConnection:
@@ -42,3 +43,4 @@ class SSHConnection:
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_state = False
+

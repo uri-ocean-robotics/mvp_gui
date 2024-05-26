@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 from mvp_gui import *
 import threading
@@ -302,6 +303,17 @@ def systems_page():
     rostopic_list = RosTopicList.query.all()
 
     remote_connection  = ssh_connection.is_connected()
+    
+    ##check ros master
+    roscore_status =False
+    if remote_connection:
+        command = ros_source + "rosnode list"
+        response = ssh_connection.execute_command(command, wait=True)
+        node_output = response[0].splitlines()
+        #if any node listed?
+        if node_output:
+            roscore_status = True
+
     ## buttons
     if request.method == 'POST':
          ### remote connection
@@ -316,12 +328,13 @@ def systems_page():
         ###roscore stuff
         elif 'roscore_start' in request.form:
             ssh_connection.execute_command(ros_source + "roscore", wait=False)
-            print("Start ROS core")
+            # print("Start ROS core")
+            time.sleep(1.0)
             return redirect(url_for('systems_page'))
         
         elif 'roscore_stop' in request.form:
             ssh_connection.execute_command("killall -9 rosmaster")
-            print("Stop ROS core")
+            # print("Stop ROS core")
             return redirect(url_for('systems_page'))
 
         elif 'rosnode_cleanup' in request.form:
@@ -439,6 +452,7 @@ def systems_page():
                            node_list = rosnode_list, 
                            topic_list = rostopic_list,
                            remote_connection = str(remote_connection),
+                           roscore_status = str(roscore_status),
                            current_page = "systems")
 
 

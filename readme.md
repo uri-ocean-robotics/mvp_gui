@@ -17,6 +17,14 @@
     ```
     pip3 install Flask-WTF
     ```
+- [psutil](https://psutil.readthedocs.io/en/latest/)
+    ```
+    pip3 install psutil 
+    ```
+- [paramiko](https://www.paramiko.org)
+    ```
+    pip3 install paramiko
+    ```
     
 ### Offline Map (mbtiles)
 A test map is provided, if you want to load your own map
