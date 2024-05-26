@@ -29,16 +29,4 @@ remote_host: "192.168.0.118"
 remote_user: "mingxi"
 remote_password: "qwer1234"  
 
-roslaunch_setup:  
-  xsens:
-    namespace: alpha_rise
-    package_name: alpha_rise_bringup
-    launch_file_name: bringup_xsens
-    nodes: [xsens_mti_node]
-  test2:
-    namespace: alpha_rise
-    package_name: alpha_rise_bringup
-    launch_file_name: bringup_localization
-    nodes: [a, b, c]
-
 roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
