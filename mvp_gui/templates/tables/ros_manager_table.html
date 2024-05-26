@@ -82,19 +82,18 @@
 </tbody>
 </table>
 <br>
-<table class="table table-hover table-dark">
-<form action="/systems" method="post">
-    <input type="hidden" name="rosnode_list">
-    <button type="submit">Get ROS Nodes</button>
-</form>
+<div style="display: flex;">
+    <form action="/systems" method="post">
+        <input type="hidden" name="rosnode_list">
+        <button type="submit">Get ROS Nodes</button>
+    </form>
+    <form action="/systems" method="post">
+        <input type="hidden" name="rostopic_list">
+        <button type="submit">Get ROS Topics</button>
+    </form>
+</div>
+<br>
 
-<br>
-<form action="/systems" method="post">
-    <input type="hidden" name="rostopic_list">
-    <button type="submit">Get ROS Topics</button>
-</form>
-<br>
-</table>
 <h6>Node lists</h6>
 <table class="table table-hover table-dark">
     <thead>
