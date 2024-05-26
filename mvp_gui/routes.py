@@ -26,7 +26,7 @@ def inject_load():
 def home_page():
     vitals = Vitals.query.first()
     poses = Poses.query.first()
-    return render_template("home.html", vitals=vitals, poses=poses)
+    return render_template("home.html", vitals=vitals, poses=poses, current_page='home')
 
 
 @app.route("/power_manager",  methods=['GET', 'POST']) 
@@ -48,7 +48,7 @@ def power_manager_page():
                     db.session.commit()
                     ##call rosservice
             # return render_template("power_manager.html", items=items, vitals=vitals)
-    return render_template("power_manager.html", items=items, vitals=vitals)
+    return render_template("power_manager.html", items=items, vitals=vitals, current_page='power_manager')
 
 
 @app.route('/waypoint_drag', methods=['POST'])
@@ -118,7 +118,7 @@ def mission_page():
             return redirect(url_for('mission_page'))
 
     ##render the mission site
-    return render_template("mission.html", waypoints=waypoints)
+    return render_template("mission.html", waypoints=waypoints, current_page = "mission")
 
 def generat_waypoints_from_kml(file_name, replace_flag):
     tree = ET.parse(file_name)
@@ -286,7 +286,8 @@ def map_page():
         
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
                                         vehicle_jsn=vehicle_data, host_ip=host_ip, states=states,
-                                        pose_jsn =pose_data, controller_state = controller_state)
+                                        pose_jsn =pose_data, controller_state = controller_state,
+                                        current_page = "map")
 
 
 ## systems tools for launch files
@@ -315,6 +316,8 @@ def systems_page():
         count = count + 1
 
     roslaunch_config = RoslaunchConfig.query.all()
+    rosnode_list = RosNodeList.query.all()
+    rostopic_list = RosTopicList.query.all()
     remote_connection  = ssh_connection.is_connected()
     ## buttons
     if request.method == 'POST':
@@ -361,7 +364,53 @@ def systems_page():
             ssh_connection.execute_command(command, wait=False)
             return redirect(url_for('systems_page'))
             
-    return render_template("systems.html", roslaunch_config = roslaunch_config, remote_connection = str(remote_connection))
+        ##get ros node list
+        elif 'rosnode_list' in request.form:
+            if remote_connection: 
+                command = ros_source + "rosnode list"
+                response = ssh_connection.execute_command(command, wait=True)
+                node_list = response[0].splitlines()
+                count = 0
+                db.session.query(RosNodeList).delete()
+                for item in node_list:
+                    node_ = RosNodeList(id=count, name = item)
+                    db.session.add(node_)
+                    db.session.commit()
+                    count = count + 1
+                    # print(item)
+            else:
+                db.session.query(RosNodeList).delete()
+                node_ = RosNodeList(id=count, name = 'No Connection')
+                db.session.add(node_)
+                db.session.commit()
+            return redirect(url_for('systems_page'))
+        
+         ##get ros topic list
+        elif 'rostopic_list' in request.form:
+            if remote_connection: 
+                command = ros_source + "rostopic list"
+                response = ssh_connection.execute_command(command, wait=True)
+                topic_list = response[0].splitlines()
+                count = 0
+                db.session.query(RosTopicList).delete()
+                for item in topic_list:
+                    node_ = RosTopicList(id=count, name = item)
+                    db.session.add(node_)
+                    db.session.commit()
+                    count = count + 1
+                    # print(item)
+            else:
+                db.session.query(RosTopicList).delete()
+                node_ = RosTopicList(id=count, name = 'No Connection')
+                db.session.add(node_)
+                db.session.commit()
+            return redirect(url_for('systems_page'))
+            
+    return render_template("systems.html", roslaunch_config = roslaunch_config, 
+                           node_list = rosnode_list, 
+                           topic_list = rostopic_list,
+                           remote_connection = str(remote_connection),
+                           current_page = "systems")
 
 
 ##javascaript routes

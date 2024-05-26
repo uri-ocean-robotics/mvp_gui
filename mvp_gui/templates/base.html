@@ -13,6 +13,10 @@
         <style>
             body {  margin-left: 2%; margin-right:5%; padding: 0; }
             html, body, #map { height: 90%; }
+
+            .nav-item.active .nav-link {
+            color: white !important;
+        }
         </style>
             
         
@@ -36,21 +40,21 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mr-auto">
-                    <li class="nav-item active">
+                    <li class="nav-item {% if current_page == 'home' %}active{% endif %}">
                         <a class="nav-link" href="{{ url_for('home_page') }}" data-turbo="false">Home <span class="sr-only">(current)</span></a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item {% if current_page == 'systems' %}active{% endif %}">
                         <a class="nav-link" href="{{ url_for('systems_page') }}" data-turbo="false">Systems & Tools</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item {% if current_page == 'power_manager' %}active{% endif %}">
                         <a class="nav-link" href="{{ url_for('power_manager_page') }}">Power Manager</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item {% if current_page == 'mission' %}active{% endif %}">
                         <a class="nav-link" href="{{ url_for('mission_page') }}">Mission</a>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item {% if current_page == 'map' %}active{% endif %}">
                         <a class="nav-link" href="{{ url_for('map_page') }}" data-turbo="false">Map</a>
-                    </li>                    
+                    </li>                  
                 </ul>
                 <!-- <ul class="navbar-nav">
                     <li class="nav-item">

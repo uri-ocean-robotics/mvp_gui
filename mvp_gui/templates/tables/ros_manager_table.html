@@ -1,73 +1,120 @@
+
+
+<h4> Connection management</h4>
+Connection status: {{ remote_connection }}
+<br>
 <table class="table table-hover table-dark">
+<form action="/systems" method="post">
+    <input type="hidden" name="connect">
+    <button type="submit">Connect vehicle</button>
+</form>
+<form action="/systems" method="post">
+    <input type="hidden" name="disconnect">
+    <button type="submit">Disconnect vehicle</button>
+</form>
+</table>
 
-    <!-- <h4> GUI management</h4>
-    <form action="/systems" method="post">
-        <input type="hidden" name="start_gui">
-        <button type="submit">Start GUI</button>
-    </form>
-    <form action="/systems" method="post">
-        <input type="hidden" name="stop_gui">
-        <button type="submit">Stop GUI</button>
-    </form> -->
+<h4> ROS core management</h4>
+<table class="table table-hover table-dark">
+<form action="/systems" method="post">
+    <input type="hidden" name="roscore_start">
+    <button type="submit">Start ROS Core</button>
+</form>
+<form action="/systems" method="post">
+    <input type="hidden" name="roscore_stop">
+    <button type="submit">Stop ROS Core </button>
+</form>
+<form action="/systems" method="post">
+    <input type="hidden" name="rosnode_cleanup">
+    <button type="submit">Cleanup ROS Nodes </button>
+</form>
+</table>
 
-    <br>
-    <br>
-    <h4> Connection management</h4>
-    Connection status: {{ remote_connection }}
-    <br>
-    <form action="/systems" method="post">
-        <input type="hidden" name="connect">
-        <button type="submit">Connect vehicle</button>
-    </form>
-    <form action="/systems" method="post">
-        <input type="hidden" name="disconnect">
-        <button type="submit">Disconnect vehicle</button>
-    </form>
-    <br>
-    <br>
-    <h4> ROS core management</h4>
-    <form action="/systems" method="post">
-        <input type="hidden" name="roscore_start">
-        <button type="submit">Start ROS Core</button>
-    </form>
-    <form action="/systems" method="post">
-        <input type="hidden" name="roscore_stop">
-        <button type="submit">Stop ROS Core </button>
-    </form>
-    <form action="/systems" method="post">
-        <input type="hidden" name="rosnode_cleanup">
-        <button type="submit">Cleanup ROS Nodes </button>
-    </form>
-    <thead>
+
+<h4>ROS Launch configration</h4>
+<table class="table table-hover table-dark">
+<thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Package</th>
+        <th scope="col">Launch</th>
+        <th scope="col">Nodes</th>
+        <th scope="col">Actions</th>
+        <th scope="col"> </th>
+    </tr>
+</thead>
+<tbody>
+    <!-- Loop through each item in roslaunch_config list -->
+    {% for item in roslaunch_config %}
         <tr>
-            <th scope="col">ID</th>
-            <th scope="col">Package</th>
-            <th scope="col">Launch</th>
-            <th scope="col">Nodes</th>
-            <th scope="col">Actions</th>
-            <th scope="col"> </th>
+            <td>{{ item.id }}</td>
+            <td>{{ item.package_name }}</td>
+            <td>{{ item.launch_name }}</td>
+            <td>{{ item.node_names|safe }}</td>
+            <td>
+                <form action="/systems" method="post">
+                    <input type="hidden" name="launch" value="{{ item.id }}">
+                    <button type="submit">Launch</button>
+                </form>
+            </td>
+            <td>
+                <form action="/systems" method="post">
+                    <input type="hidden" name="kill" value="{{ item.id }}">
+                    <button type="submit">Kill</button>
+                </form>
+            </td>
         </tr>
+    {% endfor %}
+</tbody>
+</table>
+
+
+<h4>ROS node lists</h4>
+
+<form action="/systems" method="post">
+    <input type="hidden" name="rosnode_list">
+    <button type="submit">Get ROS Nodes</button>
+</form>
+
+<table class="table table-hover table-dark">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+    </tr>
     </thead>
     <tbody>
         <!-- Loop through each item in roslaunch_config list -->
-        {% for item in roslaunch_config %}
+        {% for item in node_list %}
             <tr>
                 <td>{{ item.id }}</td>
-                <td>{{ item.package_name }}</td>
-                <td>{{ item.launch_name }}</td>
-                <td>{{ item.node_names|safe }}</td>
-                <td>
-                    <form action="/systems" method="post">
-                        <input type="hidden" name="launch" value="{{ item.id }}">
-                        <button type="submit">Launch</button>
-                    </form>
-                </td>
-                <td>
-                    <form action="/systems" method="post">
-                        <input type="hidden" name="kill" value="{{ item.id }}">
-                        <button type="submit">Kill</button>
-                    </form>
-                </td>
+                <td>{{ item.name }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<h4>ROS topic lists</h4>
+
+<form action="/systems" method="post">
+    <input type="hidden" name="rostopic_list">
+    <button type="submit">Get ROS Topics</button>
+</form>
+
+<table class="table table-hover table-dark">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+    </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through each item in roslaunch_config list -->
+        {% for item in topic_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
             </tr>
         {% endfor %}
     </tbody>
