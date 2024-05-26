@@ -306,7 +306,7 @@ def systems_page():
         launch_file_name = params['launch_file_name']
         nodes = params['nodes']
         namespace = params['namespace']
-        nodes_string = " ".join(nodes)
+        nodes_string = "<br>".join(nodes)
         # node_display = "<br>".join(nodes)
         launch_file = RoslaunchConfig(id=count, package_name = str(package_name), namespace = str(namespace), 
                                       launch_name = str(launch_file_name),
@@ -356,13 +356,6 @@ def systems_page():
             # print(command)
             ssh_connection.execute_command(command, wait=False)
             return redirect(url_for('systems_page'))
-        
-        elif 'kill' in request.form:
-            kill_id = request.form['kill']
-            temp_kill = RoslaunchConfig.query.get(kill_id)
-            command = ros_source + "rosnode kill /" + temp_kill.namespace + "/" +  temp_kill.node_names
-            ssh_connection.execute_command(command, wait=False)
-            return redirect(url_for('systems_page'))
             
         ##get ros node list
         elif 'rosnode_list' in request.form:
@@ -381,6 +374,31 @@ def systems_page():
             else:
                 db.session.query(RosNodeList).delete()
                 node_ = RosNodeList(id=count, name = 'No Connection')
+                db.session.add(node_)
+                db.session.commit()
+            return redirect(url_for('systems_page'))
+        
+        elif 'kill_all_nodes' in request.form:
+            if remote_connection: 
+                command = ros_source + "rosnode kill -a"
+                ssh_connection.execute_command(command, wait=False)
+            else:
+                db.session.query(RosNodeList).delete()
+                node_ = RosNodeList(id=count, name = 'Clicked without Connection')
+                db.session.add(node_)
+                db.session.commit()
+            return redirect(url_for('systems_page'))
+
+
+        elif 'kill_node' in request.form:
+            if remote_connection: 
+                kill_id = request.form['kill_node']
+                temp_kill = RosNodeList.query.get(kill_id)
+                command = ros_source + "rosnode kill " + temp_kill.name
+                ssh_connection.execute_command(command, wait=False)
+            else:
+                db.session.query(RosNodeList).delete()
+                node_ = RosNodeList(id=count, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
