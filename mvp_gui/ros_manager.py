@@ -54,7 +54,6 @@ class SSHConnection:
 
         # Execute the command with DISPLAY set
         # session.exec_command(f'export DISPLAY=$DISPLAY; {command}')
-        print(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
         session.exec_command(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
 
         # Execute the command
