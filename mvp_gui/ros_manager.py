@@ -1,4 +1,5 @@
 import paramiko
+import os 
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -41,6 +42,37 @@ class SSHConnection:
         else:
             # If we don't want to wait, we return immediately.
             return None, None
+        
+    def execute_command_with_x11(self, command):
+        # Open a new session with X11 forwarding
+        transport = self.ssh_client.get_transport()
+        session = transport.open_session()
+
+        # Request X11 forwarding
+        session.get_pty()
+        session.request_x11()
+
+        # Execute the command with DISPLAY set
+        # session.exec_command(f'export DISPLAY=$DISPLAY; {command}')
+        print(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
+        session.exec_command(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
+
+        # Execute the command
+        # session.exec_command(command)
+
+        # Get the output and error streams
+        stdout = session.makefile('r', 2048)
+        stderr = session.makefile_stderr('r', 2048)
+
+        # Print the output and error
+        for line in stdout:
+            print(line, end="")
+
+        for line in stderr:
+            print(line, end="")
+
+        # Close the session
+        # session.close()
 
     def close(self):
         if self.ssh_client:

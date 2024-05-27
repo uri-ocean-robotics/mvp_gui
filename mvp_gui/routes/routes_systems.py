@@ -99,7 +99,7 @@ def systems_page():
                 db.session.query(RosLaunchList).delete()
                 for item in launch_list:
                     if item.endswith(".launch"):
-                        launch_ = RosLaunchList(id=count, name = item)
+                        launch_ = RosLaunchList(id=count, name = roslaunch_folder+ item)
                         db.session.add(launch_)
                         db.session.commit()
                         count = count + 1
@@ -115,15 +115,18 @@ def systems_page():
             launch_id = request.form['launch']
             ##get the package name and launch file
             temp_launch = RosLaunchList.query.get(launch_id)
-            command = ros_source + "roslaunch " + temp_launch
-            # print(command)
-            ssh_connection.execute_command(command, wait=False)
+            
+            command = ros_source + "roslaunch " + temp_launch.name
+
+            # ssh_connection.execute_command(command, wait=False)
+            ssh_connection.execute_command_with_x11(command)
+            time.sleep(20)
             return redirect(url_for('systems_page'))
         
         elif 'info' in request.form:
             launch_id = request.form['info']
             temp_launch = RosLaunchList.query.get(launch_id)
-            command = "cat " + roslaunch_folder + "/" + temp_launch.name
+            command = "cat " + temp_launch.name
             response = ssh_connection.execute_command(command, wait=True)
             
             return redirect(url_for('launch_file_data', response=response[0])) 

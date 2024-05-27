@@ -195,7 +195,8 @@ class gui_ros():
                 rospy.wait_for_service(self.get_state_srv)
                 try:
                     service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
-                    request = ChangeStateRequest(change_state.value)
+                    print(rospy.get_name())
+                    request = ChangeStateRequest(change_state.value, rospy.get_name())
                     response = service_client_change_state(request)
                     change_state.pending = 0
                     db.session.commit()
