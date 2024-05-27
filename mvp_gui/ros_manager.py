@@ -1,13 +1,11 @@
 import paramiko
-import subprocess
-import time
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
         self.hostname = hostname
         self.username = username
         self.password = password
-        self.ssh_client = None
+        self.ssh_client = None  
         self.ssh_state = False
 
     def connect(self):
@@ -48,4 +46,6 @@ class SSHConnection:
         if self.ssh_client:
             self.ssh_client.close()
             self.ssh_state = False
+
+
 

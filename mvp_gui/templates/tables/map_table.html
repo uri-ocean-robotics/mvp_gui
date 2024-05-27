@@ -598,29 +598,60 @@
         });
     });
 
-    // Function to start the update interval
-    function startUpdateInterval() {
+    /** TURBO **/
+    // // Function to start the update interval
+    // function startUpdateInterval() {
+    //     if (intervalId_map === null) {
+    //         intervalId_map = setInterval(updateMarkers, updateInterval);
+    //     }
+    // }
+
+    // // Function to stop the update interval
+    // function stopUpdateInterval() {
+    //     if (intervalId_map !== null) {
+    //         clearInterval(intervalId_map);
+    //     }
+    // }
+
+    // // Set up the interval to call updateMarkers when the page is loaded
+    // document.addEventListener('turbo:load', () => {
+    //     startUpdateInterval();
+    // });
+
+    // // Stop the interval when navigating away from the page
+    // document.addEventListener('turbo:before-render', () => {
+    //     stopUpdateInterval();
+    // });
+
+
+    // Function to start the interval
+    function startInterval() {
         if (intervalId_map === null) {
             intervalId_map = setInterval(updateMarkers, updateInterval);
         }
     }
 
-    // Function to stop the update interval
-    function stopUpdateInterval() {
+    // Function to stop the interval
+    function stopInterval() {
         if (intervalId_map !== null) {
             clearInterval(intervalId_map);
+            intervalId_map = null;
         }
     }
 
-    // Set up the interval to call updateMarkers when the page is loaded
-    document.addEventListener('turbo:load', () => {
-        startUpdateInterval();
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startInterval();
+        } else {
+            stopInterval();
+        }
     });
 
-    // Stop the interval when navigating away from the page
-    document.addEventListener('turbo:before-render', () => {
-        stopUpdateInterval();
-    });
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        startInterval();
+    }
 
 
 </script>
