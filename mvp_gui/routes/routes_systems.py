@@ -1,13 +1,13 @@
 from mvp_gui import *
 import yaml 
 
-
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
 def systems_page():
     ##get roslaunch files
     dataset_config = yaml.safe_load(open(global_file_name, 'r'))
-    roslaunch_folder = dataset_config['roslaunch_folder']
+    # roslaunch_folder = dataset_config['roslaunch_folder']
+    roslaunch_folder = roslaunch_folder_default
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
@@ -99,14 +99,14 @@ def systems_page():
                 db.session.query(RosLaunchList).delete()
                 for item in launch_list:
                     if item.endswith(".launch"):
-                        launch_ = RosLaunchList(id=count, name = roslaunch_folder+ item)
+                        launch_ = RosLaunchList(id=count, folder_dir = roslaunch_folder, name = item)
                         db.session.add(launch_)
                         db.session.commit()
                         count = count + 1
                     # print(item)
             else:
                 db.session.query(RosLaunchList).delete()
-                launch_ = RosLaunchList(id=0, name = 'Clicked without Connection')
+                launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
                 db.session.add(launch_)
                 db.session.commit()
             return redirect(url_for('systems_page'))
@@ -115,8 +115,18 @@ def systems_page():
             launch_id = request.form['launch']
             ##get the package name and launch file
             temp_launch = RosLaunchList.query.get(launch_id)
-            
-            command = ros_source + "roslaunch " + temp_launch.name
+            command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
+
+            ssh_connection.execute_command(command, wait=False)
+            # ssh_connection.execute_command_with_x11(command)
+            time.sleep(20)
+            return redirect(url_for('systems_page'))
+        
+        elif 'launch_x11' in request.form:
+            launch_id = request.form['launch']
+            ##get the package name and launch file
+            temp_launch = RosLaunchList.query.get(launch_id)
+            command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
 
             # ssh_connection.execute_command(command, wait=False)
             ssh_connection.execute_command_with_x11(command)
@@ -126,7 +136,7 @@ def systems_page():
         elif 'info' in request.form:
             launch_id = request.form['info']
             temp_launch = RosLaunchList.query.get(launch_id)
-            command = "cat " + temp_launch.name
+            command = "cat " + temp_launch.folder_dir + temp_launch.name
             response = ssh_connection.execute_command(command, wait=True)
             
             return redirect(url_for('launch_file_data', response=response[0])) 

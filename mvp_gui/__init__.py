@@ -24,10 +24,10 @@ ssh_hostname = '192.168.0.118'
 ssh_username = 'mingxi'
 ssh_password = 'qwer1234'
 ros_source = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
+roslaunch_folder_default = '~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/'
 
 # Create SSHConnection instance
 ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
-
 
 from mvp_gui.routes import routes_base
 from mvp_gui.routes import routes_systems
