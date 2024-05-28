@@ -112,32 +112,35 @@ def systems_page():
             return redirect(url_for('systems_page'))
 
         elif 'launch' in request.form:
-            launch_id = request.form['launch']
-            ##get the package name and launch file
-            temp_launch = RosLaunchList.query.get(launch_id)
-            command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
+            if remote_connection: 
+                launch_id = request.form['launch']
+                ##get the package name and launch file
+                temp_launch = RosLaunchList.query.get(launch_id)
+                command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
 
-            ssh_connection.execute_command(command, wait=False)
-            # ssh_connection.execute_command_with_x11(command)
-            time.sleep(20)
+                ssh_connection.execute_command(command, wait=False)
+                # ssh_connection.execute_command_with_x11(command)
+                time.sleep(20)
             return redirect(url_for('systems_page'))
         
         elif 'launch_x11' in request.form:
-            launch_id = request.form['launch']
-            ##get the package name and launch file
-            temp_launch = RosLaunchList.query.get(launch_id)
-            command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
+            if remote_connection: 
+                launch_id = request.form['launch']
+                ##get the package name and launch file
+                temp_launch = RosLaunchList.query.get(launch_id)
+                command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
 
-            # ssh_connection.execute_command(command, wait=False)
-            ssh_connection.execute_command_with_x11(command)
-            time.sleep(20)
+                # ssh_connection.execute_command(command, wait=False)
+                ssh_connection.execute_command_with_x11(command)
+                time.sleep(20)
             return redirect(url_for('systems_page'))
         
         elif 'info' in request.form:
-            launch_id = request.form['info']
-            temp_launch = RosLaunchList.query.get(launch_id)
-            command = "cat " + temp_launch.folder_dir + temp_launch.name
-            response = ssh_connection.execute_command(command, wait=True)
+            if remote_connection: 
+                launch_id = request.form['info']
+                temp_launch = RosLaunchList.query.get(launch_id)
+                command = "cat " + temp_launch.folder_dir + temp_launch.name
+                response = ssh_connection.execute_command(command, wait=True)
             
             return redirect(url_for('launch_file_data', response=response[0])) 
             
