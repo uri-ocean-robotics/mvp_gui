@@ -23,33 +23,33 @@ def stop_processes():
     with process_lock:
         if flask_process:
             os.killpg(os.getpgid(flask_process.pid), signal.SIGTERM)
-            kill_rosnode('/mvp_gui_node')
+            # kill_rosnode('/mvp_gui_node')
 
-def check_rosnode_exists(node_name):
-    try:
-        # Source the ROS environment before running rosnode list
-        command = 'source /opt/ros/noetic/setup.bash && rosnode list'
-        result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-        nodes = result.stdout.splitlines()
-        return node_name in nodes
+# def check_rosnode_exists(node_name):
+#     try:
+#         # Source the ROS environment before running rosnode list
+#         command = 'source /opt/ros/noetic/setup.bash && rosnode list'
+#         result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+#         nodes = result.stdout.splitlines()
+#         return node_name in nodes
             
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while listing ROS nodes: {e.stderr}")
-        return False
+#     except subprocess.CalledProcessError as e:
+#         print(f"An error occurred while listing ROS nodes: {e.stderr}")
+#         return False
 
-def kill_rosnode(node_name, timeout=5):
-    try:
-        if check_rosnode_exists(node_name):
-            command = f'source /opt/ros/noetic/setup.bash && rosnode kill {node_name}'
-            result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
-            if result.returncode != 0:
-                print(f"Kill command failed with error: {result.stderr}")
-            else:
-                print(f"Kill command successful for node: {node_name}")
-    except subprocess.TimeoutExpired:
-        print(f"Kill command timed out for node: {node_name}")
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while killing ROS node: {e.stderr}")
+# def kill_rosnode(node_name, timeout=5):
+#     try:
+#         if check_rosnode_exists(node_name):
+#             command = f'source /opt/ros/noetic/setup.bash && rosnode kill {node_name}'
+#             result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
+#             if result.returncode != 0:
+#                 print(f"Kill command failed with error: {result.stderr}")
+#             else:
+#                 print(f"Kill command successful for node: {node_name}")
+#     except subprocess.TimeoutExpired:
+#         print(f"Kill command timed out for node: {node_name}")
+#     except subprocess.CalledProcessError as e:
+#         print(f"An error occurred while killing ROS node: {e.stderr}")
 
 if __name__ == "__main__":
     start_processes()

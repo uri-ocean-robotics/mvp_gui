@@ -1,5 +1,13 @@
 from mvp_gui import *
+import subprocess
 import yaml 
+
+ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
+ros_hostname = ssh_connection.hostname 
+
+env['ROS_MASTER_URI'] = ros_master_uri
+env['ROS_IP'] = ros_hostname
+env['ROS_HOSTNAME'] = ros_hostname
 
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
@@ -30,7 +38,7 @@ def systems_page():
     mvpgui_node_name = '/mvp_gui_node'
     try:
         mvpgui_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
-        mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         nodes = mvpgui_result.stdout.splitlines()
         mvpgui_status =  mvpgui_node_name in nodes
     except subprocess.CalledProcessError as e:
@@ -47,11 +55,11 @@ def systems_page():
             ssh_connection.password = request.form['password']
             ssh_connection.connect()
             if ssh_connection.connect():
-            # If SSH connection is successful, redirect to systems_page
+                # If SSH connection is successful, redirect to systems_page
                 return redirect(url_for('systems_page'))
             else:
                 ssh_connection.close()
-            # If SSH connection fails, you can render an error page or redirect to a different route
+                # If SSH connection fails, you can render an error page or redirect to a different route
                 # flash("SSH connection failed. Please check your credentials.")
                 return redirect(url_for('ssh_failed'))  # Redirect to login page or error page
         
@@ -78,13 +86,13 @@ def systems_page():
         
         ### mvp_gui node
         elif 'mvpgui_start' in request.form:
-            stop_ros_process()
-            start_ros_process()
+            stop_ros_process(env)
+            start_ros_process(env)
             time.sleep(1.0)
             return redirect(url_for('systems_page'))
 
         elif 'mvpgui_stop' in request.form:
-            stop_ros_process()
+            stop_ros_process(env)
             time.sleep(1.0)
             return redirect(url_for('systems_page'))
 
@@ -125,11 +133,11 @@ def systems_page():
         
         elif 'launch_x11' in request.form:
             if remote_connection: 
-                launch_id = request.form['launch']
+                launch_id = request.form['launch_x11']
+                
                 ##get the package name and launch file
                 temp_launch = RosLaunchList.query.get(launch_id)
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
-
                 # ssh_connection.execute_command(command, wait=False)
                 ssh_connection.execute_command_with_x11(command)
                 time.sleep(20)

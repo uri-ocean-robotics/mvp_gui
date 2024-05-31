@@ -8,13 +8,13 @@ import signal
 ros_process = None
 flask_process = None
 process_lock = threading.Lock()
-project_path = os.getcwd()
-env = os.environ.copy()
-env['PYTHONPATH'] = project_path
+# project_path = os.getcwd()
+# env = os.environ.copy()
+# env['PYTHONPATH'] = project_path
 
-def start_ros_process():
+def start_ros_process(env):
     global ros_process
-    global env
+    # global env
     with process_lock:
         if ros_process is None:
             ros_process = subprocess.Popen(
@@ -25,29 +25,29 @@ def start_ros_process():
                 preexec_fn=os.setsid
             )
 
-def stop_ros_process():
+def stop_ros_process(env):
     global ros_process
     print("TO STOP: ", ros_process)
     with process_lock:
         if ros_process:
-            kill_rosnode('/mvp_gui_node')  # Explicitly kill the node
+            node_name = '/mvp_gui_node'
+            kill_rosnode(node_name, env)  # Explicitly kill the node
             os.killpg(os.getpgid(ros_process.pid), signal.SIGTERM)
             ros_process.wait()  # Wait for the process to terminate
             ros_process = None
             time.sleep(1)
             # Recheck if the node still exists
-            node_name = '/mvp_gui_node'
             for _ in range(5):  # Retry up to 5 times
-                if not check_rosnode_exists(node_name):
+                if not check_rosnode_exists(node_name, env):
                     break
                 print(f"Node {node_name} still exists, retrying...")
-                kill_rosnode(node_name)
+                kill_rosnode(node_name, env)
                 time.sleep(1)
 
-def kill_rosnode(node_name, timeout=5):
+def kill_rosnode(node_name, env, timeout=5):
     try:
         command = f'source /opt/ros/noetic/setup.bash && rosnode kill {node_name}'
-        result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
+        result = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
         if result.returncode != 0:
             print(f"Kill command failed with error: {result.stderr}")
         else:
@@ -57,12 +57,13 @@ def kill_rosnode(node_name, timeout=5):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while killing ROS node: {e.stderr}")
 
-def check_rosnode_exists(node_name):
+def check_rosnode_exists(node_name, env):
     try:
         # Source the ROS environment before running rosnode list
         command = 'source /opt/ros/noetic/setup.bash && rosnode list'
-        result = subprocess.run(['bash', '-c', command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        result = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
         nodes = result.stdout.splitlines()
+        print(nodes)
         return node_name in nodes
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while listing ROS nodes: {e.stderr}")

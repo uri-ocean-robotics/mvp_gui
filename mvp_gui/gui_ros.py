@@ -1,7 +1,6 @@
 import numpy as np
 import rospy
 import message_filters
-import signal
 from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped

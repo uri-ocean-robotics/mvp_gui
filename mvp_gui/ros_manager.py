@@ -54,10 +54,26 @@ class SSHConnection:
 
         # Execute the command with DISPLAY set
         # session.exec_command(f'export DISPLAY=$DISPLAY; {command}')
-        session.exec_command(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
+        # session.exec_command(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
+
+        ros_master_uri = 'http://' + self.hostname  + ':11311/'
+        ros_hostname = self.hostname 
+        ros_ip = self.hostname
+
+        # Start Xvfb and set DISPLAY variable
+        full_command = (
+            'if pgrep -x "Xvfb" > /dev/null; then pkill -x "Xvfb"; fi; '
+            'rm -f /tmp/.X99-lock; '
+            'Xvfb :99 -screen 0 1024x768x24 & '
+            'export DISPLAY=:99; '
+            f'export ROS_MASTER_URI={ros_master_uri}; '
+            f'export ROS_HOSTNAME={ros_hostname}; '
+            f'export ROS_IP={ros_ip}; '
+            f'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && {command}'
+        )
 
         # Execute the command
-        # session.exec_command(command)
+        session.exec_command(full_command)
 
         # Get the output and error streams
         stdout = session.makefile('r', 2048)

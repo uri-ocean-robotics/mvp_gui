@@ -26,6 +26,10 @@ ssh_password = 'qwer1234'
 ros_source = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
 roslaunch_folder_default = '~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/'
 
+project_path = os.getcwd()
+env = os.environ.copy()
+env['PYTHONPATH'] = project_path
+
 # Create SSHConnection instance
 ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
 
