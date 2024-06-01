@@ -14,7 +14,6 @@ process_lock = threading.Lock()
 
 def start_ros_process(env):
     global ros_process
-    # global env
     with process_lock:
         if ros_process is None:
             ros_process = subprocess.Popen(
@@ -37,12 +36,12 @@ def stop_ros_process(env):
             ros_process = None
             time.sleep(1)
             # Recheck if the node still exists
-            for _ in range(5):  # Retry up to 5 times
-                if not check_rosnode_exists(node_name, env):
-                    break
-                print(f"Node {node_name} still exists, retrying...")
-                kill_rosnode(node_name, env)
-                time.sleep(1)
+            # for _ in range(5):  # Retry up to 5 times
+            #     if not check_rosnode_exists(node_name, env):
+            #         break
+            #     print(f"Node {node_name} still exists, retrying...")
+            #     kill_rosnode(node_name, env)
+            #     time.sleep(1)
 
 def kill_rosnode(node_name, env, timeout=5):
     try:
@@ -57,15 +56,15 @@ def kill_rosnode(node_name, env, timeout=5):
     except subprocess.CalledProcessError as e:
         print(f"An error occurred while killing ROS node: {e.stderr}")
 
-def check_rosnode_exists(node_name, env):
-    try:
-        # Source the ROS environment before running rosnode list
-        command = 'source /opt/ros/noetic/setup.bash && rosnode list'
-        result = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-        nodes = result.stdout.splitlines()
-        print(nodes)
-        return node_name in nodes
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while listing ROS nodes: {e.stderr}")
-        return False
+# def check_rosnode_exists(node_name, env):
+#     try:
+#         # Source the ROS environment before running rosnode list
+#         command = 'source /opt/ros/noetic/setup.bash && rosnode list'
+#         result = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+#         nodes = result.stdout.splitlines()
+#         print(nodes)
+#         return node_name in nodes
+#     except subprocess.CalledProcessError as e:
+#         print(f"An error occurred while listing ROS nodes: {e.stderr}")
+#         return False
 

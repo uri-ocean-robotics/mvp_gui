@@ -1,5 +1,5 @@
 import paramiko
-import os 
+import time 
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -33,9 +33,21 @@ class SSHConnection:
             return True
         return False
 
-    def execute_command(self, command, wait=True):
+    def execute_command(self, command, wait=True, timeout=None):
+
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
+        
         if wait:
+            output = stdout.read().decode()
+            error = stderr.read().decode()
+            return output, error
+        elif timeout != None:
+            start_time = time.time()
+            while not stdout.channel.eof_received:
+                time.sleep(1)
+                if time.time() > start_time + timeout:
+                    stdout.channel.close()
+                    return "empty", None
             output = stdout.read().decode()
             error = stderr.read().decode()
             return output, error
@@ -43,7 +55,7 @@ class SSHConnection:
             # If we don't want to wait, we return immediately.
             return None, None
         
-    def execute_command_with_x11(self, command):
+    def execute_command_with_xvfb(self, command):
         # Open a new session with X11 forwarding
         transport = self.ssh_client.get_transport()
         session = transport.open_session()
@@ -64,7 +76,7 @@ class SSHConnection:
         full_command = (
             'if pgrep -x "Xvfb" > /dev/null; then pkill -x "Xvfb"; fi; '
             'rm -f /tmp/.X99-lock; '
-            'Xvfb :99 -screen 0 1024x768x24 & '
+            'Xvfb :99 -screen 0 1200x800x24 & '
             'export DISPLAY=:99; '
             f'export ROS_MASTER_URI={ros_master_uri}; '
             f'export ROS_HOSTNAME={ros_hostname}; '

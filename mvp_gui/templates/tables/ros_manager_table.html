@@ -17,12 +17,29 @@
 <p style="color: lightskyblue;"> 
     Hostname: {{ remote_hostname }} 
     <br>
-    Connectivity: {{ remote_connection }}
+    <!-- Connectivity: {{ remote_connection }} -->
 </p>
 <br>
 
+<table class="table table-hover table-dark table-bordered">
+    <thead>
+        <tr>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">SSH Connectivity</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">ROS Core Status</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">MVP GUI Node Status</th>
+        </tr>
+    </thead>
+    <tbody id="current-status">
+        <tr>
+            <td id="remote_connection"></td>
+            <td id="roscore_status"></td>
+            <td id="mvpgui_status"></td>
+        </tr>
+    </tbody>
+</table>
+
 <h4> ROS Core Manager</h4>
-<p style="color: lightskyblue;"> ROS Core status: {{ roscore_status }} </p>
+<!-- <p style="color: lightskyblue;"> ROS Core status: {{ roscore_status }} </p> -->
 <table class="table table-hover table-dark">
 <form action="/" method="post">
     <input type="hidden" name="roscore_start">
@@ -43,7 +60,7 @@
 </table>
 
 <h4> MVP GUI ROS NODE Manager</h4>
-<p style="color: lightskyblue;"> MVP GUI ROS Node status: {{ mvpgui_status }} </p>
+<!-- <p style="color: lightskyblue;"> MVP GUI ROS Node status: {{ mvpgui_status }} </p> -->
 <table class="table table-hover table-dark">
 
 <form action="/" method="post">
@@ -84,8 +101,8 @@
                     <button type="submit">Launch</button>
                 </form>
                 <form action="/" method="post">
-                    <input type="hidden" name="launch_x11" value="{{ item.id }}">
-                    <button type="submit">Launch (X11)</button>
+                    <input type="hidden" name="launch_xvfb" value="{{ item.id }}">
+                    <button type="submit">Launch (xvfb)</button>
                 </form>
             </td>
             <td>
@@ -153,7 +170,62 @@
             <tr>
                 <td>{{ item.id }}</td>
                 <td>{{ item.name }}</td>
+                <td>
+                    <form action="/" method="post">
+                        <input type="hidden" name="echo_1" value="{{ item.id }}">
+                        <button type="submit">Echo Once</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
     </tbody>
 </table>
+
+<script>
+    let intervalId_system_status = null;
+    const updateInterval_system_status = 1000;
+
+    // Function to start the interval
+    function startssInterval() {
+        if (intervalId_system_status === null) {
+            intervalId_system_status = setInterval(() => updatessTables(), updateInterval_system_status);
+        }
+    }
+
+    // Function to stop the interval
+    function stopssInterval() {
+        if (intervalId_system_status !== null) {
+            clearInterval(intervalId_system_status);
+            intervalId_system_status = null;
+        }
+    }
+
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startssInterval();
+        } else {
+            stopssInterval();
+        }
+    });
+
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        startssInterval();
+    }
+
+    function updatessTables() {
+        fetch('/current_system_status')
+            .then(response => response.json())
+            .then(data => {
+                const { remote_connection, roscore_status, mvpgui_status} = data;
+                console.log( remote_connection.data, roscore_status.data, mvpgui_status.data)
+                // Populate vital data
+                document.getElementById('remote_connection').textContent = remote_connection.data;
+                document.getElementById('roscore_status').textContent = roscore_status.data;
+                document.getElementById('mvpgui_status').textContent = mvpgui_status.data;
+
+            })
+        }
+
+</script>
