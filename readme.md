@@ -35,3 +35,8 @@ A test map is provided, if you want to load your own map
     mb-util your_file.mbtiles your_file_tiles_directory
     ```
 - set the `TILES_DIR` in `__init__.py` to the correct directory
+
+### Rosnode Python Package
+```
+sudo apt-get install python3-rosnode
+```
