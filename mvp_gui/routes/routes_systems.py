@@ -10,6 +10,8 @@ env['ROS_MASTER_URI'] = ros_master_uri
 os.environ['ROS_MASTER_URI'] = ros_master_uri
 ros_source += f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
 
+roslaunch_folder = roslaunch_folder_default
+
 def check_mvpgui_status(mvpgui_node_name, env):
     mvpgui_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
     try:
@@ -47,6 +49,7 @@ def check_roscore_status(ssh_connection, remote_connection):
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
 def systems_page():
+    global roslaunch_folder
     server_ip = app.config['HOST_IP']
     env['ROS_IP'] = server_ip
     os.environ['ROS_IP'] = server_ip
@@ -54,7 +57,7 @@ def systems_page():
     ##get roslaunch files
     dataset_config = yaml.safe_load(open(global_file_name, 'r'))
     # roslaunch_folder = dataset_config['roslaunch_folder']
-    roslaunch_folder = roslaunch_folder_default
+    # roslaunch_folder = roslaunch_folder_default
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
@@ -149,9 +152,11 @@ def systems_page():
                     if item.endswith(".launch"):
                         launch_ = RosLaunchList(id=count, folder_dir = roslaunch_folder, name = item)
                         db.session.add(launch_)
-                        db.session.commit()
+                        # db.session.commit()
                         count = count + 1
                     # print(item)
+                db.session.commit()
+
             else:
                 db.session.query(RosLaunchList).delete()
                 launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
@@ -205,9 +210,11 @@ def systems_page():
                 for item in node_list:
                     node_ = RosNodeList(id=count, name = item)
                     db.session.add(node_)
-                    db.session.commit()
+                    # db.session.commit()
                     count = count + 1
                     # print(item)
+                db.session.commit()
+
             else:
                 db.session.query(RosNodeList).delete()
                 node_ = RosNodeList(id=0, name = 'No Connection')
@@ -255,9 +262,10 @@ def systems_page():
                 for item in topic_list:
                     node_ = RosTopicList(id=count, name = item)
                     db.session.add(node_)
-                    db.session.commit()
+                    # db.session.commit()
                     count = count + 1
                     # print(item)
+                db.session.commit()
             else:
                 db.session.query(RosTopicList).delete()
                 node_ = RosTopicList(id=0, name = 'No Connection')
