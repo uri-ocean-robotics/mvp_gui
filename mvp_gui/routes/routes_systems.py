@@ -4,11 +4,11 @@ import yaml
 import rosnode
 import rosgraph
 
-ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-ros_hostname = ssh_connection.hostname 
-env['ROS_MASTER_URI'] = ros_master_uri
-os.environ['ROS_MASTER_URI'] = ros_master_uri
-ros_source += f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+# ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
+# ros_hostname = ssh_connection.hostname 
+# env['ROS_MASTER_URI'] = ros_master_uri
+# os.environ['ROS_MASTER_URI'] = ros_master_uri
+# ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
 
 roslaunch_folder = roslaunch_folder_default
 
@@ -49,7 +49,10 @@ def check_roscore_status(ssh_connection, remote_connection):
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
 def systems_page():
+    global ros_source
     global roslaunch_folder
+    global env
+
     server_ip = app.config['HOST_IP']
     env['ROS_IP'] = server_ip
     os.environ['ROS_IP'] = server_ip
@@ -61,30 +64,25 @@ def systems_page():
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
-    rostopic_list = RosTopicList.query.all()
+    # rostopic_list = RosTopicList.query.all()
 
     remote_connection  = ssh_connection.is_connected()
     
     ##check ros master
-    roscore_status = check_roscore_status(ssh_connection, remote_connection)
-    # roscore_status =False
-    # if remote_connection:
-    #     command = ros_source + "rosnode list"
-    #     response = ssh_connection.execute_command(command, wait=True)
-    #     node_output = response[0].splitlines()
-    #     #if any node listed?
-    #     if node_output:
-    #         roscore_status = True
+    roscore_status = False
+    if remote_connection:
+        roscore_status = check_roscore_status(ssh_connection, remote_connection)
     
     ##check mvp_gui node 
     mvpgui_status = False
     mvpgui_node_name = '/mvp_gui_node'
-    try:
-        mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
-    except subprocess.CalledProcessError as e:
-        print(f"An error occurred while listing ROS nodes: {e.stderr}")
-        pass
-    
+    if remote_connection:
+        try:
+            mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
+        except subprocess.CalledProcessError as e:
+            print(f"An error occurred while listing ROS nodes: {e.stderr}")
+            pass
+        
 
     ## buttons
     if request.method == 'POST':
@@ -94,7 +92,13 @@ def systems_page():
             ssh_connection.username = request.form['username']
             ssh_connection.password = request.form['password']
             ssh_connection.connect()
-            if ssh_connection.connect():
+
+            if ssh_connection.is_connected():
+                ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
+                ros_hostname = ssh_connection.hostname 
+                env['ROS_MASTER_URI'] = ros_master_uri
+                os.environ['ROS_MASTER_URI'] = ros_master_uri
+                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
                 # If SSH connection is successful, redirect to systems_page
                 return redirect(url_for('systems_page'))
             else:
@@ -250,41 +254,41 @@ def systems_page():
             return redirect(url_for('systems_page'))
         
          ##get ros topic list
-        elif 'rostopic_list' in request.form:
-            if remote_connection: 
-                cleanup_dead_nodes()
-                time.sleep(0.5)
-                command = ros_source + "rostopic list"
-                response = ssh_connection.execute_command(command, wait=True)
-                topic_list = response[0].splitlines()
-                count = 0
-                db.session.query(RosTopicList).delete()
-                for item in topic_list:
-                    node_ = RosTopicList(id=count, name = item)
-                    db.session.add(node_)
-                    # db.session.commit()
-                    count = count + 1
-                    # print(item)
-                db.session.commit()
-            else:
-                db.session.query(RosTopicList).delete()
-                node_ = RosTopicList(id=0, name = 'No Connection')
-                db.session.add(node_)
-                db.session.commit()
-            return redirect(url_for('systems_page'))
+        # elif 'rostopic_list' in request.form:
+        #     if remote_connection: 
+        #         cleanup_dead_nodes()
+        #         time.sleep(0.5)
+        #         command = ros_source + "rostopic list"
+        #         response = ssh_connection.execute_command(command, wait=True)
+        #         topic_list = response[0].splitlines()
+        #         count = 0
+        #         db.session.query(RosTopicList).delete()
+        #         for item in topic_list:
+        #             node_ = RosTopicList(id=count, name = item)
+        #             db.session.add(node_)
+        #             # db.session.commit()
+        #             count = count + 1
+        #             # print(item)
+        #         db.session.commit()
+        #     else:
+        #         db.session.query(RosTopicList).delete()
+        #         node_ = RosTopicList(id=0, name = 'No Connection')
+        #         db.session.add(node_)
+        #         db.session.commit()
+        #     return redirect(url_for('systems_page'))
         
-        elif 'echo_1' in request.form:
-            if remote_connection: 
-                topic_id = request.form['echo_1']
-                topic_name = RosTopicList.query.get(topic_id)
-                command = ros_source + "rostopic echo -n 1 " +  topic_name.name
-                response = ssh_connection.execute_command(command, wait=False, timeout=3)
-                return redirect(url_for('echo_topic', response=response[0])) 
+        # elif 'echo_1' in request.form:
+        #     if remote_connection: 
+        #         topic_id = request.form['echo_1']
+        #         topic_name = RosTopicList.query.get(topic_id)
+        #         command = ros_source + "rostopic echo -n 1 " +  topic_name.name
+        #         response = ssh_connection.execute_command(command, wait=False, timeout=3)
+        #         return redirect(url_for('echo_topic', response=response[0])) 
             
     return render_template("systems.html", 
                            launch_list = roslaunch_list, 
                            node_list = rosnode_list, 
-                           topic_list = rostopic_list,
+                        #    topic_list = rostopic_list,
                            remote_connection = str(remote_connection),
                            remote_hostname  = str(ssh_connection.hostname),
                            remote_username = str(ssh_connection.username),
@@ -315,20 +319,20 @@ def launch_file_data():
     
     return render_template("roslaunch_info.html", info = cat_string)
 
-@app.route('/echo', methods=['GET', 'POST'])
-def echo_topic():
-    response = request.args.get('response')
-    if response != None:
-        cat_string = response.splitlines()
-        # cat_string = response
-        if request.method == 'POST':
-            ### remote connection
-            if 'return' in request.form:
-                return redirect(url_for('systems_page'))
+# @app.route('/echo', methods=['GET', 'POST'])
+# def echo_topic():
+#     response = request.args.get('response')
+#     if response != None:
+#         cat_string = response.splitlines()
+#         # cat_string = response
+#         if request.method == 'POST':
+#             ### remote connection
+#             if 'return' in request.form:
+#                 return redirect(url_for('systems_page'))
 
-        return render_template("echo.html", info = cat_string)
-    else:
-        return redirect(url_for('systems_page'))
+#         return render_template("echo.html", info = cat_string)
+#     else:
+#         return redirect(url_for('systems_page'))
 
 
     
@@ -336,6 +340,7 @@ def echo_topic():
 
 @app.route('/current_system_status')
 def current_status():
+    global env
     remote_connection_tab  = {
         "data": ssh_connection.is_connected()
     }

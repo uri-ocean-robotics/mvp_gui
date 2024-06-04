@@ -18,8 +18,8 @@ def start_ros_process(env):
         if ros_process is None:
             ros_process = subprocess.Popen(
                 ['bash', '-c', 'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && python3 ./mvp_gui/gui_ros.py'],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL, 
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL, 
                 env=env,
                 preexec_fn=os.setsid
             )

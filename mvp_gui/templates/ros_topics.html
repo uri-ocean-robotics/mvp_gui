@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title%}
+  Home Page
+{% endblock %}
+
+{% block content%}  
+
+    <br>
+    <div style="display: flex;">
+        <form action="/ros_topics" method="post">
+            <input type="hidden" name="rostopic_list">
+            <button type="submit">Get ROS Topics</button>
+        </form>
+    </div>
+    <br>
+
+    <h4>Topic lists</h4>
+    <table class="table table-hover table-dark">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Name</th>
+        </tr>
+        </thead>
+        <tbody>
+            <!-- Loop through each item in roslaunch_config list -->
+            {% for item in topic_list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>
+                        <form action="/ros_topics" method="post">
+                            <input type="hidden" name="echo_1" value="{{ item.id }}">
+                            <button type="submit">Echo Once</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+

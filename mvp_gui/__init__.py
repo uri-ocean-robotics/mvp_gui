@@ -23,7 +23,7 @@ global_file_name = './config/gui_config.yaml'
 ssh_hostname = '192.168.0.118'
 ssh_username = 'mingxi'
 ssh_password = 'qwer1234'
-ros_source = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
+ros_source_base = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
 roslaunch_folder_default = '~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/'
 
 project_path = os.getcwd()
@@ -35,6 +35,7 @@ ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
 
 from mvp_gui.routes import routes_base
 from mvp_gui.routes import routes_systems
+from mvp_gui.routes import routes_rostopics
 from mvp_gui.routes import routes_map
 from mvp_gui.routes import routes_mission
 

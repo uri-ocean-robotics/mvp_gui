@@ -1,5 +1,6 @@
 import paramiko
 import time 
+import socket
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -12,9 +13,8 @@ class SSHConnection:
     def connect(self):
         self.ssh_client = paramiko.SSHClient()
         self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        # self.ssh_client.connect(self.hostname, username = self.username, password = self.password)
         try:
-            self.ssh_client.connect(self.hostname, username=self.username, password=self.password)
+            self.ssh_client.connect(self.hostname, username=self.username, password=self.password, timeout=5)
             self.ssh_state = True  # Update connection state
             print("SSH connection is established.")
             return True
@@ -23,6 +23,9 @@ class SSHConnection:
             return False
         except paramiko.SSHException as ssh_exception:
             print(f"SSH connection failed: {ssh_exception}")
+            return False
+        except (paramiko.SSHException, socket.error) as se:        
+            print(f"SSH connection failed: {se}")
             return False
         except Exception as e:
             print(f"An error occurred: {e}")

@@ -121,10 +121,10 @@
         <input type="hidden" name="rosnode_list">
         <button type="submit">Get ROS Nodes</button>
     </form>
-    <form action="/" method="post">
+    <!-- <form action="/" method="post">
         <input type="hidden" name="rostopic_list">
         <button type="submit">Get ROS Topics</button>
-    </form>
+    </form> -->
 </div>
 <br>
 
@@ -156,7 +156,7 @@
 
 
 
-<h6>Topic lists</h6>
+<!-- <h6>Topic lists</h6>
 <table class="table table-hover table-dark">
     <thead>
     <tr>
@@ -165,7 +165,6 @@
     </tr>
     </thead>
     <tbody>
-        <!-- Loop through each item in roslaunch_config list -->
         {% for item in topic_list %}
             <tr>
                 <td>{{ item.id }}</td>
@@ -179,7 +178,7 @@
             </tr>
         {% endfor %}
     </tbody>
-</table>
+</table> -->
 
 <script>
     let intervalId_system_status = null;
