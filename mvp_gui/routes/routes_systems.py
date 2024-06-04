@@ -31,7 +31,6 @@ def cleanup_dead_nodes():
                 rosnode.cleanup_master_blacklist(master, unpinged)
     except rosnode.ROSNodeIOException as e:
         pass
-    
 
 def check_roscore_status(ssh_connection, remote_connection):
     roscore_status =False

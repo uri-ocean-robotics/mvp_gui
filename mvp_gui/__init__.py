@@ -33,6 +33,10 @@ env['PYTHONPATH'] = project_path
 # Create SSHConnection instance
 ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
 
+# Clear pervious ROS topics keywords
+db.session.query(RosTopicKeywords).delete()
+db.session.commit()
+
 from mvp_gui.routes import routes_base
 from mvp_gui.routes import routes_systems
 from mvp_gui.routes import routes_rostopics
