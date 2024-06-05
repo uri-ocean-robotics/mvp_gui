@@ -1,6 +1,4 @@
-import time
 import numpy as np
-import threading
 import rospy
 import message_filters
 from datetime import datetime
@@ -17,18 +15,16 @@ from std_msgs.msg import Int16
 
 class gui_ros():
     def __init__(self):
-        # self.node_name = rospy.get_name()
-
         self.helm_state = 'start'
         self.helm_connected_states = []
         # ros parameters
         self.get_params()
-
         # ros subscribers and publishers
         self.setup_ros()
-
-
         # Main while loop.
+        self.main_loop()
+
+    def main_loop(self):
         while not rospy.is_shutdown():
             self.log_poses()
             rospy.sleep(0.1)
@@ -94,10 +90,6 @@ class gui_ros():
             action = RosActions.query.filter_by(action='publish_waypoints').first()
             action.pending = 0
             db.session.commit()
-
-    def shutdown_node():    
-        rospy.loginfo("Shutting down subscriber!")
-        rospy.signal_shutdown("Shutting down subscriber!")
 
     #obtain pose and power information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):
@@ -202,7 +194,8 @@ class gui_ros():
                 rospy.wait_for_service(self.get_state_srv)
                 try:
                     service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
-                    request = ChangeStateRequest(change_state.value)
+                    print(rospy.get_name())
+                    request = ChangeStateRequest(change_state.value, rospy.get_name())
                     response = service_client_change_state(request)
                     change_state.pending = 0
                     db.session.commit()
@@ -294,25 +287,16 @@ class gui_ros():
                 except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
 
-                
-
-def shutdown_node():    
-    rospy.loginfo("Shutting down subscriber!")
-    rospy.signal_shutdown("Shutting down subscriber!")
-
-
+    
 def gui_ros_start():  
-    rospy.init_node('mvp_gui_node', disable_signals=True)
-    node = gui_ros()
-    return node
+    try:
+        rospy.init_node('mvp_gui_node', disable_signals=True)
+        gui_ros()
+    except rospy.exceptions.ROSException as e:
+        pass
 
-global_file_name = './config/gui_config.yaml'
+if __name__ == "__main__":
+    gui_ros_start()
 
 
-ros_t = threading.Thread(target = gui_ros_start)
-ros_t.daemon = True
-ros_t.start()
-
-# except rospy.ROSInterruptException: pass
-rospy.on_shutdown(shutdown_node)
 

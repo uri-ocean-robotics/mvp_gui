@@ -10,13 +10,13 @@
         <tr>
             <td id="controllerState"></td>
             <td>
-                <form action="/map" method="post">
+                <form id="disableForm" form action="/map" method="post">
                     <input type="hidden" name="controller_disable">
                     <button type="submit">Disable</button>
                 </form>
             </td>
             <td>
-                <form action="/map" method="post">
+                <form id="enableForm" form action="/map" method="post">
                     <input type="hidden" name="controller_enable">
                     <button type="submit">Enable</button>
                 </form>
@@ -40,49 +40,205 @@
     </tbody>
 </table>
 
+<form id="publishForm" form action="/map" method="post">
+    <input type="hidden" name="publish_waypoints" value="publish" >
+    <button type="submit"> Publish waypoints </button>  
+</form>
+
+
 <script>
 
     let intervalId_heml = null;
+    const updateInterval_heml = 1000;
+    
+    /** TURBO **/
+    // document.addEventListener('turbo:load', () => {
+    //     if (intervalId_heml === null) {
+    //         // Start a new interval for fetching data
+    //         intervalId_heml = setInterval(function() {
+    //             fetch('/mission/states') // Update with your API endpoint
+    //                 .then(response => response.json())
+    //                 .then(data => {
+    //                     updateTables(data); // Call the function to update the tables
+    //                 })
+    //                 .catch(error => console.error('Error fetching controller state:', error));
+    //         }, 1000); // Update every second
+    //     }        
 
-    document.addEventListener('turbo:load', () => {
+    // });
+
+    // // Stop the interval when navigating away from the page
+    // document.addEventListener('turbo:before-render', () => {
+    //     clearInterval(intervalId_heml);
+    // });
+
+    // Function to start the interval
+    function starthelmInterval() {
         if (intervalId_heml === null) {
-            // Start a new interval for fetching data
-            intervalId_heml = setInterval(function() {
-                fetch('/mission/states') // Update with your API endpoint
+            intervalId_heml = setInterval(() => updateTables(), updateInterval_heml);
+        }
+    }
+
+    // Function to stop the interval
+    function stophelmInterval() {
+        if (intervalId_heml !== null) {
+            clearInterval(intervalId_heml);
+            intervalId_heml = null;
+        }
+    }
+
+
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            starthelmInterval();
+        } else {
+            stophelmInterval();
+        }
+    });
+
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        starthelmInterval();
+    }
+
+
+    function updateTables() {
+        fetch('/mission/states') // Update with your API endpoint
+            .then(response => response.json())
+            .then(data =>  {
+            // Update controller state cell
+            document.getElementById('controllerState').textContent = data.controller_data.state;
+
+            // Update the current state cell
+            if (data.helm_state_data.length > 0) {
+                document.getElementById('currentState').textContent = data.helm_state_data[0].name;
+            }
+
+            // Update the connected states cell
+            const connectedStatesCell = document.getElementById('connectedStates');
+            connectedStatesCell.innerHTML = ''; // Clear the cell
+
+            data.helm_state_data.slice(1).forEach(state => {
+                const form = document.createElement('form');
+                form.action = '/map';
+                form.method = 'post';
+
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'states';
+                input.value = state.name;
+
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.textContent = state.name;
+
+                form.appendChild(input);
+                form.appendChild(button);
+                connectedStatesCell.appendChild(form);
+
+                // Add event listener to the new form
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    fetch('/map', {
+                        method: 'POST',
+                        body: new URLSearchParams(new FormData(this))
+                    })
                     .then(response => response.json())
                     .then(data => {
-                        updateTables(data); // Call the function to update the tables
+                        updateTables(); // Update the table content after action
                     })
-                    .catch(error => console.error('Error fetching controller state:', error));
-            }, 1000); // Update every second
-        }        
+                    .catch(error => console.error('Error:', error));
+                });
+            });
+        })
+    }
 
+    // Handle form submissions without reloading the page
+    document.getElementById('disableForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        fetch('/map', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(this))
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('controllerState').textContent = data.controllerState;
+            document.getElementById('currentState').textContent = data.currentState;
+            document.getElementById('connectedStates').innerHTML = ''; // Clear the cell
+            data.connectedStates.forEach(state => {
+                const form = document.createElement('form');
+                form.action = '/map';
+                form.method = 'post';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'states';
+                input.value = state.name;
+
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.textContent = state.name;
+
+                form.appendChild(input);
+                form.appendChild(button);
+                document.getElementById('connectedStates').appendChild(form);
+            });
+        })
+        .catch(error => console.error('Error:', error));
     });
 
-    // Stop the interval when navigating away from the page
-    document.addEventListener('turbo:before-render', () => {
-        clearInterval(intervalId_heml);
+    document.getElementById('enableForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        fetch('/map', {
+            method: 'POST',
+            body: new URLSearchParams(new FormData(this))
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('controllerState').textContent = data.controllerState;
+            document.getElementById('currentState').textContent = data.currentState;
+            document.getElementById('connectedStates').innerHTML = ''; // Clear the cell
+            data.connectedStates.forEach(state => {
+                const form = document.createElement('form');
+                form.action = '/map';
+                form.method = 'post';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'states';
+                input.value = state.name;
+
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.textContent = state.name;
+
+                form.appendChild(input);
+                form.appendChild(button);
+                document.getElementById('connectedStates').appendChild(form);
+            });
+        })
+        .catch(error => console.error('Error:', error));
     });
 
-
-    function updateTables(data) {
-        // Update controller state cell
-        document.getElementById('controllerState').textContent = data.controller_data.state;
-
-        // Update the current state cell
-        if (data.helm_state_data.length > 0) {
-            document.getElementById('currentState').textContent = data.helm_state_data[0].name;
-        }
-
-        // Update the connected states cell
-        const connectedStatesCell = document.getElementById('connectedStates');
-        connectedStatesCell.innerHTML = ''; // Clear the cell
-
-        data.helm_state_data.slice(1).forEach(state => {
+    document.getElementById('publishForm').addEventListener('submit', function(event) {
+    event.preventDefault();
+    fetch('/map', {
+        method: 'POST',
+        body: new URLSearchParams(new FormData(this))
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update the page with the new data
+        // Assuming you return the necessary data to update the tables
+        document.getElementById('controllerState').textContent = data.controllerState;
+        document.getElementById('currentState').textContent = data.currentState;
+        document.getElementById('connectedStates').innerHTML = ''; // Clear the cell
+        data.connectedStates.forEach(state => {
             const form = document.createElement('form');
             form.action = '/map';
             form.method = 'post';
-
+            
             const input = document.createElement('input');
             input.type = 'hidden';
             input.name = 'states';
@@ -94,7 +250,12 @@
 
             form.appendChild(input);
             form.appendChild(button);
-            connectedStatesCell.appendChild(form);
+            document.getElementById('connectedStates').appendChild(form);
         });
-    }
+    })
+    .catch(error => console.error('Error:', error));
+    });
+
+
+
 </script>

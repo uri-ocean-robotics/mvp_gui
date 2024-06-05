@@ -100,3 +100,29 @@ class RosActions(db.Model):
     pending = db.Column(db.Integer(), nullable=False)
     def __repr__(self):
         return f'rosactions {self}'
+
+    
+class RosLaunchList(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    folder_dir = db.Column(db.String(length=100), nullable=False)
+    name = db.Column(db.String(length=100), nullable=False)
+    def __repr__(self):
+        return f'roslaunchlist {self}'
+
+class RosNodeList(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False)
+    def __repr__(self):
+        return f'rosnodelist {self}'
+    
+class RosTopicList(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False)
+    def __repr__(self):
+        return f'rostopiclist {self}'
+    
+class RosTopicKeywords(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False)
+    def __repr__(self):
+        return f'rostopickeywords {self}'

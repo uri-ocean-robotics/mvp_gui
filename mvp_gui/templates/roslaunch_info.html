@@ -1,0 +1,45 @@
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prism-tomorrow.min.css') }}">
+    <script src="{{ url_for('static', filename='js/prism.min.js') }}"></script>
+
+    <style>
+        pre {
+            line-height: 1.2; /* Adjust the value as needed */
+            margin: 0;
+            white-space: pre; /* Preserve white spaces and line breaks */
+        }
+        code {
+            display: block;
+            padding: 0;
+            margin: 0;
+        }
+        .big-button {
+            font-size: 30px; /* Increase the font size */
+            padding: 15px 15px; /* Increase the padding */
+            border-radius: 5px; /* Optional: add border radius */
+            cursor: pointer; /* Optional: change cursor on hover */
+        }
+        .center-button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+    </style>
+</head>
+<body>
+
+        {% for line in info %}
+            <code class="language-html">{{ line}}</code>
+        {% endfor %}
+
+        <div class="center-button-container">
+            <form action="/" method="post">
+                <input type="hidden" name="return">
+                <button type="submit" class="big-button">Return</button>
+            </form>
+        </div>
+
+</body>
+
+

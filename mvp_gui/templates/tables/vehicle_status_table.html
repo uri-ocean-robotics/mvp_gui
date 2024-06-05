@@ -91,23 +91,54 @@
     let intervalId_vehicle_status = null;
     const updateInterval_vehicle_status = 1000;
 
-    // Start the interval when on the page
-    document.addEventListener('turbo:load', () => {
-        if (intervalId_vehicle_status === null){
-            intervalId_vehicle_status = setInterval(updateTables, updateInterval_vehicle_status)
+    /** TURBO **/
+    // // Start the interval when on the page
+    // document.addEventListener('turbo:load', () => {
+    //     if (intervalId_vehicle_status === null){
+    //         intervalId_vehicle_status = setInterval(updateTables, updateInterval_vehicle_status)
+    //     }
+    // });
+
+    // // Stop the interval when navigating away from the page
+    // document.addEventListener('turbo:before-render', () => {
+    //     if (intervalId_vehicle_status !== null) {
+    //         console.log("status clear")
+    //         clearInterval(intervalId_vehicle_status);
+    //     }        
+    // });
+
+    // Function to start the interval
+    function startvsInterval() {
+        if (intervalId_vehicle_status === null) {
+            intervalId_vehicle_status = setInterval(() => updateTables(), updateInterval_vehicle_status);
+        }
+    }
+
+    // Function to stop the interval
+    function stopvsInterval() {
+        if (intervalId_vehicle_status !== null) {
+            clearInterval(intervalId_vehicle_status);
+            intervalId_vehicle_status = null;
+        }
+    }
+
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startvsInterval();
+        } else {
+            stopvsInterval();
         }
     });
 
-    // Stop the interval when navigating away from the page
-    document.addEventListener('turbo:before-render', () => {
-        if (intervalId_vehicle_status !== null) {
-            console.log("status clear")
-            clearInterval(intervalId_vehicle_status);
-        }        
-    });
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        startvsInterval();
+    }
+
 
     function updateTables() {
-        fetch('/home/states')
+        fetch('/vehicle_status/states')
             .then(response => response.json())
             .then(data => {
                 const { pose_data, vital_data } = data;

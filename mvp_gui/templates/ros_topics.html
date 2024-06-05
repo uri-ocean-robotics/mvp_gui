@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title%}
+  Home Page
+{% endblock %}
+
+{% block content%}  
+    &nbsp
+    <h4> ROS Topics</h4>
+    <form action="/ros_topics" method="post">
+        <label for="ros_topic_keyword">Keyword(s) [seperate by comma, empty to list all]:</label>
+        <input type="ros_topic_keyword" id="ros_topic_keyword" name="ros_topic_keyword" value="{{ ros_topic_keyword }}" style="width: 450px;"><br>
+        <input type="submit" value="Get ROS Topics" name="rostopic_list">
+        <input type="submit" value="Remove All Keywords" name="remove_keywords">
+    </form>
+
+    &nbsp
+    <h5>ROS Topic Keywords</h5>
+    <table class="table table-hover table-dark">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Name</th>
+        </tr>
+        </thead>
+        <tbody>
+            <!-- Loop through each item in roslaunch_config list -->
+            {% for item in keyword_list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>
+                        <form action="/ros_topics" method="post">
+                            <input type="hidden" name="remove_single_keyword" value="{{ item.id }}">
+                            <button type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    &nbsp
+    <h5>ROS Topic lists</h5>
+    <table class="table table-hover table-dark">
+        <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Name</th>
+        </tr>
+        </thead>
+        <tbody>
+            <!-- Loop through each item in roslaunch_config list -->
+            {% for item in topic_list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>
+                        <form action="/ros_topics" method="post">
+                            <input type="hidden" name="echo_1" value="{{ item.id }}">
+                            <button type="submit">Echo Once</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+

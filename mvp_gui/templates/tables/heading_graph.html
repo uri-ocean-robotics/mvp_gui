@@ -6,20 +6,50 @@
     let intervalId_heading = null;
     const updateInterval_heading = 1000
     const plotSettings = initializePlot();
-    
-    // Start the interval when on the page
-    document.addEventListener('turbo:load', () => {
-        if (intervalId_heading === null){
-            intervalId_heading = setInterval(() => updatePlot(plotSettings), updateInterval_heading)
+   
+    /** TURBO **/
+    // // Start the interval when on the page
+    // document.addEventListener('turbo:load', () => {
+    //     if (intervalId_heading === null){
+    //         intervalId_heading = setInterval(() => updatePlot(plotSettings), updateInterval_heading)
+    //     }
+    // });
+
+    // // Stop the interval when navigating away from the page
+    // document.addEventListener('turbo:before-render', () => {
+    //     if (intervalId_heading !== null) {
+    //         clearInterval(intervalId_heading);
+    //     }
+    // });
+
+    // Function to start the interval
+    function startInterval() {
+        if (intervalId_heading === null) {
+            intervalId_heading = setInterval(() => updatePlot(plotSettings), updateInterval_heading);
+        }
+    }
+
+    // Function to stop the interval
+    function stopInterval() {
+        if (intervalId_heading !== null) {
+            clearInterval(intervalId_heading);
+            intervalId_heading = null;
+        }
+    }
+
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startInterval();
+        } else {
+            stopInterval();
         }
     });
 
-    // Stop the interval when navigating away from the page
-    document.addEventListener('turbo:before-render', () => {
-        if (intervalId_heading !== null) {
-            clearInterval(intervalId_heading);
-        }
-    });
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        startInterval();
+    }
 
     // Initial setup for the plot
     function initializePlot() { 

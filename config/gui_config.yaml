@@ -21,3 +21,12 @@ pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
 power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]
+
+
+
+##remote ros manager
+remote_host: "192.168.0.118"
+remote_user: "mingxi"
+remote_password: "qwer1234"  
+
+roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/

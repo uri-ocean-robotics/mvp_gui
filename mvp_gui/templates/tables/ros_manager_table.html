@@ -1,0 +1,230 @@
+
+<h4> Connection Manager</h4>
+<form action="/" method="post">
+    <label for="hostname">Host Name:</label>
+    <input type="text" id="hostname" name="hostname" value="{{ remote_hostname }}">
+    
+    <label for="username">User name:</label>
+    <input type="text" id="username" name="username" value="{{ remote_username }}">
+    
+    <label for="password">Password:</label>
+    <input type="password" id="password" name="password"><br>
+    
+    <input type="submit" value="Connect" name="ssh_connect">
+    <input type="submit" value="Disconnect" name="ssh_disconnect">
+</form>
+
+<p style="color: lightskyblue;"> 
+    Hostname: {{ remote_hostname }} 
+    <br>
+    <!-- Connectivity: {{ remote_connection }} -->
+</p>
+<br>
+
+<table class="table table-hover table-dark table-bordered">
+    <thead>
+        <tr>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">SSH Connectivity</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">ROS Core Status</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">MVP GUI Node Status</th>
+        </tr>
+    </thead>
+    <tbody id="current-status">
+        <tr>
+            <td id="remote_connection"></td>
+            <td id="roscore_status"></td>
+            <td id="mvpgui_status"></td>
+        </tr>
+    </tbody>
+</table>
+
+<h4> ROS Core Manager</h4>
+<!-- <p style="color: lightskyblue;"> ROS Core status: {{ roscore_status }} </p> -->
+<table class="table table-hover table-dark">
+<form action="/" method="post">
+    <input type="hidden" name="roscore_start">
+    <button type="submit">Start ROS Core</button>
+</form>
+<form action="/" method="post">
+    <input type="hidden" name="roscore_stop">
+    <button type="submit">Stop ROS Core </button>
+</form>
+<form action="/" method="post">
+    <input type="hidden" name="kill_all_nodes">
+    <button type="submit">Kill all ROS Nodes</button>
+</form>
+<form action="/" method="post">
+    <input type="hidden" name="rosnode_cleanup">
+    <button type="submit">Cleanup ROS Nodes </button>
+</form>
+</table>
+
+<h4> MVP GUI ROS NODE Manager</h4>
+<!-- <p style="color: lightskyblue;"> MVP GUI ROS Node status: {{ mvpgui_status }} </p> -->
+<table class="table table-hover table-dark">
+
+<form action="/" method="post">
+    <input type="hidden" name="mvpgui_start">
+    <button type="submit">Start MVP GUI ROS Node </button>
+</form>
+<form action="/" method="post">
+    <input type="hidden" name="mvpgui_stop">
+    <button type="submit">Stop MVP GUI ROS Node </button>
+</form>
+</table>
+<br>
+
+<h4> ROS Process Manager</h4>
+<form action="/" method="post">
+    <label for="roslaunch_folder">Launch File Folder:</label>
+    <input type="roslaunch_folder" id="roslaunch_folder" name="roslaunch_folder" value="{{ roslaunch_folder }}" style="width: 600px;"><br>
+    <input type="submit" value="Get ROS Launch List" name="roslaunch_list">
+</form>
+<table class="table table-hover table-dark">
+<thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Names</th>
+        <th scope="col">Actions</th>
+        <th scope="col"> </th>
+    </tr>
+</thead>
+<tbody>
+    <!-- Loop through each item in roslaunch_config list -->
+    {% for item in launch_list %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>
+                <form action="/" method="post">
+                    <input type="hidden" name="launch" value="{{ item.id }}">
+                    <button type="submit">Launch</button>
+                </form>
+                <form action="/" method="post">
+                    <input type="hidden" name="launch_xvfb" value="{{ item.id }}">
+                    <button type="submit">Launch (xvfb)</button>
+                </form>
+            </td>
+            <td>
+                <form action="/" method="post">
+                    <input type="hidden" name="info" value="{{ item.id }}">
+                    <button type="submit">Info</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+</tbody>
+</table>
+<br>
+<div style="display: flex;">
+    <form action="/" method="post">
+        <input type="hidden" name="rosnode_list">
+        <button type="submit">Get ROS Nodes</button>
+    </form>
+    <!-- <form action="/" method="post">
+        <input type="hidden" name="rostopic_list">
+        <button type="submit">Get ROS Topics</button>
+    </form> -->
+</div>
+<br>
+
+<h6>Node lists</h6>
+<table class="table table-hover table-dark">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+        <th scope="col"> Action</th>
+    </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through each item in roslaunch_config list -->
+        {% for item in node_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>
+                <form action="/" method="post">
+                    <input type="hidden" name="kill_node" value="{{ item.id }}">
+                    <button type="submit">Kill</button>
+                </form>
+            </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+<!-- <h6>Topic lists</h6>
+<table class="table table-hover table-dark">
+    <thead>
+    <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+    </tr>
+    </thead>
+    <tbody>
+        {% for item in topic_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>
+                    <form action="/" method="post">
+                        <input type="hidden" name="echo_1" value="{{ item.id }}">
+                        <button type="submit">Echo Once</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table> -->
+
+<script>
+    let intervalId_system_status = null;
+    const updateInterval_system_status = 1000;
+
+    // Function to start the interval
+    function startssInterval() {
+        if (intervalId_system_status === null) {
+            intervalId_system_status = setInterval(() => updatessTables(), updateInterval_system_status);
+        }
+    }
+
+    // Function to stop the interval
+    function stopssInterval() {
+        if (intervalId_system_status !== null) {
+            clearInterval(intervalId_system_status);
+            intervalId_system_status = null;
+        }
+    }
+
+    // Event listener for page visibility change
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            startssInterval();
+        } else {
+            stopssInterval();
+        }
+    });
+
+    // Initial check to start the interval if the page is already visible
+    if (document.visibilityState === 'visible') {
+        startssInterval();
+    }
+
+    function updatessTables() {
+        fetch('/current_system_status')
+            .then(response => response.json())
+            .then(data => {
+                const { remote_connection, roscore_status, mvpgui_status} = data;
+                console.log( remote_connection.data, roscore_status.data, mvpgui_status.data)
+                // Populate vital data
+                document.getElementById('remote_connection').textContent = remote_connection.data;
+                document.getElementById('roscore_status').textContent = roscore_status.data;
+                document.getElementById('mvpgui_status').textContent = mvpgui_status.data;
+
+            })
+        }
+
+</script>
