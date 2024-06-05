@@ -25,6 +25,10 @@
     ```
     pip3 install paramiko
     ```
+- [python3-rosnode](https://packages.debian.org/sid/python3-rosnode)
+    ```
+    sudo apt-get install python3-rosnode
+    ```
     
 ### Offline Map (mbtiles)
 A test map is provided, if you want to load your own map
@@ -35,8 +39,3 @@ A test map is provided, if you want to load your own map
     mb-util your_file.mbtiles your_file_tiles_directory
     ```
 - set the `TILES_DIR` in `__init__.py` to the correct directory
-
-### Rosnode Python Package
-```
-sudo apt-get install python3-rosnode
-```
