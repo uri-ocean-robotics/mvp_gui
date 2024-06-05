@@ -15,7 +15,7 @@ roslaunch_folder = roslaunch_folder_default
 def check_mvpgui_status(mvpgui_node_name, env):
     mvpgui_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
     try:
-        mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+        mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
         nodes = mvpgui_result.stdout.splitlines()
         mvpgui_status =  mvpgui_node_name in nodes
     except subprocess.CalledProcessError as e:
@@ -32,18 +32,33 @@ def cleanup_dead_nodes():
     except rosnode.ROSNodeIOException as e:
         pass
 
-def check_roscore_status(ssh_connection, remote_connection):
-    roscore_status =False
-    if remote_connection:
-        command = ros_source + "rosnode list"
-        response = ssh_connection.execute_command(command, wait=True)
-        node_output = response[0].splitlines()
-        #if any node listed?
-        if node_output:
-            roscore_status = True
+# def check_roscore_status(ssh_connection, remote_connection):
+#     roscore_status =False
+#     if remote_connection:
+#         command = ros_source + "rosnode list"
+#         response = ssh_connection.execute_command(command, wait=True)
+#         node_output = response[0].splitlines()
+#         #if any node listed?
+#         if node_output:
+#             roscore_status = True
     
-    return roscore_status
+#     return roscore_status
 
+def check_roscore_status(remote_connection, env):
+    roscore_status =False
+    node_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
+    node_name = '/rosout'
+    if remote_connection:
+        try:
+            node_result = subprocess.run(['bash', '-c', node_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
+            nodes = node_result.stdout.splitlines()
+            roscore_status =  node_name in nodes
+        except subprocess.CalledProcessError as e:
+            roscore_status = False
+        return roscore_status
+        
+    else:
+        return roscore_status
 
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
@@ -70,12 +85,13 @@ def systems_page():
     ##check ros master
     roscore_status = False
     if remote_connection:
-        roscore_status = check_roscore_status(ssh_connection, remote_connection)
+        # roscore_status = check_roscore_status(ssh_connection, remote_connection)
+        roscore_status = check_roscore_status(remote_connection, env)
     
     ##check mvp_gui node 
     mvpgui_status = False
     mvpgui_node_name = '/mvp_gui_node'
-    if remote_connection:
+    if remote_connection and roscore_status:
         try:
             mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
         except subprocess.CalledProcessError as e:
@@ -345,7 +361,8 @@ def current_status():
     }
     if ssh_connection.is_connected():
         roscore_status = {
-            "data": check_roscore_status(ssh_connection, ssh_connection.is_connected())
+            # "data": check_roscore_status(ssh_connection, ssh_connection.is_connected())
+            "data": check_roscore_status(ssh_connection.is_connected(), env)
         }
         mvpgui_node_name = '/mvp_gui_node'
         try:

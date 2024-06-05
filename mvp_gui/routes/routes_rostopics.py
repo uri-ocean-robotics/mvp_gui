@@ -99,7 +99,7 @@ def ros_topics_page():
             topic_id = request.form['echo_1']
             topic_name = RosTopicList.query.get(topic_id)
             command = ros_source + "rostopic echo -n 1 " +  topic_name.name
-            response = ssh_connection.execute_command(command, wait=False, timeout=5)
+            response = ssh_connection.execute_command(command, wait=False, timeout=10)
             return redirect(url_for('echo_topic', response=response[0])) 
             
     elif 'remove_keywords' in request.form:

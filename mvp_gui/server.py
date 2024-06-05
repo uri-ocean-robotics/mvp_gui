@@ -18,6 +18,7 @@ def get_ip():
 if __name__ == '__main__':
     
     host_ip = get_ip()
+    #host_ip = '192.168.2.200'
     app.config['HOST_IP'] = host_ip
     app.run(debug=False, host=host_ip, port=5000)
 
