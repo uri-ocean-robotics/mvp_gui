@@ -48,7 +48,7 @@ def ros_topics_page():
             RosTopicKeywords.id.notin_(
                 db.session.query(func.min(RosTopicKeywords.id)).group_by(RosTopicKeywords.name)
             )
-        ).subquery()
+        )#.subquery()
 
         # Step 2: Delete the Duplicates
         db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id.in_(subquery)).delete(synchronize_session=False)
@@ -77,11 +77,9 @@ def ros_topics_page():
                     else:
                         command += str(item.name) 
                 command += "'"
-                print(command)
                 response = ssh_connection.execute_command(command, wait=True)
             
             topic_list = response[0].splitlines()
-            print(topic_list)
             count = 0
             db.session.query(RosTopicList).delete()
             for item in topic_list:

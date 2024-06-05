@@ -6,15 +6,11 @@ import signal
 
 # Initialize global variables
 ros_process = None
-flask_process = None
-process_lock = threading.Lock()
-# project_path = os.getcwd()
-# env = os.environ.copy()
-# env['PYTHONPATH'] = project_path
+process_lock_gui = threading.Lock()
 
 def start_ros_process(env):
     global ros_process
-    with process_lock:
+    with process_lock_gui:
         if ros_process is None:
             ros_process = subprocess.Popen(
                 ['bash', '-c', 'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && python3 ./mvp_gui/gui_ros.py'],
@@ -27,7 +23,7 @@ def start_ros_process(env):
 def stop_ros_process(env):
     global ros_process
     print("TO STOP: ", ros_process)
-    with process_lock:
+    with process_lock_gui:
         if ros_process:
             node_name = '/mvp_gui_node'
             kill_rosnode(node_name, env)  # Explicitly kill the node
