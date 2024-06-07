@@ -20,7 +20,7 @@ get_waypoints_service: helm/path_3d/get_next_waypoints
 pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
-power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]
+get_power_port_srv: gpio_manager/get_power_status
 
 
 

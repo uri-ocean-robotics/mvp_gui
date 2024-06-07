@@ -56,8 +56,7 @@ class PoseHistory(db.Model):
 
 class PowerItems(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
-    device = db.Column(db.String(length=30), nullable=False, unique=True)
-    gpio = db.Column(db.Integer(), nullable=False, unique=True)
+    name = db.Column(db.String(length=30), nullable=False, unique=True)
     status = db.Column(db.String(length=5), nullable=False)
     def __repr__(self):
         return f'item {self}'

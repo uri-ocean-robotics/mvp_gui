@@ -19,7 +19,8 @@ def start_ros_process(env):
                 env=env,
                 preexec_fn=os.setsid
             )
-
+            # text = ros_process.communicate()[0]
+            # print(text)
 def stop_ros_process(env):
     global ros_process
     print("TO STOP: ", ros_process)

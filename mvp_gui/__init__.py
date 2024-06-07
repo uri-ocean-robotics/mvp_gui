@@ -40,4 +40,5 @@ from mvp_gui.routes import routes_systems
 from mvp_gui.routes import routes_rostopics
 from mvp_gui.routes import routes_map
 from mvp_gui.routes import routes_mission
+from mvp_gui.routes import routes_power_manager
 

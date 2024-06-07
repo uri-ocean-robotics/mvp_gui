@@ -17,28 +17,34 @@ class gui_ros():
     def __init__(self):
         self.helm_state = 'start'
         self.helm_connected_states = []
+        print("node start")
         # ros parameters
         self.get_params()
+        print("param get")
         # ros subscribers and publishers
         self.setup_ros()
+        print("Setup ros done")
         # Main while loop.
         self.main_loop()
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            self.log_poses()
-            rospy.sleep(0.1)
-            self.get_state()
-            rospy.sleep(0.1)
-            self.change_state()
-            rospy.sleep(0.1)
-            self.change_controller_state()
-            rospy.sleep(0.1)
-            self.get_controller_state()
-            rospy.sleep(0.1)
-            self.get_waypoints()
-            rospy.sleep(0.1)
-            self.publish_wpt()
+            print("looping")
+            # self.log_poses()
+            # rospy.sleep(0.1)
+            # self.get_state()
+            # rospy.sleep(0.1)
+            # self.change_state()
+            # rospy.sleep(0.1)
+            # self.change_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_waypoints()
+            # rospy.sleep(0.1)
+            # self.publish_wpt()
+            # rospy.sleep(0.1)
+            self.get_power_port_status()
             rospy.sleep(0.5)
     
 
@@ -61,11 +67,9 @@ class gui_ros():
 
         self.get_waypoint_srv  = self.name_space + dataset_config['get_waypoints_service']
         self.pub_waypoint_srv = self.name_space + dataset_config['pub_waypoints_service']
-
-        # self.power_items_source= rospy.get_param('power_items', ['power_manager/jetson',
-        #                                                          'power_manager/24v',
-        #                                                          'power_manager/lumen'])
-
+        
+        self.get_power_port_srv = self.name_space + dataset_config['get_power_port_srv']
+       
     
     def setup_ros(self):
         
@@ -287,7 +291,24 @@ class gui_ros():
                 except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
 
-    
+    ##### power items
+    def get_power_port_status(self):
+        with app.app_context():
+            print(self.get_power_port_srv)
+            rospy.wait_for_service(self.get_power_port_srv)
+            try:
+                service_client_get_power_port_srv= rospy.ServiceProxy(self.get_power_port_srv, Trigger)
+                request = GetWaypointsRequest() ##get names
+                response = service_client_get_power_port_srv(request)
+   
+                db.session.query(PowerItems).delete()
+                db.session.commit()
+                count = 0
+                print(response.msg)
+            except rospy.ServiceException as e:
+                print("Service call failed: %s"%e)
+
+
 def gui_ros_start():  
     try:
         rospy.init_node('mvp_gui_node', disable_signals=True)
