@@ -109,6 +109,10 @@ class gui_ros():
             action.pending = 0
             db.session.commit()
 
+            lumen_item = LedItems.query.first()
+            lumen_item.status = 1.0
+            db.session.commit()
+
 
     #obtain pose and power information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):

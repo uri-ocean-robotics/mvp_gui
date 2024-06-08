@@ -1,8 +1,10 @@
 from mvp_gui import *
+from decimal import Decimal
 
 @app.route("/power_manager",  methods=['GET', 'POST']) 
 def power_manager_page():
     items = PowerItems.query.all()
+    lumen_item =  LedItems.query.first()
     # print("power manager")
     if request.method == 'POST':
         if 'switch' in request.form:
@@ -18,9 +20,22 @@ def power_manager_page():
                 switch_power.pending = 1
             db.session.commit()
             return redirect(url_for('power_manager_page'))
-                    ##call rosservice
-            # return render_template("power_manager.html", items=items, vitals=vitals)
-    return render_template("power_manager.html", items=items, current_page='power_manager')
+
+        elif 'lumen' in request.form:
+            lumen_adj  = request.form['lumen']
+            if lumen_adj == 'increase':
+                delta = 0.1
+            else:
+                delta = -0.1
+            lumen_item.status = lumen_item.status + Decimal(delta)
+            if(lumen_item.status > 1.9):
+                lumen_item.status = 1.9
+            if(lumen_item.status< 1.0):
+                lumen_item.status = 1.0
+            db.session.commit()
+            return redirect(url_for('power_manager_page'))
+
+    return render_template("power_manager.html", items=items, lumen_item = lumen_item, current_page='power_manager')
 
 
 @app.route('/power_manager/states')
