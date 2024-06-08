@@ -9,7 +9,7 @@ from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
 from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest, SendWaypoints, SendWaypointsRequest
-from std_srvs.srv import Empty, Trigger
+from std_srvs.srv import Empty, Trigger, SetBool, SetBoolRequest
 from std_msgs.msg import Int16
 
 
@@ -29,7 +29,6 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            print("looping")
             # self.log_poses()
             # rospy.sleep(0.1)
             # self.get_state()
@@ -45,6 +44,8 @@ class gui_ros():
             # self.publish_wpt()
             # rospy.sleep(0.1)
             self.get_power_port_status()
+            rospy.sleep(0.1)
+            self.set_power_port()
             rospy.sleep(0.5)
     
 
@@ -94,6 +95,20 @@ class gui_ros():
             action = RosActions.query.filter_by(action='publish_waypoints').first()
             action.pending = 0
             db.session.commit()
+
+            action = RosActions.query.filter_by(action='get_topics').first()
+            action.pending = 0
+            db.session.commit()
+
+            action = RosActions.query.filter_by(action='rosnode_cleanup').first()
+            action.pending = 0
+            db.session.commit()
+
+
+            action = RosActions.query.filter_by(action='set_power').first()
+            action.pending = 0
+            db.session.commit()
+
 
     #obtain pose and power information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):
@@ -294,20 +309,46 @@ class gui_ros():
     ##### power items
     def get_power_port_status(self):
         with app.app_context():
-            print(self.get_power_port_srv)
             rospy.wait_for_service(self.get_power_port_srv)
             try:
                 service_client_get_power_port_srv= rospy.ServiceProxy(self.get_power_port_srv, Trigger)
-                request = GetWaypointsRequest() ##get names
-                response = service_client_get_power_port_srv(request)
+                response = service_client_get_power_port_srv()
    
                 db.session.query(PowerItems).delete()
                 db.session.commit()
                 count = 0
-                print(response.msg)
+                power_list = response.message.splitlines()
+                count = 0
+                db.session.query(PowerItems).delete()
+                for line in power_list:
+                    parts = line.split('=')
+                    if len(parts) == 2:  # Ensure there are exactly two parts
+                        name, status = parts
+                        power_item = PowerItems(id=count, name=name, status=status)
+                        db.session.add(power_item)
+                        count += 1
+                db.session.commit()
             except rospy.ServiceException as e:
                 print("Service call failed: %s"%e)
 
+    def set_power_port(self):
+        with app.app_context():
+            set_power_action = RosActions.query.filter_by(action='set_power').first()
+            if set_power_action.pending == 1:
+                 parts = set_power_action.value.split('=')
+                 srv_name, set_status = parts
+                 rospy.wait_for_service(self.name_space + srv_name)
+                 try:
+                    service_client_set_power_port_srv= rospy.ServiceProxy(self.name_space + srv_name, SetBool)
+                    if set_status == "false":
+                        request = SetBoolRequest(False)
+                    else:
+                        request = SetBoolRequest(True)
+                    response = service_client_set_power_port_srv(request)
+                    set_power_action.pending = 0
+                    db.session.commit()
+                 except rospy.ServiceException as e:
+                    print("Service call failed: %s"%e)
 
 def gui_ros_start():  
     try:
