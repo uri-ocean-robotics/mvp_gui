@@ -21,7 +21,7 @@ pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
 get_power_port_srv: gpio_manager/get_power_status
-
+led_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager

@@ -12,6 +12,27 @@
             <!-- Rows will be dynamically inserted here -->
         </tbody>
     </table>
+    <table class="table table-hover table-dark">
+        <tr>
+            <td>Lumen Brightness</td>
+            <td>
+                <form action="/power_manager" method="post">
+                    <input type="hidden" name="lumen" value="decrease">
+                    <button type="submit">-</button>
+                </form>
+            </td>
+            <!-- <td class="brightness-display">{{ brightness }}</td> -->
+            <td class="brightness-display">brightness</td>
+            <td>
+                <form action="power_manager" method="post">
+                    <input type="hidden" name="lumen" value="increase">
+                    <button type="submit">+</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+    
+
 </div>
 
 <script>
