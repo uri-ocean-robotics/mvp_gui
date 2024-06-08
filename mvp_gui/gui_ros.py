@@ -30,20 +30,20 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            # self.log_poses()
-            # rospy.sleep(0.1)
-            # self.get_state()
-            # rospy.sleep(0.1)
-            # self.change_state()
-            # rospy.sleep(0.1)
-            # self.change_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_waypoints()
-            # rospy.sleep(0.1)
-            # self.publish_wpt()
-            # rospy.sleep(0.1)
+            self.log_poses()
+            rospy.sleep(0.1)
+            self.get_state()
+            rospy.sleep(0.1)
+            self.change_state()
+            rospy.sleep(0.1)
+            self.change_controller_state()
+            rospy.sleep(0.1)
+            self.get_controller_state()
+            rospy.sleep(0.1)
+            self.get_waypoints()
+            rospy.sleep(0.1)
+            self.publish_wpt()
+            rospy.sleep(0.1)
             self.get_power_port_status()
             rospy.sleep(0.1)
             self.set_power_port()
@@ -116,6 +116,7 @@ class gui_ros():
 
             lumen_item = LedItems.query.first()
             lumen_item.status = 1.0
+            self.current_lumen = float(lumen_item.status) ##used for publishing when there is a change
             db.session.commit()
 
 
@@ -362,9 +363,13 @@ class gui_ros():
     def set_lumen(self):
         with app.app_context():
             lumen_item = LedItems.query.first()
-            lumen_ms = Float64()
-            lumen_ms = float(lumen_item.status)
-            self.lumen_pub.publish(lumen_ms)
+            if float(lumen_item.status) != self.current_lumen:
+                self.current_lumen = float(lumen_item.status)
+                for i in range(3):
+                    lumen_ms = Float64()
+                    lumen_ms.data = float(lumen_item.status)
+                    # print("change led")
+                    self.lumen_pub.publish(lumen_ms)
 
 def gui_ros_start():  
     try:
