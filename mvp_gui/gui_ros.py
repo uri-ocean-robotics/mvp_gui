@@ -5,6 +5,7 @@ from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped
 from mvp_msgs.msg import Power, Waypoint
+from std_msgs.msg import Float64
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
@@ -29,23 +30,25 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            self.log_poses()
-            rospy.sleep(0.1)
-            self.get_state()
-            rospy.sleep(0.1)
-            self.change_state()
-            rospy.sleep(0.1)
-            self.change_controller_state()
-            rospy.sleep(0.1)
-            self.get_controller_state()
-            rospy.sleep(0.1)
-            self.get_waypoints()
-            rospy.sleep(0.1)
-            self.publish_wpt()
-            rospy.sleep(0.1)
+            # self.log_poses()
+            # rospy.sleep(0.1)
+            # self.get_state()
+            # rospy.sleep(0.1)
+            # self.change_state()
+            # rospy.sleep(0.1)
+            # self.change_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_waypoints()
+            # rospy.sleep(0.1)
+            # self.publish_wpt()
+            # rospy.sleep(0.1)
             self.get_power_port_status()
             rospy.sleep(0.1)
             self.set_power_port()
+            rospy.sleep(0.1)
+            self.set_lumen()
             rospy.sleep(0.5)
     
 
@@ -71,7 +74,8 @@ class gui_ros():
         
         self.get_power_port_srv = self.name_space + dataset_config['get_power_port_srv']
        
-    
+        self.lumen_control_topic = self.name_space + dataset_config['lumen_control_topic']
+
     def setup_ros(self):
         
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
@@ -79,8 +83,9 @@ class gui_ros():
 
         self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
 
-
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
+
+        self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
 
         self.ts.registerCallback(self.callback)
         with app.app_context():
@@ -353,6 +358,13 @@ class gui_ros():
                     db.session.commit()
                  except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
+
+    def set_lumen(self):
+        with app.app_context():
+            lumen_item = LedItems.query.first()
+            lumen_ms = Float64()
+            lumen_ms = float(lumen_item.status)
+            self.lumen_pub.publish(lumen_ms)
 
 def gui_ros_start():  
     try:
