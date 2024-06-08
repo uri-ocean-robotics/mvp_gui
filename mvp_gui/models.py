@@ -61,6 +61,11 @@ class PowerItems(db.Model):
     def __repr__(self):
         return f'item {self}'
     
+class LedItems(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False, unique=True)
+    status = db.Column(db.Numeric(10,2), nullable=False)
+
 class CurrentWaypoints(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     lat = db.Column(db.Numeric(10,8), nullable=False)
