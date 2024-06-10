@@ -1,5 +1,5 @@
-## MVP GUI ##
-### Dependencies
+# MVP GUI #
+## Dependencies
 - [Flask](https://flask.palletsprojects.com/en/3.0.x/)
     ```
     pip3 install Flask
@@ -30,7 +30,7 @@
     sudo apt-get install python3-rosnode
     ```
     
-### Offline Map (mbtiles)
+## Offline Map (mbtiles)
 A test map is provided, if you want to load your own map
 - Download the .mbtiles file for the region of interest
 - Put the .mbtiles file into offline_map directory
@@ -39,3 +39,10 @@ A test map is provided, if you want to load your own map
     mb-util your_file.mbtiles your_file_tiles_directory
     ```
 - set the `TILES_DIR` in `__init__.py` to the correct directory
+
+
+## User instruction
+
+MVP GUI has the following web pages for user to operate the vehicles running mvp framework.
+Please click the link for each page to see detailed instructions.
+
