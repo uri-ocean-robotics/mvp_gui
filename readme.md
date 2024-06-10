@@ -50,3 +50,7 @@ A test map is provided, if you want to load your own map
 MVP GUI has the following web pages for user to operate the vehicles running mvp framework.
 Please go to `doc` folder to find the readme for each page to see detailed instructions.
 
+To run the gui, 
+```
+python3 run.py
+```
