@@ -380,9 +380,5 @@ def gui_ros_start():
 
 if __name__ == "__main__":
     gui_ros_start()
-    # try:
-    #     gui_ros_start()
-    # except KeyboardInterrupt:
-    #     stop_ros_process()
 
 

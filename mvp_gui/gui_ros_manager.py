@@ -26,9 +26,11 @@ def stop_ros_process(env):
     global ros_process
     print("TO STOP: ", ros_process)
     with process_lock_gui:
+        
         if ros_process:
             node_name = '/mvp_gui_node'
             kill_rosnode(node_name, env)  # Explicitly kill the node
+            print("after kill node")
             os.killpg(os.getpgid(ros_process.pid), signal.SIGTERM)
             ros_process.wait()  # Wait for the process to terminate
             ros_process = None

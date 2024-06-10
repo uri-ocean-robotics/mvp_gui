@@ -15,6 +15,7 @@ roslaunch_folder = roslaunch_folder_default
 def check_mvpgui_status(mvpgui_node_name, env):
     mvpgui_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
     try:
+        cleanup_dead_nodes()
         mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
         nodes = mvpgui_result.stdout.splitlines()
         mvpgui_status =  mvpgui_node_name in nodes

@@ -2,6 +2,9 @@ import subprocess
 import signal
 import os
 import threading
+import psutil
+import rosnode 
+import rosgraph
 
 from mvp_gui.models import *
 from mvp_gui.ros_manager import SSHConnection
@@ -29,6 +32,17 @@ def stop_processes():
         if flask_process:
             os.killpg(os.getpgid(flask_process.pid), signal.SIGTERM)
 
+def cleanup_dead_nodes():
+    print("cleaning")
+    try:
+        _, unpinged = rosnode.rosnode_ping_all()    
+        if unpinged:
+            if unpinged:
+                master = rosgraph.Master("")
+                rosnode.cleanup_master_blacklist(master, unpinged)
+    except rosnode.ROSNodeIOException as e:
+        pass
+
 if __name__ == "__main__":
     start_processes()
 
@@ -45,3 +59,12 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("exiting server!")
         stop_processes()
+        print("Stoped")
+        py_proc_name = "python3"
+        for proc in psutil.process_iter():
+            # check whether the process name matches
+            if proc.name() == py_proc_name:
+                proc.kill()
+        print("before cl")
+        cleanup_dead_nodes()
+
