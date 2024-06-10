@@ -32,17 +32,6 @@ def cleanup_dead_nodes():
     except rosnode.ROSNodeIOException as e:
         pass
 
-# def check_roscore_status(ssh_connection, remote_connection):
-#     roscore_status =False
-#     if remote_connection:
-#         command = ros_source + "rosnode list"
-#         response = ssh_connection.execute_command(command, wait=True)
-#         node_output = response[0].splitlines()
-#         #if any node listed?
-#         if node_output:
-#             roscore_status = True
-    
-#     return roscore_status
 
 def check_roscore_status(remote_connection, env):
     roscore_status =False
@@ -59,6 +48,11 @@ def check_roscore_status(remote_connection, env):
         
     else:
         return roscore_status
+
+def check_ros_master_uri(env):
+    check_ros_master_cmd = 'echo $ROS_MASTER_URI'
+    current_ros_master_uri = subprocess.run(['bash', '-c', check_ros_master_cmd], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
+    return current_ros_master_uri.stdout
 
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
@@ -113,7 +107,9 @@ def systems_page():
                 ros_hostname = ssh_connection.hostname 
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
-                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+                # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
+
                 # If SSH connection is successful, redirect to systems_page
                 return redirect(url_for('systems_page'))
             else:
@@ -125,6 +121,16 @@ def systems_page():
         elif 'ssh_disconnect' in request.form:
             ssh_connection.close()
             return redirect(url_for('systems_page'))
+        
+        elif 'export_rosmasteruri' in request.form:
+            if request.form['ros_master_uri'] != '':
+                ros_master_uri = 'http://' + request.form['ros_master_uri']  + ':11311/'
+                ros_hostname = ssh_connection.hostname 
+                env['ROS_MASTER_URI'] = ros_master_uri
+                os.environ['ROS_MASTER_URI'] = ros_master_uri
+                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
+            return redirect(url_for('systems_page'))
+
         
         ###roscore stuff
         elif 'roscore_start' in request.form:
@@ -268,38 +274,7 @@ def systems_page():
                 db.session.commit()
             return redirect(url_for('systems_page'))
         
-         ##get ros topic list
-        # elif 'rostopic_list' in request.form:
-        #     if remote_connection: 
-        #         cleanup_dead_nodes()
-        #         time.sleep(0.5)
-        #         command = ros_source + "rostopic list"
-        #         response = ssh_connection.execute_command(command, wait=True)
-        #         topic_list = response[0].splitlines()
-        #         count = 0
-        #         db.session.query(RosTopicList).delete()
-        #         for item in topic_list:
-        #             node_ = RosTopicList(id=count, name = item)
-        #             db.session.add(node_)
-        #             # db.session.commit()
-        #             count = count + 1
-        #             # print(item)
-        #         db.session.commit()
-        #     else:
-        #         db.session.query(RosTopicList).delete()
-        #         node_ = RosTopicList(id=0, name = 'No Connection')
-        #         db.session.add(node_)
-        #         db.session.commit()
-        #     return redirect(url_for('systems_page'))
-        
-        # elif 'echo_1' in request.form:
-        #     if remote_connection: 
-        #         topic_id = request.form['echo_1']
-        #         topic_name = RosTopicList.query.get(topic_id)
-        #         command = ros_source + "rostopic echo -n 1 " +  topic_name.name
-        #         response = ssh_connection.execute_command(command, wait=False, timeout=3)
-        #         return redirect(url_for('echo_topic', response=response[0])) 
-            
+
     return render_template("systems.html", 
                            launch_list = roslaunch_list, 
                            node_list = rosnode_list, 
@@ -334,23 +309,6 @@ def launch_file_data():
     
     return render_template("roslaunch_info.html", info = cat_string)
 
-# @app.route('/echo', methods=['GET', 'POST'])
-# def echo_topic():
-#     response = request.args.get('response')
-#     if response != None:
-#         cat_string = response.splitlines()
-#         # cat_string = response
-#         if request.method == 'POST':
-#             ### remote connection
-#             if 'return' in request.form:
-#                 return redirect(url_for('systems_page'))
-
-#         return render_template("echo.html", info = cat_string)
-#     else:
-#         return redirect(url_for('systems_page'))
-
-
-    
 
 
 @app.route('/current_system_status')
@@ -359,6 +317,10 @@ def current_status():
     remote_connection_tab  = {
         "data": ssh_connection.is_connected()
     }
+    connected_ros_master = {
+        "data": check_ros_master_uri(env)
+    }
+    
     if ssh_connection.is_connected():
         roscore_status = {
             # "data": check_roscore_status(ssh_connection, ssh_connection.is_connected())
@@ -382,4 +344,4 @@ def current_status():
         }
 
 
-    return jsonify({"remote_connection": remote_connection_tab, "roscore_status": roscore_status, "mvpgui_status": mvpgui_status})
+    return jsonify({"remote_connection": remote_connection_tab, "roscore_status": roscore_status, "mvpgui_status": mvpgui_status, "connected_ros_master": connected_ros_master})
