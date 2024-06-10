@@ -29,7 +29,11 @@
     ```
     sudo apt-get install python3-rosnode
     ```
-    
+- [mvp_msgs](https://github.com/uri-ocean-robotics/mvp_msgs)
+    ```
+    git clone https://github.com/uri-ocean-robotics/mvp_msgs.git
+    ```
+
 ## Offline Map (mbtiles)
 A test map is provided, if you want to load your own map
 - Download the .mbtiles file for the region of interest
