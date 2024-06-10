@@ -44,5 +44,5 @@ A test map is provided, if you want to load your own map
 ## User instruction
 
 MVP GUI has the following web pages for user to operate the vehicles running mvp framework.
-Please click the link for each page to see detailed instructions.
+Please go to `doc` folder to find the readme for each page to see detailed instructions.
 
