@@ -376,9 +376,13 @@ def gui_ros_start():
         rospy.init_node('mvp_gui_node', disable_signals=True)
         gui_ros()
     except rospy.exceptions.ROSException as e:
-        pass
+        print("Exiting mvp gui node!")
 
 if __name__ == "__main__":
     gui_ros_start()
+    # try:
+    #     gui_ros_start()
+    # except KeyboardInterrupt:
+    #     stop_ros_process()
 
 

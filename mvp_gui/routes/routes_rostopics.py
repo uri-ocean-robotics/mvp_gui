@@ -15,16 +15,19 @@ def cleanup_dead_nodes():
 
 @app.route('/ros_topics', methods=['GET', 'POST'])
 def ros_topics_page():
-    global ros_source
-    ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-    ros_hostname = ssh_connection.hostname 
-    env['ROS_MASTER_URI'] = ros_master_uri
-    os.environ['ROS_MASTER_URI'] = ros_master_uri
-    ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+    # global ros_source
+    global env
+    # ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
+    # ros_hostname = ssh_connection.hostname 
+    # env['ROS_MASTER_URI'] = ros_master_uri
+    # os.environ['ROS_MASTER_URI'] = ros_master_uri
+    # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+    ros_source = ros_source_base + f"export ROS_MASTER_URI={env['ROS_MASTER_URI']} &&"
+    os.environ['ROS_MASTER_URI'] = env['ROS_MASTER_URI']
 
-    server_ip = app.config['HOST_IP']
-    env['ROS_IP'] = server_ip
-    os.environ['ROS_IP'] = server_ip
+    # server_ip = app.config['HOST_IP']
+    # env['ROS_IP'] = server_ip
+    # os.environ['ROS_IP'] = server_ip
 
     rostopic_list = RosTopicList.query.all()
     rostopic_keyword = RosTopicKeywords.query.all()

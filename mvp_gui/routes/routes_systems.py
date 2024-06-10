@@ -18,6 +18,8 @@ def check_mvpgui_status(mvpgui_node_name, env):
         mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
         nodes = mvpgui_result.stdout.splitlines()
         mvpgui_status =  mvpgui_node_name in nodes
+    except subprocess.TimeoutExpired:
+        mvpgui_status = False
     except subprocess.CalledProcessError as e:
         mvpgui_status = False
     return mvpgui_status
@@ -42,6 +44,8 @@ def check_roscore_status(remote_connection, env):
             node_result = subprocess.run(['bash', '-c', node_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
             nodes = node_result.stdout.splitlines()
             roscore_status =  node_name in nodes
+        except subprocess.TimeoutExpired:
+            roscore_status = False
         except subprocess.CalledProcessError as e:
             roscore_status = False
         return roscore_status
@@ -60,26 +64,25 @@ def systems_page():
     global ros_source
     global roslaunch_folder
     global env
+    # global ros_master_uri
 
-    server_ip = app.config['HOST_IP']
-    env['ROS_IP'] = server_ip
-    os.environ['ROS_IP'] = server_ip
+    # server_ip = app.config['HOST_IP']
+    # env['ROS_IP'] = server_ip
+    # os.environ['ROS_IP'] = server_ip
 
     ##get roslaunch files
-    dataset_config = yaml.safe_load(open(global_file_name, 'r'))
+    # dataset_config = yaml.safe_load(open(global_file_name, 'r'))
     # roslaunch_folder = dataset_config['roslaunch_folder']
     # roslaunch_folder = roslaunch_folder_default
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
-    # rostopic_list = RosTopicList.query.all()
 
     remote_connection  = ssh_connection.is_connected()
     
     ##check ros master
     roscore_status = False
     if remote_connection:
-        # roscore_status = check_roscore_status(ssh_connection, remote_connection)
         roscore_status = check_roscore_status(remote_connection, env)
     
     ##check mvp_gui node 
@@ -104,12 +107,12 @@ def systems_page():
 
             if ssh_connection.is_connected():
                 ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-                ros_hostname = ssh_connection.hostname 
+                # ros_hostname = ssh_connection.hostname 
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
                 # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
-                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
-
+                # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
+                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
                 # If SSH connection is successful, redirect to systems_page
                 return redirect(url_for('systems_page'))
             else:
@@ -125,10 +128,11 @@ def systems_page():
         elif 'export_rosmasteruri' in request.form:
             if request.form['ros_master_uri'] != '':
                 ros_master_uri = 'http://' + request.form['ros_master_uri']  + ':11311/'
-                ros_hostname = ssh_connection.hostname 
+                # ros_hostname = ssh_connection.hostname 
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
-                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
+                # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} &&"
+                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
             return redirect(url_for('systems_page'))
 
         
