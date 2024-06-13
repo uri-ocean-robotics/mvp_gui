@@ -15,24 +15,15 @@ def cleanup_dead_nodes():
 
 @app.route('/ros_topics', methods=['GET', 'POST'])
 def ros_topics_page():
-    # global ros_source
     global env
-    # ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-    # ros_hostname = ssh_connection.hostname 
-    # env['ROS_MASTER_URI'] = ros_master_uri
-    # os.environ['ROS_MASTER_URI'] = ros_master_uri
-    # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
-    ros_source = ros_source_base + f"export ROS_MASTER_URI={env['ROS_MASTER_URI']} &&"
+    # ros_source = ros_source_base + f"export ROS_MASTER_URI={env['ROS_MASTER_URI']} &&"
     os.environ['ROS_MASTER_URI'] = env['ROS_MASTER_URI']
-
-    # server_ip = app.config['HOST_IP']
-    # env['ROS_IP'] = server_ip
-    # os.environ['ROS_IP'] = server_ip
 
     rostopic_list = RosTopicList.query.all()
     rostopic_keyword = RosTopicKeywords.query.all()
+    cleanup_dead_nodes()
 
-    remote_connection  = ssh_connection.is_connected()
+    timeout_subprocess = 5
 
     ## buttons
     if 'rostopic_list' in request.form:
@@ -51,26 +42,20 @@ def ros_topics_page():
             RosTopicKeywords.id.notin_(
                 db.session.query(func.min(RosTopicKeywords.id)).group_by(RosTopicKeywords.name)
             )
-        )#.subquery()
-
+        )
         # Step 2: Delete the Duplicates
         db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id.in_(subquery)).delete(synchronize_session=False)
-
         # Retrieve the remaining entries sorted by their current ID
         remaining_entries = db.session.query(RosTopicKeywords).order_by(RosTopicKeywords.id).all()
-
         # Update the IDs to be sequential starting from 0
         for index, entry in enumerate(remaining_entries):
             entry.id = index
-
         db.session.commit()
         
-        if remote_connection:             
-            cleanup_dead_nodes()
-            time.sleep(0.5)
-            command = ros_source + "rostopic list"
+        try:
+            command = "rostopic list"
             if len(RosTopicKeywords.query.all()) == 0:
-                response = ssh_connection.execute_command(command, wait=True)
+                response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
             else:
                 keywords_list = RosTopicKeywords.query.all()
                 command += " |grep '"
@@ -80,9 +65,8 @@ def ros_topics_page():
                     else:
                         command += str(item.name) 
                 command += "'"
-                response = ssh_connection.execute_command(command, wait=True)
-            
-            topic_list = response[0].splitlines()
+                response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
+            topic_list = response.stdout.splitlines()
             count = 0
             db.session.query(RosTopicList).delete()
             for item in topic_list:
@@ -90,20 +74,26 @@ def ros_topics_page():
                 db.session.add(node_)
                 count = count + 1                
             db.session.commit()
-        else:
+        except subprocess.CalledProcessError as e:
             db.session.query(RosTopicList).delete()
-            node_ = RosTopicList(id=0, name = 'No Connection')
-            db.session.add(node_)
+            topic_ = RosTopicList(id=0, name = 'empty')
+            db.session.add(topic_)
             db.session.commit()
+
         return redirect(url_for('ros_topics_page'))
     
     elif 'echo_1' in request.form:
-        if remote_connection: 
-            topic_id = request.form['echo_1']
-            topic_name = RosTopicList.query.get(topic_id)
-            command = ros_source + "rostopic echo -n 1 " +  topic_name.name
-            response = ssh_connection.execute_command(command, wait=False, timeout=10)
-            return redirect(url_for('echo_topic', response=response[0])) 
+        topic_id = request.form['echo_1']
+        topic_name = RosTopicList.query.get(topic_id)
+        command = "rostopic echo -n 1 " +  topic_name.name
+        try:
+            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)  
+            return redirect(url_for('echo_topic', response=response.stdout)) 
+        except subprocess.TimeoutExpired:
+            return redirect(url_for('echo_topic', response="No incoming message after {} s".format(timeout_subprocess))) 
+        except subprocess.CalledProcessError as e:
+            return redirect(url_for('echo_topic', response="empty")) 
+
             
     elif 'remove_keywords' in request.form:
         db.session.query(RosTopicKeywords).delete()

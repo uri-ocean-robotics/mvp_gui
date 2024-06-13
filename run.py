@@ -16,8 +16,6 @@ project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
 
-INIT_CNT = 1
-
 def start_processes():
     global flask_process
     with process_lock_server:
@@ -64,7 +62,6 @@ if __name__ == "__main__":
         for proc in psutil.process_iter():
             # check whether the process name matches
             if proc.name() == py_proc_name:
+                print("PKILL  !!!")
                 proc.kill()
-        print("before cl")
-        cleanup_dead_nodes()
 
