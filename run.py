@@ -55,13 +55,6 @@ if __name__ == "__main__":
         while True:
             pass
     except KeyboardInterrupt:
-        print("exiting server!")
-        stop_processes()
-        print("Stoped")
-        py_proc_name = "python3"
-        for proc in psutil.process_iter():
-            # check whether the process name matches
-            if proc.name() == py_proc_name:
-                print("PKILL  !!!")
-                proc.kill()
-
+        print("\nExiting server !!")
+        result = subprocess.run(['bash', '-c', 'pkill -9 python'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result.stdout)

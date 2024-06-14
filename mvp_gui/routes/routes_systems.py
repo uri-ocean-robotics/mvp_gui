@@ -98,7 +98,7 @@ def systems_page():
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
                 # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
                 ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-                return redirect(url_for('systems_page'))
+                # return redirect(url_for('systems_page'))
             else:
                 ssh_connection.close()
                 # If SSH connection fails, you can render an error page or redirect to a different route
@@ -107,7 +107,7 @@ def systems_page():
         
         elif 'ssh_disconnect' in request.form:
             ssh_connection.close()
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
         
         elif 'export_rosmasteruri' in request.form:
             if request.form['ros_master_uri'] != '':
@@ -115,18 +115,20 @@ def systems_page():
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
                 ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
 
         
         ###roscore stuff
         elif 'roscore_start' in request.form:
-            ssh_connection.execute_command(ros_source + "roscore", wait=False)
-            time.sleep(1.0)
-            return redirect(url_for('systems_page'))
+            if ssh_connection.is_connected():
+                ssh_connection.execute_command(ros_source + "roscore", wait=False)
+                time.sleep(1.0)
+            # return redirect(url_for('systems_page'))
         
         elif 'roscore_stop' in request.form:
-            ssh_connection.execute_command(ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz")
-            return redirect(url_for('systems_page'))
+            if ssh_connection.is_connected():
+                ssh_connection.execute_command(ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz")
+            # return redirect(url_for('systems_page'))
 
         elif 'rosnode_cleanup' in request.form:
             cleanup_dead_nodes()
@@ -139,15 +141,13 @@ def systems_page():
             stop_ros_process(env)
             cleanup_dead_nodes()
             start_ros_process(env)
-            time.sleep(1.0)
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
 
         elif 'mvpgui_stop' in request.form:
             print(env['ROS_MASTER_URI'])
             stop_ros_process(env)
             cleanup_dead_nodes()
-            time.sleep(1.0)
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
 
         ##roslaunch
         elif 'roslaunch_list' in request.form:
@@ -172,7 +172,7 @@ def systems_page():
                 launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
                 db.session.add(launch_)
                 db.session.commit()
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
 
         elif 'launch' in request.form:
             if remote_connection: 
@@ -184,7 +184,7 @@ def systems_page():
                 ssh_connection.execute_command(command, wait=False)
                 # ssh_connection.execute_command_with_x11(command)
                 time.sleep(20)
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
             if remote_connection: 
@@ -196,7 +196,7 @@ def systems_page():
                 # ssh_connection.execute_command(command, wait=False)
                 ssh_connection.execute_command_with_xvfb(command)
                 time.sleep(20)
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
         
         elif 'info' in request.form:
             if remote_connection: 
@@ -227,7 +227,7 @@ def systems_page():
                 db.session.add(node_)
                 db.session.commit()
 
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
         
         elif 'kill_all_nodes' in request.form:
             if remote_connection: 
@@ -239,7 +239,7 @@ def systems_page():
                 node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
 
         elif 'kill_node' in request.form:
             if remote_connection: 
@@ -253,12 +253,11 @@ def systems_page():
                 node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
-            return redirect(url_for('systems_page'))
+            # return redirect(url_for('systems_page'))
         
     return render_template("systems.html", 
                            launch_list = roslaunch_list, 
                            node_list = rosnode_list, 
-                        #    topic_list = rostopic_list,
                            remote_connection = str(remote_connection),
                            remote_hostname  = str(ssh_connection.hostname),
                            remote_username = str(ssh_connection.username),

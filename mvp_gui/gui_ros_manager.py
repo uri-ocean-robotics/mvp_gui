@@ -19,8 +19,6 @@ def start_ros_process(env):
                 env=env,
                 preexec_fn=os.setsid
             )
-            text = ros_process.communicate()[0]
-            print(text)
 
 def stop_ros_process(env):
     global ros_process
@@ -29,17 +27,16 @@ def stop_ros_process(env):
         if ros_process:
             node_name = '/mvp_gui_node'
             kill_rosnode(node_name, env)  # Explicitly kill the node
-            print("after kill node")
             os.killpg(os.getpgid(ros_process.pid), signal.SIGTERM)
             ros_process.wait()  # Wait for the process to terminate
             ros_process = None
-            time.sleep(1)
 
 
 def kill_rosnode(node_name, env, timeout=5):
     try:
-        command = f'source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && rosnode kill {node_name}'
+        command = f'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && rosnode kill {node_name}'
         result = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, timeout=timeout)
+        print("KILLING ROSNODE: ", result.stdout)
         if result.returncode != 0:
             print(f"Kill command failed with error: {result.stderr}")
         else:
