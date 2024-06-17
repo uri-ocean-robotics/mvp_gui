@@ -121,7 +121,14 @@ def latest_data():
     return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data})
 
 
+
 @app.route('/tiles/<path:filename>')
 def serve_tiles(filename):
-    print(f"Request for tile: {filename}, {TILES_DIR}")
-    return send_from_directory(TILES_DIR, filename)
+    for tile_dir in sorted(os.listdir(TILES_DIR_1)):
+        loc_dir_1 = os.path.join(TILES_DIR_1, tile_dir)
+        loc_dir_2 = os.path.join(TILES_DIR_2, tile_dir)
+        full_path = os.path.join(loc_dir_1, filename)
+        if os.path.exists(full_path):
+            print(f"Request for tile: {filename}, {loc_dir_2}")
+            return send_from_directory(loc_dir_2, filename)    
+    return 'No Tile Available'

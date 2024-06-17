@@ -1,0 +1,9 @@
+{
+    "format": "png",
+    "name": "allen_harbor",
+    "version": "1.1",
+    "type": "overlay",
+    "minzoom": "12",
+    "maxzoom": "20",
+    "bounds": "-71.4118,41.6213,-71.4102,41.6223"
+}

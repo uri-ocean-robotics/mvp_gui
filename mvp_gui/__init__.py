@@ -16,7 +16,10 @@ db.init_app(app)
 app.app_context().push()
 
 # Path to the directory where tiles are stored
-TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
+# TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
+TILES_DIR_1 = "./offline_map/"
+TILES_DIR_2 = "../offline_map/"
+
 
 global_file_name = './config/gui_config.yaml'
 
