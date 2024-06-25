@@ -119,8 +119,8 @@ def ros_topics_page():
 def echo_topic():
     response = request.args.get('response')
     if response != None:
-        # cat_string = response.splitlines()
-        cat_string = response
+        cat_string = response.splitlines()
+        # cat_string = response
         if request.method == 'POST':
             ### remote connection
             if 'return' in request.form:
