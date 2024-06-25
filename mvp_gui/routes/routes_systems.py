@@ -90,9 +90,9 @@ def systems_page():
             ssh_connection.hostname = request.form['hostname']
             ssh_connection.username = request.form['username']
             ssh_connection.password = request.form['password']
-            ssh_connection.connect()
+            ssh_connection_status = ssh_connection.connect()
 
-            if ssh_connection.is_connected():
+            if ssh_connection_status:
                 ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
@@ -107,7 +107,7 @@ def systems_page():
         
         elif 'ssh_disconnect' in request.form:
             ssh_connection.close()
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
         
         elif 'export_rosmasteruri' in request.form:
             if request.form['ros_master_uri'] != '':
@@ -115,12 +115,13 @@ def systems_page():
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
                 ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
 
         
         ###roscore stuff
         elif 'roscore_start' in request.form:
             if ssh_connection.is_connected():
+                print(ros_source + "roscore")
                 ssh_connection.execute_command(ros_source + "roscore", wait=False)
                 time.sleep(1.0)
             # return redirect(url_for('systems_page'))
@@ -172,7 +173,7 @@ def systems_page():
                 launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
                 db.session.add(launch_)
                 db.session.commit()
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
 
         elif 'launch' in request.form:
             if remote_connection: 
@@ -183,7 +184,7 @@ def systems_page():
 
                 ssh_connection.execute_command(command, wait=False)
                 # ssh_connection.execute_command_with_x11(command)
-                time.sleep(20)
+                # time.sleep(20)
             # return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
@@ -195,7 +196,7 @@ def systems_page():
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
                 # ssh_connection.execute_command(command, wait=False)
                 ssh_connection.execute_command_with_xvfb(command)
-                time.sleep(20)
+                # time.sleep(20)
             # return redirect(url_for('systems_page'))
         
         elif 'info' in request.form:
@@ -204,7 +205,6 @@ def systems_page():
                 temp_launch = RosLaunchList.query.get(launch_id)
                 command = "cat " + temp_launch.folder_dir + temp_launch.name
                 response = ssh_connection.execute_command(command, wait=True)
-            
             return redirect(url_for('launch_file_data', response=response[0])) 
             
         ##get ros node list
@@ -227,7 +227,7 @@ def systems_page():
                 db.session.add(node_)
                 db.session.commit()
 
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
         
         elif 'kill_all_nodes' in request.form:
             if remote_connection: 

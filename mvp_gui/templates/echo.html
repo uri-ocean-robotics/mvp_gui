@@ -25,13 +25,32 @@
             align-items: center;
         }
 
+        pre {
+            margin: 0; 
+            padding: 0; 
+            line-height: 0.0; /* Adjust line height */
+        }
+        code {
+            display: block; 
+            margin: 0;
+            padding: 0;
+            line-height: 0.0; /* Adjust line height */
+        }
+
     </style>
 </head>
 <body>
-
-        {% for line in info %}
-            <code class="language-html">{{ line}}</code>
-        {% endfor %}
+        <pre>
+            <code class="language-html">
+            <!-- {% for line in info %}
+            {{line}}
+            {% endfor %} -->
+            {{info | join('\n') | replace('', '')}}
+            <!-- {% set formatted_info = info | join('\n') | replace('\n', '\n    ') %}
+            {{ formatted_info.strip() }} -->
+            <!-- {{ info | join('\n') | replace('\n', '\n    ') | replace('    ', '        ') }} -->
+            </code>
+        </pre>
 
         <div class="center-button-container">
             <form action="/ros_topics" method="post">

@@ -85,7 +85,8 @@ def ros_topics_page():
     elif 'echo_1' in request.form:
         topic_id = request.form['echo_1']
         topic_name = RosTopicList.query.get(topic_id)
-        command = "rostopic echo -n 1 " +  topic_name.name
+        command_source = "source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && "
+        command = command_source + "rostopic echo -n 1 " +  topic_name.name
         try:
             response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)  
             return redirect(url_for('echo_topic', response=response.stdout)) 
@@ -118,8 +119,8 @@ def ros_topics_page():
 def echo_topic():
     response = request.args.get('response')
     if response != None:
-        cat_string = response.splitlines()
-        # cat_string = response
+        # cat_string = response.splitlines()
+        cat_string = response
         if request.method == 'POST':
             ### remote connection
             if 'return' in request.form:

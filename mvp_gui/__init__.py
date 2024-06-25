@@ -23,7 +23,7 @@ TILES_DIR_2 = "../offline_map/"
 
 global_file_name = './config/gui_config.yaml'
 
-ros_source_base = "source /opt/ros/noetic/setup.bash && source catkin_ws/devel/setup.bash && "
+ros_source_base = "source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && "
 roslaunch_folder_default = '~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/'
 
 project_path = os.getcwd()

@@ -3,6 +3,7 @@ from mvp_gui import *
 @app.route('/map', methods=['GET', 'POST'])
 def map_page():
     host_ip = app.config['HOST_IP']
+    
     # Get vehicle lat lon for map
     poses = Poses.query.first()
     vehicle_data = {
