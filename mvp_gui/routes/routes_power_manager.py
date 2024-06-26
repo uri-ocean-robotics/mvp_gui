@@ -18,6 +18,7 @@ def power_manager_page():
             else:
                 switch_power.value = item.name + "=" + "true"
                 switch_power.pending = 1
+            print("switch power value name: ", switch_power.value)
             db.session.commit()
             return redirect(url_for('power_manager_page'))
 

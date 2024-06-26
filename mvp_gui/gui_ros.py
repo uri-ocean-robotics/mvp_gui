@@ -18,6 +18,7 @@ class gui_ros():
     def __init__(self):
         self.helm_state = 'start'
         self.helm_connected_states = []
+        self.service_timeout = 0.1
         print("node start")
         # ros parameters
         self.get_params()
@@ -30,20 +31,20 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            self.log_poses()
-            rospy.sleep(0.1)
+            # self.log_poses()
+            # rospy.sleep(0.1)
             self.get_state()
             rospy.sleep(0.1)
-            self.change_state()
-            rospy.sleep(0.1)
-            self.change_controller_state()
-            rospy.sleep(0.1)
-            self.get_controller_state()
-            rospy.sleep(0.1)
-            self.get_waypoints()
-            rospy.sleep(0.1)
-            self.publish_wpt()
-            rospy.sleep(0.1)
+            # self.change_state()
+            # rospy.sleep(0.1)
+            # self.change_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_waypoints()
+            # rospy.sleep(0.1)
+            # self.publish_wpt()
+            # rospy.sleep(0.1)
             self.get_power_port_status()
             rospy.sleep(0.1)
             self.set_power_port()
@@ -195,8 +196,9 @@ class gui_ros():
     ##state info
     def get_state(self):
         with app.app_context():
-            rospy.wait_for_service(self.get_state_srv)
             try:
+                rospy.wait_for_service(self.get_state_srv, timeout=self.service_timeout)
+                print("get state after timeout") 
                 service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
                 request = GetStateRequest("")
                 response = service_client_get_state(request)
@@ -212,30 +214,34 @@ class gui_ros():
                     db.session.add(state)
                     count = count +1
                 db.session.commit()
-            except rospy.ServiceException as e:
-                print("Service call failed: %s"%e)
-
+            # except rospy.ServiceException as e:
+                # print("Get State Service Timeout: %s"%e)
+            except:
+                print("Get State Service Timeout")
      ##state info
     def change_state(self):
         with app.app_context():
             change_state = RosActions.query.filter_by(action='change_state').first()
             if change_state.pending == 1:
-                rospy.wait_for_service(self.get_state_srv)
+                # rospy.wait_for_service(self.get_state_srv)
                 try:
+                    rospy.wait_for_service(self.get_state_srv, timeout=self.service_timeout)
                     service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
                     print(rospy.get_name())
                     request = ChangeStateRequest(change_state.value, rospy.get_name())
                     response = service_client_change_state(request)
                     change_state.pending = 0
                     db.session.commit()
-                except rospy.ServiceException as e:
-                    print("Service call failed: %s"%e)
-            
+                # except rospy.ServiceException as e:
+                #     print("Service call failed: %s"%e)
+                except:
+                    print("Get State Service Timeout")
     ##change controller state action
     def get_controller_state(self):
         with app.app_context():
-            rospy.wait_for_service(self.controller_state_srv)
+            # rospy.wait_for_service(self.controller_state_srv)
             try:
+                rospy.wait_for_service(self.controller_state_srv, timeout=self.service_timeout)
                 service_client_get_controller_state = rospy.ServiceProxy(self.controller_state_srv, Trigger)
                 response = service_client_get_controller_state()
 
@@ -244,16 +250,19 @@ class gui_ros():
                 # print(response.message)
                 db.session.commit()
                 
-            except rospy.ServiceException as e:
-                print("Service call failed: %s"%e)
+            # except rospy.ServiceException as e:
+            #     print("Service call failed: %s"%e)
+            except:
+                print("Get State Service Timeout")
 
 
     def change_controller_state(self):
         with app.app_context():
             controller_state = RosActions.query.filter_by(action='controller_state').first()
             if controller_state.pending == 1:
-                rospy.wait_for_service(self.controller_srv + '/' + controller_state.value)
+                # rospy.wait_for_service(self.controller_srv + '/' + controller_state.value)
                 try:
+                    rospy.wait_for_service(self.controller_srv + '/' + controller_state.value, timeout=self.service_timeout)
                     service_client_change_controller_state = rospy.ServiceProxy(self.controller_srv + '/' + controller_state.value, Empty)
                     service_client_change_controller_state()
                     controller_state.pending = 0
@@ -266,8 +275,9 @@ class gui_ros():
     ##get current waypoints
     def get_waypoints(self):
         with app.app_context():
-            rospy.wait_for_service(self.get_waypoint_srv)
+            # rospy.wait_for_service(self.get_waypoint_srv)
             try:
+                rospy.wait_for_service(self.get_waypoint_srv, timeout=self.service_timeout)
                 service_client_get_waypoint_srv= rospy.ServiceProxy(self.get_waypoint_srv, GetWaypoints)
                 request = GetWaypointsRequest(Int16(0)) ##get all waypoints
                 response = service_client_get_waypoint_srv(request)
@@ -319,8 +329,10 @@ class gui_ros():
     ##### power items
     def get_power_port_status(self):
         with app.app_context():
-            rospy.wait_for_service(self.get_power_port_srv)
+            # rospy.wait_for_service(self.get_power_port_srv)
             try:
+                rospy.wait_for_service(self.get_power_port_srv, timeout=self.service_timeout)
+
                 service_client_get_power_port_srv= rospy.ServiceProxy(self.get_power_port_srv, Trigger)
                 response = service_client_get_power_port_srv()
    
@@ -344,11 +356,19 @@ class gui_ros():
     def set_power_port(self):
         with app.app_context():
             set_power_action = RosActions.query.filter_by(action='set_power').first()
+            print("before pending:", set_power_action.value)
+
             if set_power_action.pending == 1:
-                 parts = set_power_action.value.split('=')
-                 srv_name, set_status = parts
-                 rospy.wait_for_service(self.name_space + srv_name)
-                 try:
+
+                parts = set_power_action.value.split('=')
+                srv_name, set_status = parts
+                print("before wait for service:", srv_name)
+
+                # rospy.wait_for_service(self.name_space + srv_name)
+                print(self.name_space + srv_name)
+                
+                try:
+                    rospy.wait_for_service(self.name_space + srv_name, timeout=self.service_timeout)
                     service_client_set_power_port_srv= rospy.ServiceProxy(self.name_space + srv_name, SetBool)
                     if set_status == "false":
                         request = SetBoolRequest(False)
@@ -357,7 +377,7 @@ class gui_ros():
                     response = service_client_set_power_port_srv(request)
                     set_power_action.pending = 0
                     db.session.commit()
-                 except rospy.ServiceException as e:
+                except rospy.ServiceException as e:
                     print("Service call failed: %s"%e)
 
     def set_lumen(self):
@@ -372,6 +392,8 @@ class gui_ros():
                     self.lumen_pub.publish(lumen_ms)
 
 def gui_ros_start():  
+    # rospy.init_node('mvp_gui_node', disable_signals=True)
+    # gui_ros()
     try:
         rospy.init_node('mvp_gui_node', disable_signals=True)
         gui_ros()

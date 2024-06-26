@@ -30,17 +30,6 @@ def stop_processes():
         if flask_process:
             os.killpg(os.getpgid(flask_process.pid), signal.SIGTERM)
 
-def cleanup_dead_nodes():
-    print("cleaning")
-    try:
-        _, unpinged = rosnode.rosnode_ping_all()    
-        if unpinged:
-            if unpinged:
-                master = rosgraph.Master("")
-                rosnode.cleanup_master_blacklist(master, unpinged)
-    except rosnode.ROSNodeIOException as e:
-        pass
-
 if __name__ == "__main__":
     start_processes()
 

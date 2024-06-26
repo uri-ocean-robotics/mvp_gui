@@ -15,7 +15,7 @@ roslaunch_folder = roslaunch_folder_default
 def check_mvpgui_status(mvpgui_node_name, env):
     mvpgui_command = 'rosnode list'
     try:
-        cleanup_dead_nodes()
+        # cleanup_dead_nodes()
         mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
         nodes = mvpgui_result.stdout.splitlines()
         mvpgui_status =  mvpgui_node_name in nodes
@@ -181,10 +181,12 @@ def systems_page():
                 ##get the package name and launch file
                 temp_launch = RosLaunchList.query.get(launch_id)
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
+                print(command)
 
+                # ssh_connection.execute_command(command, wait=True)
                 ssh_connection.execute_command(command, wait=False)
                 # ssh_connection.execute_command_with_x11(command)
-                # time.sleep(20)
+                time.sleep(5)
             # return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
