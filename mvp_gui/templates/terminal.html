@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/prism-tomorrow.min.css') }}">
+    <script src="{{ url_for('static', filename='js/prism.min.js') }}"></script>
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <style>
+        pre {
+            line-height: 1.2; /* Adjust the value as needed */
+            margin: 0;
+            white-space: pre; /* Preserve white spaces and line breaks */
+        }
+        code {
+            display: block;
+            padding: 0;
+            margin: 0;
+        }
+        .stdout-line {
+            color: white; /* White text for stdout */
+        }
+        .stderr-line {
+            color: red; /* Red text for stderr */
+        }
+        .warning-line {
+            color: yellow; /* Orange text for warnings */
+        }
+        .big-button {
+            font-size: 30px; /* Increase the font size */
+            padding: 15px 15px; /* Increase the padding */
+            border-radius: 5px; /* Optional: add border radius */
+            cursor: pointer; /* Optional: change cursor on hover */
+        }
+        .center-button-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+<pre>
+<code class="language-html" id="terminal-output">
+</code>
+</pre>
+
+    <div class="center-button-container">
+        <form action="/" method="post">
+            <input type="hidden" name="return">
+            <button type="submit" class="big-button">Return</button>
+        </form>
+    </div>
+
+    <script type="text/javascript" charset="utf-8">
+        var socket = io.connect('http://' + document.domain + ':' + location.port + '/terminal');
+        
+        console.log('Connecting to server...');
+
+        socket.on('connect', function() {
+            console.log('Connected to server');
+        });
+
+        // // Function to strip ANSI escape codes
+        // function stripAnsiCodes(text) {
+        //     return text.replace(/\u001b\[.*?m/g, '');
+        // }
+
+        // socket.on('terminal_output', function(msg) {
+        //     console.log('Received message:', msg);
+        //     var terminal = document.getElementById('terminal-output');
+        //     var cleanedData = stripAnsiCodes(msg.data);
+        //     terminal.innerHTML += cleanedData + '<br>';
+        //     terminal.scrollTop = terminal.scrollHeight;
+        // });
+
+        // Function to strip ANSI escape codes
+        function stripAnsiCodes(text) {
+            if (typeof text !== 'string') {
+                console.error('Expected a string but received:', text);
+                return text;
+            }
+            return text.replace(/\u001b\[.*?m/g, '');
+        }
+
+        socket.on('terminal_output', function(msg) {
+            console.log('Received message:', msg);
+            var terminal = document.getElementById('terminal-output');
+            var cleanedData = stripAnsiCodes(msg.data.data);
+
+            if (msg.data.type === 'stdout') {
+                terminal.innerHTML += `<span class="stdout-line">${cleanedData}</span><br>`;
+            } else if (msg.data.type === 'stderr') {
+                if (cleanedData.includes('WARN') || cleanedData.includes('WARNING')) {
+                    terminal.innerHTML += `<span class="warning-line">${cleanedData}</span><br>`;
+                } else {
+                    terminal.innerHTML += `<span class="stderr-line">${cleanedData}</span><br>`;
+                }
+            }
+
+            terminal.scrollTop = terminal.scrollHeight;
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+        });
+    </script>
+</body>
+</html>

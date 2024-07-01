@@ -1,6 +1,9 @@
 import paramiko
 import time 
+import sys
 import socket
+from flask_socketio import emit
+import threading
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -37,9 +40,7 @@ class SSHConnection:
         return False
 
     def execute_command(self, command, wait=True, timeout=None):
-
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
-        
         if wait:
             output = stdout.read().decode()
             error = stderr.read().decode()
@@ -57,6 +58,54 @@ class SSHConnection:
         else:
             # If we don't want to wait, we return immediately.
             return None, None
+
+    def responseGen(self, channel):
+        # Small outputs (i.e. 'whoami') can end up running too quickly
+        # so we yield channel.recv in both scenarios
+        while True:
+            if channel.recv_ready():
+                yield channel.recv(4096).decode('utf-8')
+                continue
+            if channel.exit_status_ready():
+                yield channel.recv(4096).decode('utf-8')
+                break
+
+    def execute_command_disp_terminal(self, command, message_callback):
+        time.sleep(1)
+        self.transport = self.ssh_client.get_transport()
+        self.channel = self.transport.open_session()
+        # # We're not handling stdout & stderr separately
+        # self.channel.set_combine_stderr(1)
+        # self.channel.exec_command(command)
+        # # Command was sent, no longer need stdin
+        # self.channel.shutdown_write()
+
+        # for response in self.responseGen(self.channel):
+        #     print("Emitting response:", response)  # Debugging print statement
+        #     message_callback(response)
+
+        self.channel.exec_command(command)
+
+        stdout = self.channel.makefile('r')
+        stderr = self.channel.makefile_stderr('r')
+
+        def read_output(file, output_type):
+            for line in file:
+                message_callback({'type': output_type, 'data': line})
+
+        stdout_thread = threading.Thread(target=read_output, args=(stdout, 'stdout'))
+        stderr_thread = threading.Thread(target=read_output, args=(stderr, 'stderr'))
+
+        stdout_thread.start()
+        stderr_thread.start()
+
+        stdout_thread.join()
+        stderr_thread.join()
+
+        stdout.close()
+        stderr.close()
+        self.channel.close()
+
         
     def execute_command_with_xvfb(self, command):
         # Open a new session with X11 forwarding

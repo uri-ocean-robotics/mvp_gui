@@ -3,6 +3,7 @@ import subprocess
 import yaml 
 import rosnode
 import rosgraph
+import threading
 
 # ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
 # ros_hostname = ssh_connection.hostname 
@@ -58,6 +59,10 @@ def check_ros_master_uri(env):
     check_ros_master_cmd = 'echo $ROS_MASTER_URI'
     current_ros_master_uri = subprocess.run(['bash', '-c', check_ros_master_cmd], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
     return current_ros_master_uri.stdout
+
+# Event emitter function
+def emit_message(message):
+    socketio.emit('terminal_output', {'data': message}, namespace='/terminal')
 
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
@@ -181,12 +186,13 @@ def systems_page():
                 ##get the package name and launch file
                 temp_launch = RosLaunchList.query.get(launch_id)
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
-                print(command)
+                threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command, emit_message)).start()
+                return render_template("terminal.html")
+
+                # return redirect(url_for('terminal_page'))
 
                 # ssh_connection.execute_command(command, wait=True)
-                ssh_connection.execute_command(command, wait=False)
-                # ssh_connection.execute_command_with_x11(command)
-                time.sleep(5)
+                # time.sleep(5)
             # return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
@@ -268,6 +274,13 @@ def systems_page():
                            roslaunch_folder = roslaunch_folder,
                            current_page = "systems")
 
+@socketio.on('connect', namespace='/terminal')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect', namespace='/terminal')
+def handle_disconnect():
+    print('Client disconnected')
 
 @app.route('/ssh_failed', methods=['GET', 'POST'])
 def ssh_failed():

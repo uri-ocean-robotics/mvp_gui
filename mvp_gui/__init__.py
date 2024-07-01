@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory, abort
+from flask_socketio import SocketIO, emit
 # from turbo_flask import Turbo
 from mvp_gui.models import *
 from mvp_gui.ros_manager import *
@@ -6,11 +7,11 @@ from mvp_gui.gui_ros_manager import *
 from mvp_gui.forms import *
 
 app = Flask(__name__)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mvp_database.db'
 app.config['SECRET_KEY'] = 'd5036a36d957701b9048179e'
 
 # turbo = Turbo(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 db.init_app(app)
 app.app_context().push()

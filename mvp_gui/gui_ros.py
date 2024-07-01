@@ -31,20 +31,20 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            # self.log_poses()
-            # rospy.sleep(0.1)
+            self.log_poses()
+            rospy.sleep(0.1)
             self.get_state()
             rospy.sleep(0.1)
-            # self.change_state()
-            # rospy.sleep(0.1)
-            # self.change_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_waypoints()
-            # rospy.sleep(0.1)
-            # self.publish_wpt()
-            # rospy.sleep(0.1)
+            self.change_state()
+            rospy.sleep(0.1)
+            self.change_controller_state()
+            rospy.sleep(0.1)
+            self.get_controller_state()
+            rospy.sleep(0.1)
+            self.get_waypoints()
+            rospy.sleep(0.1)
+            self.publish_wpt()
+            rospy.sleep(0.1)
             self.get_power_port_status()
             rospy.sleep(0.1)
             self.set_power_port()
@@ -80,6 +80,7 @@ class gui_ros():
     def setup_ros(self):
         
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
+
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
 
         self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
@@ -89,31 +90,40 @@ class gui_ros():
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
 
         self.ts.registerCallback(self.callback)
-        with app.app_context():
-            action = RosActions.query.filter_by(action='change_state').first()
-            action.pending = 0
-            db.session.commit()
 
-            action = RosActions.query.filter_by(action='controller_state').first()
-            action.pending = 0
-            db.session.commit()
+        self.action_list = ['change_state', 'controller_state', 'publish_waypoints', 'get_topics', 'rosnode_cleanup', 'set_power']
         
-            action = RosActions.query.filter_by(action='publish_waypoints').first()
-            action.pending = 0
-            db.session.commit()
+        with app.app_context():
+            
+            # action = RosActions.query.filter_by(action='change_state').first()
+            # action.pending = 0
+            # db.session.commit()
 
-            action = RosActions.query.filter_by(action='get_topics').first()
-            action.pending = 0
-            db.session.commit()
+            # action = RosActions.query.filter_by(action='controller_state').first()
+            # action.pending = 0
+            # db.session.commit()
+        
+            # action = RosActions.query.filter_by(action='publish_waypoints').first()
+            # action.pending = 0
+            # db.session.commit()
 
-            action = RosActions.query.filter_by(action='rosnode_cleanup').first()
-            action.pending = 0
-            db.session.commit()
+            # action = RosActions.query.filter_by(action='get_topics').first()
+            # action.pending = 0
+            # db.session.commit()
 
+            # action = RosActions.query.filter_by(action='rosnode_cleanup').first()
+            # action.pending = 0
+            # db.session.commit()
 
-            action = RosActions.query.filter_by(action='set_power').first()
-            action.pending = 0
-            db.session.commit()
+            # action = RosActions.query.filter_by(action='set_power').first()
+            # action.pending = 0
+            # db.session.commit()
+
+            for action_item in self.action_list:
+                action_item = "'" + action_item + "'"
+                action = RosActions.query.filter_by(action=action_item).first()
+                action.pending = 0
+                db.session.commit()
 
             lumen_item = LedItems.query.first()
             lumen_item.status = 1.0
@@ -147,29 +157,20 @@ class gui_ros():
             poses.r = poses_sub.twist.twist.angular.z
             poses.lat = geo_pose_sub.pose.position.latitude
             poses.lon = geo_pose_sub.pose.position.longitude
-
-            # print(poses.roll)
-
-            # vitals = Vitals.query.first()
-            # vitals.voltage = self.vitals_sub.voltage
-            # vitals.current = self.vitals_sub.current
-
             db.session.commit() 
+
             
     def log_poses(self):
         decay = 20
         with app.app_context():
             new_pose = db.session.query(Poses).first()
-
             num_entries = db.session.query(PoseHistory).count()
-            # print(num_entries)
             #increase id by 1
             db.session.query(PoseHistory).update({PoseHistory.id: PoseHistory.id + 1})
             db.session.query(PoseHistory).filter(PoseHistory.id > decay).delete()
             db.session.commit()
 
             # Create a new instance of PoseHistory with the values from new_pose
-            
             new_pose_history = PoseHistory()
             new_pose_history.id = 1
             new_pose_history.frame_id = new_pose.frame_id
@@ -193,12 +194,12 @@ class gui_ros():
             db.session.add(new_pose_history)
             db.session.commit()
 
+
     ##state info
     def get_state(self):
         with app.app_context():
             try:
                 rospy.wait_for_service(self.get_state_srv, timeout=self.service_timeout)
-                print("get state after timeout") 
                 service_client_get_state = rospy.ServiceProxy(self.get_state_srv, GetState)
                 request = GetStateRequest("")
                 response = service_client_get_state(request)
@@ -214,16 +215,15 @@ class gui_ros():
                     db.session.add(state)
                     count = count +1
                 db.session.commit()
-            # except rospy.ServiceException as e:
-                # print("Get State Service Timeout: %s"%e)
             except:
                 print("Get State Service Timeout")
+
+
      ##state info
     def change_state(self):
         with app.app_context():
             change_state = RosActions.query.filter_by(action='change_state').first()
             if change_state.pending == 1:
-                # rospy.wait_for_service(self.get_state_srv)
                 try:
                     rospy.wait_for_service(self.get_state_srv, timeout=self.service_timeout)
                     service_client_change_state = rospy.ServiceProxy(self.change_state_srv, ChangeState)
@@ -232,35 +232,28 @@ class gui_ros():
                     response = service_client_change_state(request)
                     change_state.pending = 0
                     db.session.commit()
-                # except rospy.ServiceException as e:
-                #     print("Service call failed: %s"%e)
                 except:
-                    print("Get State Service Timeout")
+                    print("Change State Service Timeout")
+
+
     ##change controller state action
     def get_controller_state(self):
         with app.app_context():
-            # rospy.wait_for_service(self.controller_state_srv)
             try:
                 rospy.wait_for_service(self.controller_state_srv, timeout=self.service_timeout)
                 service_client_get_controller_state = rospy.ServiceProxy(self.controller_state_srv, Trigger)
                 response = service_client_get_controller_state()
-
                 controller_state = ControllerState.query.first()
                 controller_state.state = response.message
-                # print(response.message)
                 db.session.commit()
-                
-            # except rospy.ServiceException as e:
-            #     print("Service call failed: %s"%e)
             except:
-                print("Get State Service Timeout")
+                print("Get Controller State Service Timeout")
 
 
     def change_controller_state(self):
         with app.app_context():
             controller_state = RosActions.query.filter_by(action='controller_state').first()
             if controller_state.pending == 1:
-                # rospy.wait_for_service(self.controller_srv + '/' + controller_state.value)
                 try:
                     rospy.wait_for_service(self.controller_srv + '/' + controller_state.value, timeout=self.service_timeout)
                     service_client_change_controller_state = rospy.ServiceProxy(self.controller_srv + '/' + controller_state.value, Empty)
@@ -268,20 +261,18 @@ class gui_ros():
                     controller_state.pending = 0
                     db.session.commit()
                     print(self.controller_srv + '/' + controller_state.value)
-
-                except rospy.ServiceException as e:
-                    print("Service call failed: %s"%e)
+                except:
+                    print("Change Controller State Service Timeout")
     
+
     ##get current waypoints
     def get_waypoints(self):
         with app.app_context():
-            # rospy.wait_for_service(self.get_waypoint_srv)
             try:
                 rospy.wait_for_service(self.get_waypoint_srv, timeout=self.service_timeout)
                 service_client_get_waypoint_srv= rospy.ServiceProxy(self.get_waypoint_srv, GetWaypoints)
                 request = GetWaypointsRequest(Int16(0)) ##get all waypoints
                 response = service_client_get_waypoint_srv(request)
-   
                 db.session.query(CurrentWaypoints).delete()
                 db.session.commit()
                 count = 0
@@ -293,15 +284,14 @@ class gui_ros():
                     db.session.add(p)
                     count = count +1
                 db.session.commit()
-            except rospy.ServiceException as e:
-                print("Service call failed: %s"%e)
+            except:
+                print("Get Waypoints Service Timeout")
+
 
     ##publishing waypoints 
     def publish_wpt(self):
         with app.app_context():
-            # print("publishing waypoints")
             pub_wpt_action = RosActions.query.filter_by(action='publish_waypoints').first()
-
             if pub_wpt_action.pending == 1:
                 waypoints = Waypoints.query.order_by(Waypoints.id).all()
                 geo_wpt =  SendWaypointsRequest()
@@ -315,27 +305,22 @@ class gui_ros():
                     wpt.ll_wpt.altitude =  entry.alt
                     count = count +1
                     geo_wpt.wpt.append(wpt)
-                # print(self.geo_wpt)
-                # print("sending waypoints number = ", count)
                 try:
                     service_client_pub_waypoint_srv= rospy.ServiceProxy(self.pub_waypoint_srv, SendWaypoints)
                     response = service_client_pub_waypoint_srv(geo_wpt)
-                    # print("wpt_function:" , response)
                     pub_wpt_action.pending = 0
                     db.session.commit()
-                except rospy.ServiceException as e:
-                    print("Service call failed: %s"%e)
+                except:
+                    print("Publish Waypoints Service Timeout")
+
 
     ##### power items
     def get_power_port_status(self):
         with app.app_context():
-            # rospy.wait_for_service(self.get_power_port_srv)
             try:
                 rospy.wait_for_service(self.get_power_port_srv, timeout=self.service_timeout)
-
                 service_client_get_power_port_srv= rospy.ServiceProxy(self.get_power_port_srv, Trigger)
                 response = service_client_get_power_port_srv()
-   
                 db.session.query(PowerItems).delete()
                 db.session.commit()
                 count = 0
@@ -350,23 +335,16 @@ class gui_ros():
                         db.session.add(power_item)
                         count += 1
                 db.session.commit()
-            except rospy.ServiceException as e:
-                print("Service call failed: %s"%e)
+            except:
+                print("Get Power Port Service Timeout")
+
 
     def set_power_port(self):
         with app.app_context():
             set_power_action = RosActions.query.filter_by(action='set_power').first()
-            print("before pending:", set_power_action.value)
-
             if set_power_action.pending == 1:
-
                 parts = set_power_action.value.split('=')
                 srv_name, set_status = parts
-                print("before wait for service:", srv_name)
-
-                # rospy.wait_for_service(self.name_space + srv_name)
-                print(self.name_space + srv_name)
-                
                 try:
                     rospy.wait_for_service(self.name_space + srv_name, timeout=self.service_timeout)
                     service_client_set_power_port_srv= rospy.ServiceProxy(self.name_space + srv_name, SetBool)
@@ -377,8 +355,9 @@ class gui_ros():
                     response = service_client_set_power_port_srv(request)
                     set_power_action.pending = 0
                     db.session.commit()
-                except rospy.ServiceException as e:
-                    print("Service call failed: %s"%e)
+                except:
+                    print("Set Power Port Service Timeout")
+
 
     def set_lumen(self):
         with app.app_context():
@@ -388,12 +367,10 @@ class gui_ros():
                 for i in range(3):
                     lumen_ms = Float64()
                     lumen_ms.data = float(lumen_item.status)
-                    # print("change led")
                     self.lumen_pub.publish(lumen_ms)
 
+
 def gui_ros_start():  
-    # rospy.init_node('mvp_gui_node', disable_signals=True)
-    # gui_ros()
     try:
         rospy.init_node('mvp_gui_node', disable_signals=True)
         gui_ros()
