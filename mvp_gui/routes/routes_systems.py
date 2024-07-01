@@ -127,8 +127,13 @@ def systems_page():
         elif 'roscore_start' in request.form:
             if ssh_connection.is_connected():
                 print(ros_source + "roscore")
-                ssh_connection.execute_command(ros_source + "roscore", wait=False)
+                # ssh_connection.execute_command(ros_source + "roscore", wait=False)
+                # ssh_connection.execute_command_disp_terminal(ros_source + "roscore")
+                threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(ros_source + "roscore", emit_message)).start()
+
                 time.sleep(1.0)
+                return render_template("terminal.html")
+
             # return redirect(url_for('systems_page'))
         
         elif 'roscore_stop' in request.form:

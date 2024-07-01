@@ -4,6 +4,7 @@ import sys
 import socket
 from flask_socketio import emit
 import threading
+import select
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -74,6 +75,7 @@ class SSHConnection:
         time.sleep(1)
         self.transport = self.ssh_client.get_transport()
         self.channel = self.transport.open_session()
+        print("TRANSPORT: {}, CHANNEL: {}".format(self.transport, self.channel))
         # # We're not handling stdout & stderr separately
         # self.channel.set_combine_stderr(1)
         # self.channel.exec_command(command)
@@ -84,17 +86,52 @@ class SSHConnection:
         #     print("Emitting response:", response)  # Debugging print statement
         #     message_callback(response)
 
+        print("CMD: ", command)
         self.channel.exec_command(command)
 
-        stdout = self.channel.makefile('r')
-        stderr = self.channel.makefile_stderr('r')
+        # stdout = self.channel.makefile('r')
+        # stderr = self.channel.makefile_stderr('r')
 
-        def read_output(file, output_type):
-            for line in file:
-                message_callback({'type': output_type, 'data': line})
+        # def read_output(file, output_type):
+        #     for line in file:
+        #         print(line)
+        #         message_callback({'type': output_type, 'data': line})
 
-        stdout_thread = threading.Thread(target=read_output, args=(stdout, 'stdout'))
-        stderr_thread = threading.Thread(target=read_output, args=(stderr, 'stderr'))
+        # stdout_thread = threading.Thread(target=read_output, args=(stdout, 'stdout'))
+        # stderr_thread = threading.Thread(target=read_output, args=(stderr, 'stderr'))
+
+        # stdout_thread.start()
+        # stderr_thread.start()
+
+        # stdout_thread.join()
+        # stderr_thread.join()
+
+        # stdout.close()
+        # stderr.close()
+        # self.channel.close()
+
+        def read_stdout():
+            while True:
+                if self.channel.recv_ready():
+                    stdout_data = self.channel.recv(1024).decode('utf-8')
+                    print("stdout_data: {}".format(stdout_data))
+
+                    message_callback({'type': 'stdout', 'data': stdout_data})
+                if self.channel.exit_status_ready():
+                    break
+
+        def read_stderr():
+            while True:
+                if self.channel.recv_stderr_ready():
+                    stderr_data = self.channel.recv_stderr(1024).decode('utf-8')
+                    print("stdout_data: {}".format(stderr_data))
+
+                    message_callback({'type': 'stderr', 'data': stderr_data})
+                if self.channel.exit_status_ready():
+                    break
+
+        stdout_thread = threading.Thread(target=read_stdout)
+        stderr_thread = threading.Thread(target=read_stderr)
 
         stdout_thread.start()
         stderr_thread.start()
@@ -102,9 +139,8 @@ class SSHConnection:
         stdout_thread.join()
         stderr_thread.join()
 
-        stdout.close()
-        stderr.close()
         self.channel.close()
+
 
         
     def execute_command_with_xvfb(self, command):

@@ -25,8 +25,8 @@ lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager
-remote_host: "192.168.0.118"
-remote_user: "mingxi"
-remote_password: "qwer1234"  
+remote_host: "192.168.2.50"
+remote_user: "alpha"
+remote_password: "temppwd"  
 
 roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
