@@ -60,45 +60,58 @@ class SSHConnection:
             # If we don't want to wait, we return immediately.
             return None, None
 
-    def responseGen(self, channel):
-        # Small outputs (i.e. 'whoami') can end up running too quickly
-        # so we yield channel.recv in both scenarios
-        while True:
-            if channel.recv_ready():
-                yield channel.recv(4096).decode('utf-8')
-                continue
-            if channel.exit_status_ready():
-                yield channel.recv(4096).decode('utf-8')
-                break
 
     def execute_command_disp_terminal(self, command, message_callback):
-        time.sleep(1)
-        self.transport = self.ssh_client.get_transport()
-        self.channel = self.transport.open_session()
-        print("TRANSPORT: {}, CHANNEL: {}".format(self.transport, self.channel))
-        # # We're not handling stdout & stderr separately
-        # self.channel.set_combine_stderr(1)
+
+        stdin, stdout, stderr = self.ssh_client.exec_command(command, get_pty=True)
+        stdout.channel.setblocking(0)  # Set stdout channel to non-blocking mode
+        stderr.channel.setblocking(0)  # Set stderr channel to non-blocking mode
+
+        start_time = time.time()
+    
+        while True:
+            if stdout.channel.recv_ready():
+                stdout_data = stdout.channel.recv(1024).decode('utf-8')
+                # print("stdout_data: {}".format(stdout_data))
+                message_callback({'type': 'stdout', 'data': stdout_data})
+
+            if stderr.channel.recv_stderr_ready():
+                stderr_data = stderr.channel.recv_stderr(1024).decode('utf-8')
+                # print("stdout_data: {}".format(stderr_data))
+                message_callback({'type': 'stderr', 'data': stderr_data})
+            
+            # Check if command has finished executing
+            if stdout.channel.exit_status_ready() and not stdout.channel.recv_ready():
+                break
+            
+            if time.time() - start_time >= 10:
+                time.sleep(0.1)  # Small sleep to reduce CPU usage
+            
+        
         # self.channel.exec_command(command)
-        # # Command was sent, no longer need stdin
-        # self.channel.shutdown_write()
 
-        # for response in self.responseGen(self.channel):
-        #     print("Emitting response:", response)  # Debugging print statement
-        #     message_callback(response)
+        # def read_stdout():
+        #     while True:
+        #         if self.channel.recv_ready():
+        #             stdout_data = self.channel.recv(1024).decode('utf-8')
+        #             print("stdout_data: {}".format(stdout_data))
 
-        print("CMD: ", command)
-        self.channel.exec_command(command)
+        #             message_callback({'type': 'stdout', 'data': stdout_data})
+        #         if self.channel.exit_status_ready():
+        #             break
 
-        # stdout = self.channel.makefile('r')
-        # stderr = self.channel.makefile_stderr('r')
+        # def read_stderr():
+        #     while True:
+        #         if self.channel.recv_stderr_ready():
+        #             stderr_data = self.channel.recv_stderr(1024).decode('utf-8')
+        #             print("stdout_data: {}".format(stderr_data))
 
-        # def read_output(file, output_type):
-        #     for line in file:
-        #         print(line)
-        #         message_callback({'type': output_type, 'data': line})
+        #             message_callback({'type': 'stderr', 'data': stderr_data})
+        #         if self.channel.exit_status_ready():
+        #             break
 
-        # stdout_thread = threading.Thread(target=read_output, args=(stdout, 'stdout'))
-        # stderr_thread = threading.Thread(target=read_output, args=(stderr, 'stderr'))
+        # stdout_thread = threading.Thread(target=read_stdout)
+        # stderr_thread = threading.Thread(target=read_stderr)
 
         # stdout_thread.start()
         # stderr_thread.start()
@@ -106,40 +119,7 @@ class SSHConnection:
         # stdout_thread.join()
         # stderr_thread.join()
 
-        # stdout.close()
-        # stderr.close()
         # self.channel.close()
-
-        def read_stdout():
-            while True:
-                if self.channel.recv_ready():
-                    stdout_data = self.channel.recv(1024).decode('utf-8')
-                    print("stdout_data: {}".format(stdout_data))
-
-                    message_callback({'type': 'stdout', 'data': stdout_data})
-                if self.channel.exit_status_ready():
-                    break
-
-        def read_stderr():
-            while True:
-                if self.channel.recv_stderr_ready():
-                    stderr_data = self.channel.recv_stderr(1024).decode('utf-8')
-                    print("stdout_data: {}".format(stderr_data))
-
-                    message_callback({'type': 'stderr', 'data': stderr_data})
-                if self.channel.exit_status_ready():
-                    break
-
-        stdout_thread = threading.Thread(target=read_stdout)
-        stderr_thread = threading.Thread(target=read_stderr)
-
-        stdout_thread.start()
-        stderr_thread.start()
-
-        stdout_thread.join()
-        stderr_thread.join()
-
-        self.channel.close()
 
 
         

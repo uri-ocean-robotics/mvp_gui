@@ -31,7 +31,7 @@ project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
 
-ssh_hostname = '192.168.2.50'
+ssh_hostname = '192.168.2.100'
 ssh_username = 'alpha'
 ssh_password = 'temppwd'
 

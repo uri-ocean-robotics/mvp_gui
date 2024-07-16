@@ -5,6 +5,7 @@ import threading
 import psutil
 import rosnode 
 import rosgraph
+import time
 
 from mvp_gui.models import *
 from mvp_gui.ros_manager import SSHConnection
@@ -42,7 +43,8 @@ if __name__ == "__main__":
     
     try:
         while True:
-            pass
+            # pass
+            time.sleep(1)  # Sleep for 1 second to reduce CPU usage
     except KeyboardInterrupt:
         print("\nExiting server !!")
         result = subprocess.run(['bash', '-c', 'pkill -9 python'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)

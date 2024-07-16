@@ -67,7 +67,9 @@
         // socket.on('terminal_output', function(msg) {
         //     console.log('Received message:', msg);
         //     var terminal = document.getElementById('terminal-output');
-        //     var cleanedData = stripAnsiCodes(msg.data);
+        //     // var cleanedData = stripAnsiCodes(msg.data);
+        //     var cleanedData = msg.data;
+
         //     terminal.innerHTML += cleanedData + '<br>';
         //     terminal.scrollTop = terminal.scrollHeight;
         // });
@@ -78,13 +80,19 @@
                 console.error('Expected a string but received:', text);
                 return text;
             }
-            return text.replace(/\u001b\[.*?m/g, '');
+            // return text.replace(/\u001b\[.*?m/g, '');
+            // Strip ANSI escape codes
+            let strippedText = text.replace(/\u001b\[.*?m/g, '');
+            // Remove lines starting with [2
+            strippedText = strippedText.split('\n').filter(line => !line.includes(']2;')).join('\n');
+            return strippedText;
         }
 
         socket.on('terminal_output', function(msg) {
             console.log('Received message:', msg);
             var terminal = document.getElementById('terminal-output');
             var cleanedData = stripAnsiCodes(msg.data.data);
+            // var cleanedData = msg.data.data;
 
             if (msg.data.type === 'stdout') {
                 terminal.innerHTML += `<span class="stdout-line">${cleanedData}</span><br>`;
