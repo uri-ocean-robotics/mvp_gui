@@ -31,8 +31,16 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
+            self.get_power_port_status()
+            rospy.sleep(0.1)
+            self.set_power_port()
+            rospy.sleep(0.1)
+            self.set_lumen()
+            rospy.sleep(0.5)
+
             self.log_poses()
             rospy.sleep(0.1)
+
             self.get_state()
             rospy.sleep(0.1)
             self.change_state()
@@ -45,12 +53,6 @@ class gui_ros():
             rospy.sleep(0.1)
             self.publish_wpt()
             rospy.sleep(0.1)
-            self.get_power_port_status()
-            rospy.sleep(0.1)
-            self.set_power_port()
-            rospy.sleep(0.1)
-            self.set_lumen()
-            rospy.sleep(0.5)
     
 
     def get_params(self):
@@ -120,7 +122,7 @@ class gui_ros():
             # db.session.commit()
 
             for action_item in self.action_list:
-                action_item = "'" + action_item + "'"
+                action_item = action_item
                 action = RosActions.query.filter_by(action=action_item).first()
                 action.pending = 0
                 db.session.commit()
@@ -133,12 +135,18 @@ class gui_ros():
 
     #obtain pose and power information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):
-        quad = [poses_sub.pose.pose.orientation.x, 
-                poses_sub.pose.pose.orientation.y, 
-                poses_sub.pose.pose.orientation.z, 
-                poses_sub.pose.pose.orientation.w]
-        euler_angles = euler_from_quaternion(quad)
+        # quad = [poses_sub.pose.pose.orientation.x, 
+        #         poses_sub.pose.pose.orientation.y, 
+        #         poses_sub.pose.pose.orientation.z, 
+        #         poses_sub.pose.pose.orientation.w]
 
+        quad = [geo_pose_sub.pose.orientation.x, 
+                geo_pose_sub.pose.orientation.y, 
+                geo_pose_sub.pose.orientation.z, 
+                geo_pose_sub.pose.orientation.w]
+        
+        euler_angles = euler_from_quaternion(quad)
+        
         with app.app_context():
             poses = Poses.query.first()
             poses.frame_id = poses_sub.header.frame_id
