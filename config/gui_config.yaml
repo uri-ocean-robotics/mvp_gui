@@ -1,4 +1,4 @@
-name_space: alpha_rise
+name_space: race
 
 ##vehicle status
 poses_source: odometry/filtered/local
@@ -20,13 +20,13 @@ get_waypoints_service: helm/path_3d/get_next_waypoints
 pub_waypoints_service: helm/path_3d/update_waypoints
 
 ##power manager
-power_items: [power_manager/jetson, power_manager/24v, power_manager/lumen]
-
+get_power_port_srv: gpio_manager/get_power_status
+lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager
-remote_host: "192.168.0.118"
-remote_user: "mingxi"
-remote_password: "qwer1234"  
+remote_host: "192.168.2.60"
+remote_user: "alpha"
+remote_password: "temppwd"  
 
-roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
+roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/

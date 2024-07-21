@@ -24,22 +24,24 @@
             justify-content: center;
             align-items: center;
         }
-
     </style>
 </head>
 <body>
 
-        {% for line in info %}
-            <code class="language-html">{{ line}}</code>
-        {% endfor %}
+<pre>
+<code class="language-css">
+{% for line in info %}
+{{line}}
+{% endfor %}
+</code>
+</pre>
 
-        <div class="center-button-container">
-            <form action="/ros_topics" method="post">
-                <input type="hidden" name="return">
-                <button type="submit" class="big-button">Return</button>
-            </form>
-        </div>
-
+    <div class="center-button-container">
+    <form action="/ros_topics" method="post">
+        <input type="hidden" name="return">
+        <button type="submit" class="big-button">Return</button>
+    </form>
+    </div>
 </body>
 
 

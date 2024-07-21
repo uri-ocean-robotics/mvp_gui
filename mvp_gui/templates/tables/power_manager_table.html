@@ -2,29 +2,91 @@
     <table class="table table-hover table-dark">
         <thead>
             <tr>
-                <!-- Your Columns HERE -->
                 <th scope="col">ID</th>
-                <th scope="col">Device</th>
-                <th scope="col">GPIO</th>
+                <th scope="col">Name</th>
                 <th scope="col">Status</th>
+                <th scope="col">Action</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Your rows inside the table HERE: -->
-            {% for item in items%}
-                <tr>
-                    <td>{{ item.id }}</td>
-                    <td>{{ item.device }}</td>
-                    <td>{{ item.gpio }}</td>
-                    <td>{{ item.status }}</td>
-                    <td>
-                    <form action="/power_manager" method="post">
-                        <input type="hidden" name="action" value= "{{ item.id }}" >
-                        <button type="submit"> Switch </button>
-                    </form>
-                    </td>
-                </tr>
-            {% endfor %}
+        <tbody id="power_items_body">
+            <!-- Rows will be dynamically inserted here -->
         </tbody>
     </table>
+    <table class="table table-hover table-dark">
+        <tr>
+            <td>Lumen Brightness (range: 1-1.9 ms)</td>
+            <td>
+                <form action="/power_manager" method="post">
+                    <input type="hidden" name="lumen" value="decrease">
+                    <button type="submit">-</button>
+                </form>
+            </td>
+            <!-- <td class="brightness-display">{{ brightness }}</td> -->
+            <td class="brightness-display">{{lumen_item.status}}</td>
+            <td>
+                <form action="power_manager" method="post">
+                    <input type="hidden" name="lumen" value="increase">
+                    <button type="submit">+</button>
+                </form>
+            </td>
+        </tr>
+    </table>
+    
+
 </div>
+
+<script>
+    async function fetchPowerItems() {
+        try {
+            const response = await fetch('/power_manager/states');
+            const data = await response.json();
+            const powerItems = data.power_items_data;
+            
+            const tableBody = document.getElementById('power_items_body');
+            tableBody.innerHTML = ''; // Clear the current table contents
+
+            powerItems.forEach(item => {
+                const row = document.createElement('tr');
+
+                const idCell = document.createElement('td');
+                idCell.textContent = item.id;
+                row.appendChild(idCell);
+
+                const nameCell = document.createElement('td');
+                nameCell.textContent = item.name;
+                row.appendChild(nameCell);
+
+                const statusCell = document.createElement('td');
+                statusCell.textContent = item.status;
+                row.appendChild(statusCell);
+
+                const actionCell = document.createElement('td');
+                const form = document.createElement('form');
+                form.action = '/power_manager';
+                form.method = 'post';
+
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'switch';
+                hiddenInput.value = item.id;
+
+                const button = document.createElement('button');
+                button.type = 'submit';
+                button.textContent = 'Switch';
+
+                form.appendChild(hiddenInput);
+                form.appendChild(button);
+                actionCell.appendChild(form);
+                row.appendChild(actionCell);
+
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching power items:', error);
+        }
+    }
+
+    // Fetch data initially and then every 5 seconds
+    fetchPowerItems();
+    setInterval(fetchPowerItems, 1000);
+</script>

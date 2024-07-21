@@ -27,6 +27,7 @@
             <th scope="col" bgcolor="rgba(255, 255, 0)">SSH Connectivity</th>
             <th scope="col" bgcolor="rgba(255, 255, 0)">ROS Core Status</th>
             <th scope="col" bgcolor="rgba(255, 255, 0)">MVP GUI Node Status</th>
+            <th scope="col" bgcolor="rgba(255, 255, 0)">ROS Master</th>
         </tr>
     </thead>
     <tbody id="current-status">
@@ -34,6 +35,7 @@
             <td id="remote_connection"></td>
             <td id="roscore_status"></td>
             <td id="mvpgui_status"></td>
+            <td id="connected_ros_master"></td>
         </tr>
     </tbody>
 </table>
@@ -41,22 +43,33 @@
 <h4> ROS Core Manager</h4>
 <!-- <p style="color: lightskyblue;"> ROS Core status: {{ roscore_status }} </p> -->
 <table class="table table-hover table-dark">
+
+<form action="/" method="post">
+    <label for="ros_master_uri">ROS MASTER URI:</label>
+    <input type="text" id="ros_master_uri" name="ros_master_uri" value="{{ ros_master_uri }}" style="margin-left: 20px;"> 
+    <input type="submit" value="Export" name="export_rosmasteruri" style="margin-left: 20px;">
+</form>
+<br>
 <form action="/" method="post">
     <input type="hidden" name="roscore_start">
     <button type="submit">Start ROS Core</button>
 </form>
+
 <form action="/" method="post">
     <input type="hidden" name="roscore_stop">
     <button type="submit">Stop ROS Core </button>
 </form>
+
 <form action="/" method="post">
     <input type="hidden" name="kill_all_nodes">
     <button type="submit">Kill all ROS Nodes</button>
 </form>
+
 <form action="/" method="post">
     <input type="hidden" name="rosnode_cleanup">
     <button type="submit">Cleanup ROS Nodes </button>
 </form>
+
 </table>
 
 <h4> MVP GUI ROS NODE Manager</h4>
@@ -217,12 +230,12 @@
         fetch('/current_system_status')
             .then(response => response.json())
             .then(data => {
-                const { remote_connection, roscore_status, mvpgui_status} = data;
-                console.log( remote_connection.data, roscore_status.data, mvpgui_status.data)
+                const { remote_connection, roscore_status, mvpgui_status, connected_ros_master} = data;
                 // Populate vital data
                 document.getElementById('remote_connection').textContent = remote_connection.data;
                 document.getElementById('roscore_status').textContent = roscore_status.data;
                 document.getElementById('mvpgui_status').textContent = mvpgui_status.data;
+                document.getElementById('connected_ros_master').textContent = connected_ros_master.data;
 
             })
         }

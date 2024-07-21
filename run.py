@@ -2,6 +2,10 @@ import subprocess
 import signal
 import os
 import threading
+import psutil
+import rosnode 
+import rosgraph
+import time
 
 from mvp_gui.models import *
 from mvp_gui.ros_manager import SSHConnection
@@ -12,8 +16,6 @@ process_lock_server = threading.Lock()
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
-
-INIT_CNT = 1
 
 def start_processes():
     global flask_process
@@ -41,6 +43,9 @@ if __name__ == "__main__":
     
     try:
         while True:
-            pass
+            # pass
+            time.sleep(1)  # Sleep for 1 second to reduce CPU usage
     except KeyboardInterrupt:
-        stop_processes()
+        print("\nExiting server !!")
+        result = subprocess.run(['bash', '-c', 'pkill -9 python'], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print(result.stdout)

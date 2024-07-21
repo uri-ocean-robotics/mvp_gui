@@ -1,6 +1,10 @@
 import paramiko
 import time 
+import sys
 import socket
+from flask_socketio import emit
+import threading
+import select
 
 class SSHConnection:
     def __init__(self, hostname, username, password):
@@ -37,9 +41,7 @@ class SSHConnection:
         return False
 
     def execute_command(self, command, wait=True, timeout=None):
-
         stdin, stdout, stderr = self.ssh_client.exec_command(command)
-        
         if wait:
             output = stdout.read().decode()
             error = stderr.read().decode()
@@ -57,6 +59,69 @@ class SSHConnection:
         else:
             # If we don't want to wait, we return immediately.
             return None, None
+
+
+    def execute_command_disp_terminal(self, command, message_callback):
+
+        stdin, stdout, stderr = self.ssh_client.exec_command(command, get_pty=True)
+        stdout.channel.setblocking(0)  # Set stdout channel to non-blocking mode
+        stderr.channel.setblocking(0)  # Set stderr channel to non-blocking mode
+
+        start_time = time.time()
+    
+        while True:
+            if stdout.channel.recv_ready():
+                stdout_data = stdout.channel.recv(1024).decode('utf-8')
+                # print("stdout_data: {}".format(stdout_data))
+                message_callback({'type': 'stdout', 'data': stdout_data})
+
+            if stderr.channel.recv_stderr_ready():
+                stderr_data = stderr.channel.recv_stderr(1024).decode('utf-8')
+                # print("stdout_data: {}".format(stderr_data))
+                message_callback({'type': 'stderr', 'data': stderr_data})
+            
+            # Check if command has finished executing
+            if stdout.channel.exit_status_ready() and not stdout.channel.recv_ready():
+                break
+            
+            if time.time() - start_time >= 10:
+                time.sleep(0.1)  # Small sleep to reduce CPU usage
+            
+        
+        # self.channel.exec_command(command)
+
+        # def read_stdout():
+        #     while True:
+        #         if self.channel.recv_ready():
+        #             stdout_data = self.channel.recv(1024).decode('utf-8')
+        #             print("stdout_data: {}".format(stdout_data))
+
+        #             message_callback({'type': 'stdout', 'data': stdout_data})
+        #         if self.channel.exit_status_ready():
+        #             break
+
+        # def read_stderr():
+        #     while True:
+        #         if self.channel.recv_stderr_ready():
+        #             stderr_data = self.channel.recv_stderr(1024).decode('utf-8')
+        #             print("stdout_data: {}".format(stderr_data))
+
+        #             message_callback({'type': 'stderr', 'data': stderr_data})
+        #         if self.channel.exit_status_ready():
+        #             break
+
+        # stdout_thread = threading.Thread(target=read_stdout)
+        # stderr_thread = threading.Thread(target=read_stderr)
+
+        # stdout_thread.start()
+        # stderr_thread.start()
+
+        # stdout_thread.join()
+        # stderr_thread.join()
+
+        # self.channel.close()
+
+
         
     def execute_command_with_xvfb(self, command):
         # Open a new session with X11 forwarding
