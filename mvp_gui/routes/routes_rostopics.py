@@ -10,8 +10,38 @@ def cleanup_dead_nodes():
             if unpinged:
                 master = rosgraph.Master("")
                 rosnode.cleanup_master_blacklist(master, unpinged)
+        time.sleep(1.0)
     except rosnode.ROSNodeIOException as e:
         pass
+
+def get_topic(timeout_subprocess):
+    try:
+        command = "rostopic list"
+        if len(RosTopicKeywords.query.all()) == 0:
+            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
+        else:
+            keywords_list = RosTopicKeywords.query.all()
+            command += " |grep '"
+            for count, item in enumerate(keywords_list):
+                if count != len(keywords_list) - 1:
+                    command += str(item.name) + "\|"
+                else:
+                    command += str(item.name) 
+            command += "'"
+            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
+        topic_list = response.stdout.splitlines()
+        count = 0
+        db.session.query(RosTopicList).delete()
+        for item in topic_list:
+            node_ = RosTopicList(id=count, name = item)
+            db.session.add(node_)
+            count = count + 1                
+        db.session.commit()
+    except subprocess.CalledProcessError as e:
+        db.session.query(RosTopicList).delete()
+        topic_ = RosTopicList(id=0, name = 'empty')
+        db.session.add(topic_)
+        db.session.commit()
 
 @app.route('/ros_topics', methods=['GET', 'POST'])
 def ros_topics_page():
@@ -51,34 +81,7 @@ def ros_topics_page():
         for index, entry in enumerate(remaining_entries):
             entry.id = index
         db.session.commit()
-        
-        try:
-            command = "rostopic list"
-            if len(RosTopicKeywords.query.all()) == 0:
-                response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
-            else:
-                keywords_list = RosTopicKeywords.query.all()
-                command += " |grep '"
-                for count, item in enumerate(keywords_list):
-                    if count != len(keywords_list) - 1:
-                        command += str(item.name) + "\|"
-                    else:
-                        command += str(item.name) 
-                command += "'"
-                response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
-            topic_list = response.stdout.splitlines()
-            count = 0
-            db.session.query(RosTopicList).delete()
-            for item in topic_list:
-                node_ = RosTopicList(id=count, name = item)
-                db.session.add(node_)
-                count = count + 1                
-            db.session.commit()
-        except subprocess.CalledProcessError as e:
-            db.session.query(RosTopicList).delete()
-            topic_ = RosTopicList(id=0, name = 'empty')
-            db.session.add(topic_)
-            db.session.commit()
+        get_topic(timeout_subprocess)
 
         return redirect(url_for('ros_topics_page'))
     
@@ -99,6 +102,7 @@ def ros_topics_page():
     elif 'remove_keywords' in request.form:
         db.session.query(RosTopicKeywords).delete()
         db.session.commit()
+        get_topic(timeout_subprocess)
         return redirect(url_for('ros_topics_page'))
     
     elif 'remove_single_keyword' in request.form:
@@ -106,6 +110,7 @@ def ros_topics_page():
         db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id == keyword_id).delete()
         db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id > int(keyword_id)).update({RosTopicKeywords.id: RosTopicKeywords.id - 1})
         db.session.commit()
+        get_topic(timeout_subprocess)
         return redirect(url_for('ros_topics_page'))
 
 

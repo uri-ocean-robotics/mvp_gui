@@ -5,6 +5,7 @@ from mvp_gui.models import *
 from mvp_gui.ros_manager import *
 from mvp_gui.gui_ros_manager import *
 from mvp_gui.forms import *
+import yaml
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///mvp_database.db'
@@ -16,27 +17,23 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 db.init_app(app)
 app.app_context().push()
 
-# Path to the directory where tiles are stored
+# Path to the directory where tiles are stored  
 # TILES_DIR = "../offline_map/beach_pond_tiles_directory/"
 TILES_DIR_1 = "./offline_map/"
 TILES_DIR_2 = "../offline_map/"
 
 
 global_file_name = './config/gui_config.yaml'
-
-ros_source_base = "source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && "
-roslaunch_folder_default = '~/catkin_ws/src/race_auv/race_bringup/launch/'
+config = yaml.safe_load(open(global_file_name, 'r'))
+roslaunch_folder_default = config['roslaunch_folder']
+ros_source_base = config['ros_source_base']
 
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
 
-ssh_hostname = '192.168.2.60'
-ssh_username = 'alpha'
-ssh_password = 'temppwd'
-
 # Create SSHConnection instance
-ssh_connection = SSHConnection(ssh_hostname, ssh_username, ssh_password)
+ssh_connection = SSHConnection(config['remote_host'], config['remote_user'], config['remote_password'])
 
 
 from mvp_gui.routes import routes_base

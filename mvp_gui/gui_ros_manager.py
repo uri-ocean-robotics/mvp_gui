@@ -19,6 +19,7 @@ def start_ros_process(env):
                 env=env,
                 preexec_fn=os.setsid
             )
+            time.sleep(1.0)
 
 def stop_ros_process(env):
     global ros_process

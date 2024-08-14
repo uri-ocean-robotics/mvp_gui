@@ -4,6 +4,7 @@ import yaml
 import rosnode
 import rosgraph
 import threading
+from sqlalchemy import func
 
 # ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
 # ros_hostname = ssh_connection.hostname 
@@ -33,6 +34,7 @@ def cleanup_dead_nodes():
             if unpinged:
                 master = rosgraph.Master("")
                 rosnode.cleanup_master_blacklist(master, unpinged)
+        time.sleep(1.0)
     except rosnode.ROSNodeIOException as e:
         pass
 
@@ -64,6 +66,36 @@ def check_ros_master_uri(env):
 def emit_message(message):
     socketio.emit('terminal_output', {'data': message}, namespace='/terminal')
 
+# get node with cmd_line
+def get_node(timeout_subprocess):
+    try:
+        command = "rosnode list"
+        if len(RosNodeKeywords.query.all()) == 0:
+            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
+        else:
+            keywords_list = RosNodeKeywords.query.all()
+            command += " |grep '"
+            for count, item in enumerate(keywords_list):
+                if count != len(keywords_list) - 1:
+                    command += str(item.name) + "\|"
+                else:
+                    command += str(item.name) 
+            command += "'"
+            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
+        node_list = response.stdout.splitlines()
+        count = 0
+        db.session.query(RosNodeList).delete()
+        for item in node_list:
+            node_ = RosNodeList(id=count, name = item)
+            db.session.add(node_)
+            count = count + 1                
+        db.session.commit()
+    except subprocess.CalledProcessError as e:
+        db.session.query(RosNodeList).delete()
+        node_ = RosNodeList(id=0, name = 'empty')
+        db.session.add(node_)
+        db.session.commit()
+
 ## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
 def systems_page():
@@ -74,6 +106,8 @@ def systems_page():
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
+    rosnode_keyword = RosNodeKeywords.query.all()
+
 
     remote_connection  = ssh_connection.is_connected()
     
@@ -87,7 +121,8 @@ def systems_page():
     if roscore_status:
         mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
 
-        
+    timeout_subprocess = 5
+
     ## buttons
     if request.method == 'POST':
          ### remote connection
@@ -139,12 +174,13 @@ def systems_page():
         elif 'roscore_stop' in request.form:
             if ssh_connection.is_connected():
                 ssh_connection.execute_command(ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz")
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
 
         elif 'rosnode_cleanup' in request.form:
             cleanup_dead_nodes()
+            get_node(timeout_subprocess)
             mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
-
+            return redirect(url_for('systems_page'))
         
         ### mvp_gui node
         elif 'mvpgui_start' in request.form:
@@ -152,13 +188,15 @@ def systems_page():
             stop_ros_process(env)
             cleanup_dead_nodes()
             start_ros_process(env)
-            # return redirect(url_for('systems_page'))
+            get_node(timeout_subprocess)
+            return redirect(url_for('systems_page'))
 
         elif 'mvpgui_stop' in request.form:
             print(env['ROS_MASTER_URI'])
             stop_ros_process(env)
             cleanup_dead_nodes()
-            # return redirect(url_for('systems_page'))
+            get_node(timeout_subprocess)
+            return redirect(url_for('systems_page'))
 
         ##roslaunch
         elif 'roslaunch_list' in request.form:
@@ -198,7 +236,7 @@ def systems_page():
 
                 # ssh_connection.execute_command(command, wait=True)
                 # time.sleep(5)
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
             if remote_connection: 
@@ -210,7 +248,7 @@ def systems_page():
                 # ssh_connection.execute_command(command, wait=False)
                 ssh_connection.execute_command_with_xvfb(command)
                 # time.sleep(20)
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
         
         elif 'info' in request.form:
             if remote_connection: 
@@ -220,25 +258,33 @@ def systems_page():
                 response = ssh_connection.execute_command(command, wait=True)
             return redirect(url_for('launch_file_data', response=response[0])) 
             
-        ##get ros node list
         elif 'rosnode_list' in request.form:
-            try:
-                cleanup_dead_nodes()
-                command = "rosnode list"
-                response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
-                node_list = response.stdout.splitlines()
-                count = 0
-                db.session.query(RosNodeList).delete()
-                for item in node_list:
-                    node_ = RosNodeList(id=count, name = item)
-                    db.session.add(node_)
-                    count = count + 1
-                db.session.commit()
-            except subprocess.CalledProcessError as e:
-                db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=0, name = 'empty')
-                db.session.add(node_)
-                db.session.commit()
+            rosnode_keyword = request.form['ros_node_keyword']
+            count = len(RosNodeKeywords.query.all())
+            for keyword in rosnode_keyword.split(','):
+                if keyword.strip() != '':
+                    keyword_ = RosNodeKeywords(id=count, name = keyword.strip())
+                    db.session.add(keyword_)
+                    count += 1 
+
+            # Get the IDs of the duplicates to be deleted
+            subquery = db.session.query(
+                RosNodeKeywords.id
+            ).filter(
+                RosNodeKeywords.id.notin_(
+                    db.session.query(func.min(RosNodeKeywords.id)).group_by(RosNodeKeywords.name)
+                )
+            )
+            # Step 2: Delete the Duplicates
+            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id.in_(subquery)).delete(synchronize_session=False)
+            # Retrieve the remaining entries sorted by their current ID
+            remaining_entries = db.session.query(RosNodeKeywords).order_by(RosNodeKeywords.id).all()
+            # Update the IDs to be sequential starting from 0
+            for index, entry in enumerate(remaining_entries):
+                entry.id = index
+            db.session.commit()
+
+            get_node(timeout_subprocess)
 
             return redirect(url_for('systems_page'))
         
@@ -247,12 +293,14 @@ def systems_page():
                 command = ros_source + "rosnode kill -a"
                 ssh_connection.execute_command(command, wait=False)
                 cleanup_dead_nodes()
+                time.sleep(1.0)
+                get_node(timeout_subprocess)
             else:
                 db.session.query(RosNodeList).delete()
                 node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
 
         elif 'kill_node' in request.form:
             if remote_connection: 
@@ -261,16 +309,33 @@ def systems_page():
                 command = ros_source + "rosnode kill " + temp_kill.name
                 ssh_connection.execute_command(command, wait=False)
                 cleanup_dead_nodes()
+                time.sleep(1.0)
+                get_node(timeout_subprocess)
             else:
                 db.session.query(RosNodeList).delete()
                 node_ = RosNodeList(id=0, name = 'Clicked without Connection')
                 db.session.add(node_)
                 db.session.commit()
-            # return redirect(url_for('systems_page'))
+            return redirect(url_for('systems_page'))
+
+        elif 'remove_keywords' in request.form:
+            db.session.query(RosNodeKeywords).delete()
+            db.session.commit()
+            get_node(timeout_subprocess)
+            return redirect(url_for('systems_page'))
+    
+        elif 'remove_single_keyword' in request.form:
+            keyword_id = request.form['remove_single_keyword']
+            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id == keyword_id).delete()
+            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id > int(keyword_id)).update({RosNodeKeywords.id: RosNodeKeywords.id - 1})
+            db.session.commit()
+            get_node(timeout_subprocess)
+            return redirect(url_for('systems_page'))
         
     return render_template("systems.html", 
                            launch_list = roslaunch_list, 
                            node_list = rosnode_list, 
+                           keyword_list = rosnode_keyword,
                            remote_connection = str(remote_connection),
                            remote_hostname  = str(ssh_connection.hostname),
                            remote_username = str(ssh_connection.username),

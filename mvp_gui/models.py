@@ -130,3 +130,9 @@ class RosTopicKeywords(db.Model):
     name = db.Column(db.String(length=30), nullable=False)
     def __repr__(self):
         return f'rostopickeywords {self}'
+
+class RosNodeKeywords(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False)
+    def __repr__(self):
+        return f'rosnodekeywords {self}'
