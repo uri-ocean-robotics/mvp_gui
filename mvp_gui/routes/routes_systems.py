@@ -14,6 +14,9 @@ from sqlalchemy import func
 
 roslaunch_folder = roslaunch_folder_default
 
+threads = []
+launch_files = []
+
 def check_mvpgui_status(mvpgui_node_name, env):
     mvpgui_command = 'rosnode list'
     try:
@@ -66,6 +69,11 @@ def check_ros_master_uri(env):
 def emit_message(message):
     socketio.emit('terminal_output', {'data': message}, namespace='/terminal')
 
+# def ssh_command_thread(command, emit_message, stop_event):
+#     while not stop_event.is_set():
+#         ssh_connection.execute_command_disp_terminal(command, emit_message)
+#         time.sleep(0.1)
+
 # get node with cmd_line
 def get_node(timeout_subprocess):
     try:
@@ -103,10 +111,14 @@ def systems_page():
     global roslaunch_folder
     global env
     global roscore_status
+    global threads
+    global launch_files
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
     rosnode_keyword = RosNodeKeywords.query.all()
+
+    rosthread_list = RosThreadList.query.all()
 
 
     remote_connection  = ssh_connection.is_connected()
@@ -139,6 +151,9 @@ def systems_page():
                 # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
                 ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
                 # return redirect(url_for('systems_page'))
+                cmd = "rm -rf /tmp/ros_launch_pid.txt"
+                ssh_connection.execute_command(cmd)
+
             else:
                 ssh_connection.close()
                 # If SSH connection fails, you can render an error page or redirect to a different route
@@ -229,13 +244,45 @@ def systems_page():
                 ##get the package name and launch file
                 temp_launch = RosLaunchList.query.get(launch_id)
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
-                threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command, emit_message)).start()
+                command_with_pid = f"bash -c '( {command} & echo $! >> /tmp/ros_launch_pid.txt; wait $!)'"
+                thread = threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command_with_pid, emit_message))
+                thread.start()
+                threads.append(thread)
+                launch_files.append(temp_launch.name)
+
+                db.session.query(RosThreadList).delete()
+                for i in range(len(threads)):
+                    thread_ = RosThreadList(id=i, name=launch_files[i], thread=str(threads[i]))
+                    db.session.add(thread_)
+                db.session.commit()
+                
+
+                # threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command, emit_message)).start()
+
                 return render_template("terminal.html")
 
                 # return redirect(url_for('terminal_page'))
 
                 # ssh_connection.execute_command(command, wait=True)
                 # time.sleep(5)
+            return redirect(url_for('systems_page'))
+        
+        elif 'terminate_thread' in request.form:
+            if remote_connection: 
+                t_request = request.form['terminate_thread']
+                t_id = RosThreadList.query.get(t_request)   
+                ssh_connection.kill_terminal_session(t_id.id + 1)
+                thread = threads[t_id.id]
+                thread.join(timeout=3)
+
+                threads.remove(thread)
+
+                db.session.query(RosThreadList).filter(RosThreadList.id == t_id.id).delete()
+                db.session.query(RosThreadList).filter(RosThreadList.id > int(t_id.id)).update({RosThreadList.id: RosThreadList.id - 1})
+                db.session.commit()
+                time.sleep(1.0)
+                get_node(timeout_subprocess)
+
             return redirect(url_for('systems_page'))
         
         elif 'launch_xvfb' in request.form:
@@ -333,7 +380,8 @@ def systems_page():
             return redirect(url_for('systems_page'))
         
     return render_template("systems.html", 
-                           launch_list = roslaunch_list, 
+                           launch_list = roslaunch_list,
+                           thread_list = rosthread_list, 
                            node_list = rosnode_list, 
                            keyword_list = rosnode_keyword,
                            remote_connection = str(remote_connection),

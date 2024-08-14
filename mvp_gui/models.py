@@ -112,6 +112,13 @@ class RosLaunchList(db.Model):
     name = db.Column(db.String(length=100), nullable=False)
     def __repr__(self):
         return f'roslaunchlist {self}'
+    
+class RosThreadList(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(length=30), nullable=False) 
+    thread = db.Column(db.String(length=30), nullable=False)
+    def __repr__(self):
+        return f'rosthreadlist {self}'
 
 class RosNodeList(db.Model):
     id = db.Column(db.Integer(), primary_key=True)

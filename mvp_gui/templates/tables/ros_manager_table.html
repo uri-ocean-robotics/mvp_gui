@@ -128,14 +128,34 @@
     {% endfor %}
 </tbody>
 </table>
-<!-- <br>
-<div style="display: flex;">
-    <form action="/" method="post">
-        <input type="hidden" name="rosnode_list">
-        <button type="submit">Get ROS Nodes</button>
-    </form>
-</div>
-<br> -->
+
+<h6>Current Ros Launchfiles</h6>
+
+<table class="table table-hover table-dark">
+    <thead>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Launch File</th>
+            <th scope="col">Actions</th>
+            <th scope="col"> </th>
+        </tr>
+    </thead>
+    <tbody>
+        <!-- Loop through each item in roslaunch_config list -->
+        {% for item in thread_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>
+                    <form action="/" method="post">
+                        <input type="hidden" name="terminate_thread" value="{{ item.id }}">
+                        <button type="submit">Terminate</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    </table>
 
 <!-- <h6>Node lists</h6>
 <table class="table table-hover table-dark">
