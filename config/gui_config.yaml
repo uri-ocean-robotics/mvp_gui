@@ -1,4 +1,4 @@
-name_space: race
+name_space: alpha_img
 
 ##vehicle status
 poses_source: odometry/filtered/local
@@ -25,8 +25,8 @@ lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager
-remote_host: "192.168.2.60"
-remote_user: "alpha"
+remote_host: "192.168.2.51"
+remote_user: "mvp_admin"
 remote_password: "temppwd"  
 
-roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
+roslaunch_folder: ~/catkin_ws/src/alpha_img_auv/alpha_img_bringup/launch/

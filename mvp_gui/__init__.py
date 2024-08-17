@@ -25,14 +25,14 @@ TILES_DIR_2 = "../offline_map/"
 global_file_name = './config/gui_config.yaml'
 
 ros_source_base = "source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && "
-roslaunch_folder_default = '~/catkin_ws/src/race_auv/race_bringup/launch/'
+roslaunch_folder_default = '~/catkin_ws/src/alpha_img_auv/alpha_img_bringup/launch/'
 
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
 
-ssh_hostname = '192.168.2.60'
-ssh_username = 'alpha'
+ssh_hostname = '192.168.2.51'
+ssh_username = 'mvp_admin'
 ssh_password = 'temppwd'
 
 # Create SSHConnection instance
