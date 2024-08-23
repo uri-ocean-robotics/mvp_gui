@@ -37,10 +37,8 @@ class gui_ros():
             rospy.sleep(0.1)
             self.set_lumen()
             rospy.sleep(0.5)
-
             self.log_poses()
             rospy.sleep(0.1)
-
             self.get_state()
             rospy.sleep(0.1)
             self.change_state()
@@ -87,7 +85,8 @@ class gui_ros():
 
         self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
 
-        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
+        # self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
+        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub, self.vitals_sub], 10, 0.1)
 
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
 
@@ -134,7 +133,7 @@ class gui_ros():
 
 
     #obtain pose and power information and store in the database 
-    def callback(self, poses_sub, geo_pose_sub):
+    def callback(self, poses_sub, geo_pose_sub, vitals_sub):
         # quad = [poses_sub.pose.pose.orientation.x, 
         #         poses_sub.pose.pose.orientation.y, 
         #         poses_sub.pose.pose.orientation.z, 
@@ -165,6 +164,13 @@ class gui_ros():
             poses.r = poses_sub.twist.twist.angular.z
             poses.lat = geo_pose_sub.pose.position.latitude
             poses.lon = geo_pose_sub.pose.position.longitude
+
+            vital = Vitals.query.first()
+            vital.id = 1
+            vital.name = self.name_space
+            vital.voltage = vitals_sub.voltage
+            vital.current = vitals_sub.current
+            
             db.session.commit() 
 
             
