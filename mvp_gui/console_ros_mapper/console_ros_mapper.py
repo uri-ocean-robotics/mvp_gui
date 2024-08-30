@@ -1,15 +1,36 @@
 import subprocess
 from nav_msgs.msg import Odometry
-
+from mvp_msgs.msg import HelmState
 from geographic_msgs.msg import GeoPoseStamped
+import yaml
+
+
 import rospy
 
 class ConsoleROSMapper():
     ns = 'alpha_rise'
     odom_sub_topic = 'odometry/filtered/local'
     geopose_sub_topic = 'odometry/geopose'
+    get_helm_state_service_name = 'helm/get_state'
 
     #################### get topic data####################
+    def get_helm_state_data(self):
+        
+        result = subprocess.run(['rosservice', 'call', '/' + self.ns + '/' + self.get_helm_state_service_name, '\"\"'],
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                text=True)
+        # Capture the output
+        if result.returncode == 0:
+            # print(result.stdout)
+            # Extract the pose message from stdout
+            helm_state_info = self.parse_helm_state_srv_response(result.stdout)
+            return helm_state_info
+        else:
+            print(f"Error: {result.stderr}")
+            return None
+
+
     def get_geopose_data(self):
         # Run the shell command to get odometry data
         result = subprocess.run(['rostopic', 'echo', '-n', '1', self.ns + '/' + self.geopose_sub_topic],
@@ -36,7 +57,7 @@ class ConsoleROSMapper():
         if result.returncode == 0:
             # print(result.stdout)
             # Extract the pose message from stdout
-            odom_msg = self.parse_oometry_from_string(result.stdout)
+            odom_msg = self.parse_odometry_from_string(result.stdout)
             return odom_msg
         else:
             print(f"Error: {result.stderr}")
@@ -44,93 +65,70 @@ class ConsoleROSMapper():
 
 
     #################### parsing ####################
-    def parse_oometry_from_string(self, data_string):
-        
-        time_index =  3
-        frame_index = 5
-        child_frame_index = 6
-        position_index = 9
-        orientation_index = 13
-        linear_index = 21
-        angular_index = 25
+    def parse_helm_state_srv_response(self, data_string):
+        helm_state_info = HelmState()
+
+        data = yaml.safe_load(data_string)
+
+        # Access the transitions
+        helm_state_info.name = data['state']['name']
+        helm_state_info.mode = data['state']['mode']
+        helm_state_info.transitions = data['state']['transitions']
+
+        return helm_state_info
+
+    def parse_odometry_from_string(self, data_string):
         
         # Initialize Odometry message
         odometry = Odometry()
+        documents = yaml.safe_load_all(data_string)
 
-        # Split the output string into lines
-        lines = data_string.split('\n')
+        # Extract the first document
+        data = next(documents, None)  # Get the first document
 
-        if 'secs' in lines[time_index].split(':')[0]:
-            odometry.header.stamp= rospy.Time(int(lines[time_index].split(':')[1]), int(lines[time_index+1].split(':')[1])) 
-            
-        if 'frame_id' in lines[frame_index].split(':')[0]:
-            s = lines[frame_index].split(':')[1]
-            s= s.strip()
-            odometry.header.frame_id = s.replace('"', '')
+        odometry.header.stamp= rospy.Time(int(data['header']['stamp']['secs']), int(data['header']['stamp']['nsecs'])) 
 
-        if 'child_frame_id' in lines[child_frame_index].split(':')[0]:
-            s = lines[child_frame_index].split(':')[1]
-            s= s.strip()
-            odometry.child_frame_id = s.replace('"', '')
+        odometry.header.frame_id = data['header']['frame_id']
+        odometry.child_frame_id = data['child_frame_id']
+        odometry.pose.pose.position.x = data['pose']['pose']['position']['x']
+        odometry.pose.pose.position.y = data['pose']['pose']['position']['y']
+        odometry.pose.pose.position.z = data['pose']['pose']['position']['z']
+        odometry.pose.pose.orientation.x = data['pose']['pose']['orientation']['x']
+        odometry.pose.pose.orientation.y = data['pose']['pose']['orientation']['y']
+        odometry.pose.pose.orientation.z = data['pose']['pose']['orientation']['z']
+        odometry.pose.pose.orientation.w = data['pose']['pose']['orientation']['w']
 
-        if 'position' in lines[position_index].split(':')[0]:
-            odometry.pose.pose.position.x = float(lines[position_index+1].split(': ')[1])
-            odometry.pose.pose.position.y = float(lines[position_index+2].split(': ')[1])
-            odometry.pose.pose.position.z = float(lines[position_index+3].split(': ')[1])
+        odometry.twist.twist.linear.x = data['twist']['twist']['linear']['x']
+        odometry.twist.twist.linear.y = data['twist']['twist']['linear']['y']
+        odometry.twist.twist.linear.z = data['twist']['twist']['linear']['z']
 
-        if 'orientation' in lines[orientation_index].split(':')[0]:
-            odometry.pose.pose.orientation.x = float(lines[orientation_index+1].split(': ')[1])
-            odometry.pose.pose.orientation.y = float(lines[orientation_index+2].split(': ')[1])
-            odometry.pose.pose.orientation.z = float(lines[orientation_index+3].split(': ')[1])
-            odometry.pose.pose.orientation.w = float(lines[orientation_index+4].split(': ')[1])
-
-        if 'linear' in lines[linear_index].split(':')[0]:
-            odometry.twist.twist.linear.x = float(lines[linear_index+1].split(': ')[1])
-            odometry.twist.twist.linear.y = float(lines[linear_index+2].split(': ')[1])
-            odometry.twist.twist.linear.z = float(lines[linear_index+3].split(': ')[1])
-
-        if 'angular' in lines[angular_index].split(':')[0]:
-            odometry.twist.twist.angular.x = float(lines[angular_index+1].split(': ')[1])
-            odometry.twist.twist.angular.y = float(lines[angular_index+2].split(': ')[1])
-            odometry.twist.twist.angular.z = float(lines[angular_index+3].split(': ')[1])
+        odometry.twist.twist.angular.x = data['twist']['twist']['angular']['x']
+        odometry.twist.twist.angular.y = data['twist']['twist']['angular']['y']
+        odometry.twist.twist.angular.z = data['twist']['twist']['angular']['z']
 
         return odometry
 
     def parse_geo_pose_from_string(self, data_string):
-        time_index =  3
-        frame_index = 5
-        position_index = 7
-        orientation_index = 11
-
-        # Initialize Odometry message
         geopose = GeoPoseStamped()
 
-        # Split the output string into lines
-        lines = data_string.split('\n')
+        documents = yaml.safe_load_all(data_string)
 
-        if 'secs' in lines[time_index].split(':')[0]:
-            geopose.header.stamp= rospy.Time(int(lines[time_index].split(':')[1]), int(lines[time_index+1].split(':')[1])) 
-            
-        if 'frame_id' in lines[frame_index].split(':')[0]:
-            s = lines[frame_index].split(':')[1]
-            s= s.strip()
-            geopose.header.frame_id = s.replace('"', '')
+        # Extract the first document
+        data = next(documents, None)  # Get the first document
 
+        geopose.header.stamp= rospy.Time(int(data['header']['stamp']['secs']), int(data['header']['stamp']['nsecs'])) 
 
-        if 'position' in lines[position_index].split(':')[0]:
-            geopose.pose.position.latitude = float(lines[position_index+1].split(': ')[1])
-            geopose.pose.position.longitude = float(lines[position_index+2].split(': ')[1])
-            geopose.pose.position.altitude = float(lines[position_index+3].split(': ')[1])
+        geopose.header.frame_id = data['header']['frame_id']
 
-        if 'orientation' in lines[orientation_index].split(':')[0]:
-            geopose.pose.orientation.x = float(lines[orientation_index+1].split(': ')[1])
-            geopose.pose.orientation.y = float(lines[orientation_index+2].split(': ')[1])
-            geopose.pose.orientation.z = float(lines[orientation_index+3].split(': ')[1])
-            geopose.pose.orientation.w = float(lines[orientation_index+4].split(': ')[1])
+        geopose.pose.position.latitude = data['pose']['position']['latitude']
+        geopose.pose.position.longitude = data['pose']['position']['longitude']
+        geopose.pose.position.altitude = data['pose']['position']['altitude']
+        geopose.pose.orientation.x = data['pose']['orientation']['x']
+        geopose.pose.orientation.y = data['pose']['orientation']['y']
+        geopose.pose.orientation.z = data['pose']['orientation']['z']
+        geopose.pose.orientation.w = data['pose']['orientation']['w']
 
         return geopose
-
-
 
 def main():
     rospy.init_node('odometry_mapper', anonymous=True)
@@ -145,11 +143,19 @@ def main():
         mapper = ConsoleROSMapper()
         odometry_msg = mapper.get_odometry_data()
         geopose_msg =mapper.get_geopose_data()
+        helm_info = mapper.get_helm_state_data()
+
+        
 
         # Print the Odometry message or handle it further
         if odometry_msg:
             odometry_publisher.publish(odometry_msg)
+            
+        if(geopose_msg):
             geopose_publisher.publish(geopose_msg)
+
+        if(helm_info):
+            print(helm_info)
 
         # Sleep to maintain the loop rate
         rate.sleep()
