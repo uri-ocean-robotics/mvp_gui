@@ -59,9 +59,12 @@ class gui_ros():
 
         # make lookup table for mapping
         self.name_space = '/' + dataset_config['name_space'] + '/'
+        print(self.name_space)
         self.poses_source = self.name_space + dataset_config['poses_source']
 
         self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
+        print(self.geo_pose_source)
+
         self.vitals_source = self.name_space + dataset_config['vitals_source']
 
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
@@ -155,7 +158,8 @@ class gui_ros():
             poses.yaw = euler_angles[2] * 180 / np.pi
             poses.x = poses_sub.pose.pose.position.x
             poses.y = poses_sub.pose.pose.position.y
-            poses.z = poses_sub.pose.pose.position.z
+            # poses.z = poses_sub.pose.pose.position.z
+            poses.z = geo_pose_sub.pose.position.altitude
             poses.u = poses_sub.twist.twist.linear.x
             poses.v = poses_sub.twist.twist.linear.y
             poses.w = poses_sub.twist.twist.linear.z
