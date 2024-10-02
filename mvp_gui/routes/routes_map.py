@@ -13,6 +13,26 @@ def map_page():
         "alt": float(poses.z)
     }
 
+    pose_history = PoseHistory.query.order_by(PoseHistory.id).all()
+    pose_data = [
+        {"id": pose.id, "lat": float(pose.lat), "lon": float(pose.lon)}
+        for pose in pose_history
+    ]
+
+    # Get topside lat lon for map
+    pose_topside = PoseTopside.query.first()
+    topside_data = {
+        "lat": float(pose_topside.lat),
+        "lon": float(pose_topside.lon),
+        "alt": float(pose_topside.z)
+    }
+
+    pose_history_topside = PoseHistoryTopside.query.order_by(PoseHistoryTopside.id).all()
+    topside_history_data = [
+        {"id": pose_t.id, "lat": float(pose_t.lat), "lon": float(pose_t.lon)}
+        for pose_t in pose_history_topside
+    ]
+    
     # Sort the waypoints by ID
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
@@ -25,12 +45,6 @@ def map_page():
     current_waypoints_data = [
         {"id": cwaypoint.id, "lat": float(cwaypoint.lat), "lon": float(cwaypoint.lon), "alt": float(cwaypoint.alt)}
         for cwaypoint in cwaypoints
-    ]
-
-    pose_history = PoseHistory.query.order_by(PoseHistory.id).all()
-    pose_data = [
-        {"id": pose.id, "lat": float(pose.lat), "lon": float(pose.lon)}
-        for pose in pose_history
     ]
 
     states = HelmStates.query.all()
@@ -70,7 +84,8 @@ def map_page():
         
     return render_template("map.html", items_jsn=waypoints_data, citems_jsn=current_waypoints_data, 
                                         vehicle_jsn=vehicle_data, host_ip=host_ip, states=states,
-                                        pose_jsn =pose_data, controller_state = controller_state,
+                                        pose_jsn =pose_data, controller_state = controller_state, 
+                                        topside_jsn=topside_data, topsidehistory_jsn = topside_history_data,
                                         current_page = "map")
 
 
@@ -102,6 +117,13 @@ def latest_data():
         "alt": float(poses.z)
     }
 
+    pose_topside = PoseTopside.query.first()
+    topside_data = {
+        "lat": float(pose_topside.lat),
+        "lon": float(pose_topside.lon),
+        "alt": float(pose_topside.z)
+    }
+
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
         {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon), "alt": float(waypoint.alt)}
@@ -119,7 +141,14 @@ def latest_data():
         for pose in pose_history
     ]
 
-    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data})
+    pose_history_topside = PoseHistoryTopside.query.order_by(PoseHistoryTopside.id).all()
+    topside_history_data = [
+        {"id": pose_t.id, "lat": float(pose_t.lat), "lon": float(pose_t.lon)}
+        for pose_t in pose_history_topside
+    ]
+
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data, "topside":topside_data, "topside_history":topside_history_data})
 
 
 

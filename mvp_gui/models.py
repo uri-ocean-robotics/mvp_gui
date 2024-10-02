@@ -31,6 +31,21 @@ class Poses(db.Model):
     def __repr__(self):
         return f'poses {self}'
 
+class PoseTopside(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    z = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posetopside {self}'
+    
+class PoseHistoryTopside(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    z = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posehsitorytopside {self}'
 
 class PoseHistory(db.Model):
     id = db.Column(db.Integer(), primary_key=True)

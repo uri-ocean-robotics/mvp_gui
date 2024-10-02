@@ -119,6 +119,10 @@
     const vehicleData = {{ vehicle_jsn | safe }};
     const poseData = {{pose_jsn | safe}};
 
+    const topsideData = {{ topside_jsn | safe }};
+    const topsidehistoryData = {{ topsidehistory_jsn | safe }};
+
+
     const coordinates = document.getElementById('coordinates');
 
     // Define a color mapping for route IDs
@@ -192,6 +196,12 @@
         longitude: entry.lon
     }));
 
+    // Prepare GeoJSON data for the route
+    let coordinatesData_topside = topsidehistoryData.map(entry => ({
+        latitude: entry.lat,
+        longitude: entry.lon
+    }));
+
     // Create a custom HTML element for the arrow marker
     const markerContainer = document.createElement('div');
     markerContainer.className = 'marker-container';
@@ -209,6 +219,10 @@
 
     vehicleMarker = new maplibregl.Marker({ element: markerContainer, draggable: false })
         .setLngLat([vehicleData.lon, vehicleData.lat])
+        .addTo(map);
+
+    topsideMarker = new maplibregl.Marker({ element: markerContainer, draggable: false })
+        .setLngLat([topsideData.lon, topsideData.lat])
         .addTo(map);
 
     let markers = [];
@@ -262,7 +276,8 @@
         const routes = [
             { id: 'route1', coordinates: coordinatesData },
             { id: 'route2', coordinates: coordinatesData_cWpt },
-            { id: 'route3', coordinates: coordinatesData_pose}
+            { id: 'route3', coordinates: coordinatesData_pose},
+            { id: 'route4', coordinates: coordinatesData_topside}
 
         ];
 
@@ -287,12 +302,11 @@
             });
 
             // Calculate midpoints for each segment and create HTML markers
-            if (route.id !== 'route3') {
+            if (route.id !== 'route3' && route.id !== 'route4') {
                 for (let i = 0; i < route.coordinates.length - 1; i++) {
                     const p1 = route.coordinates[i];
                     const p2 = route.coordinates[i + 1];
                     const midpoint = calculateMidpoint(p1, p2);
-                    console.log(midpoint.altitude)
                     createAltitudeMarker(midpoint, routeColors[route.id]);
                 }
             }
@@ -447,12 +461,22 @@
                 const newcWptData = data.current_waypoints;     
                 const newVehicleData = data.vehicle;
                 const newPoseData = data.pose;
+                const newtopsideData = data.topside;
+                const newtopsidehistoryData= data.topside_history;
+
+
                 // Create or update the vehicle marker
                 if (vehicleMarker) {
                     vehicleMarker.setLngLat([newVehicleData.lon, newVehicleData.lat]);
                     const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
                     arrowElement.style.transform = `rotate(${90 - newVehicleData.yaw}deg)`;  
                     vehiclealtitudeDisplay.innerText = 'Altitude: ' + newVehicleData.alt + "m";                  
+                } 
+
+                if (topsideMarker) {
+                    vehicleMarker.setLngLat([newtopsideData.lon, newtopsideData.lat]);
+                    const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
+                    vehiclealtitudeDisplay.innerText = 'Altitude: ' + newtopsideData.alt + "m";                  
                 } 
 
                 current_wpt_markers.forEach(marker => marker.remove());
@@ -502,6 +526,12 @@
                 }));
 
                 coordinatesData_pose = newPoseData.map(entry => ({
+                    id: entry.id,
+                    latitude: entry.lat,
+                    longitude: entry.lon
+                }));
+
+                coordinatesData_topside = newtopsidehistoryData.map(entry => ({
                     id: entry.id,
                     latitude: entry.lat,
                     longitude: entry.lon
@@ -587,6 +617,30 @@
                 'line-width': 3
             }
         });
+
+        // Add the first route source and layer
+        map.addSource('route4', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        map.addLayer({
+            id: 'routeLayer4',
+            type: 'line',
+            source: 'route4',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#A020F0', // Red color for the first route
+                'line-width': 3
+            }
+        });
+
 
         // Initialize markers with the existing data
         jsonData.forEach((item, index) => {

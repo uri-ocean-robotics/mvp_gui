@@ -395,6 +395,7 @@ def gui_ros_start():
     except rospy.exceptions.ROSException as e:
         print("Exiting mvp gui node!")
 
+
 if __name__ == "__main__":
     gui_ros_start()
 
