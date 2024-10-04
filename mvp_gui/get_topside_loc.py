@@ -16,7 +16,7 @@ with app.app_context():
     db.session.query(PoseHistoryTopside).delete()
     db.session.commit()
 
-decay = 20
+decay = 120
 while True:
     try:
         line = sio.readline()

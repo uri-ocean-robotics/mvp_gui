@@ -83,6 +83,14 @@
         transform-origin: center;
     }
 
+    .groundstation-marker {
+        width: 45px; /* Adjust size as needed */
+        height: 45px; /* Adjust size as needed */
+        background: url('{{ url_for('static', filename='icons/ground_station_icon.png') }}') no-repeat center center;
+        background-size: contain;
+        transform-origin: center;
+    }
+
     .vehicle-altitude-display {
         margin-top: -5px; /* Adjust negative margin to bring text closer to the arrow */
         font-size: 13px;
@@ -209,6 +217,10 @@
     const arrowElement = document.createElement('div');
     arrowElement.className = 'arrow-marker';
 
+    // Create a custom HTML element for the arrow marker
+    const GSElement = document.createElement('div');
+    GSElement.className = 'groundstation-marker';
+
     // Create the ID display element
     const vehiclealtitudeDisplay = document.createElement('div');
     vehiclealtitudeDisplay.className = 'vehicle-altitude-display';
@@ -221,7 +233,7 @@
         .setLngLat([vehicleData.lon, vehicleData.lat])
         .addTo(map);
 
-    topsideMarker = new maplibregl.Marker({ element: markerContainer, draggable: false })
+    topsideMarker = new maplibregl.Marker({ element: GSElement, draggable: false })
         .setLngLat([topsideData.lon, topsideData.lat])
         .addTo(map);
 
@@ -474,9 +486,8 @@
                 } 
 
                 if (topsideMarker) {
-                    vehicleMarker.setLngLat([newtopsideData.lon, newtopsideData.lat]);
-                    const arrowElement = vehicleMarker.getElement().querySelector('.arrow-marker');
-                    vehiclealtitudeDisplay.innerText = 'Altitude: ' + newtopsideData.alt + "m";                  
+                    topsideMarker.setLngLat([newtopsideData.lon, newtopsideData.lat]);
+                    const GSElement = topsideMarker.getElement().querySelector('.groundstation-marker');
                 } 
 
                 current_wpt_markers.forEach(marker => marker.remove());
@@ -618,7 +629,6 @@
             }
         });
 
-        // Add the first route source and layer
         map.addSource('route4', {
             type: 'geojson',
             data: {
@@ -637,7 +647,8 @@
             },
             paint: {
                 'line-color': '#A020F0', // Red color for the first route
-                'line-width': 3
+                'line-width': 3,
+                'line-opacity': 0.5 
             }
         });
 
