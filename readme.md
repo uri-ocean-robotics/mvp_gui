@@ -25,6 +25,10 @@
     ```
     pip3 install paramiko
     ```
+- [pynmea2](https://github.com/Knio/pynmea2)
+    ```
+    pip install pynmea2
+    ```
 - [python3-rosnode](https://packages.debian.org/sid/python3-rosnode)
     ```
     sudo apt-get install python3-rosnode

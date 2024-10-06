@@ -21,6 +21,14 @@ def start_ros_process(env):
             )
             time.sleep(1.0)
 
+            get_topic_loc_process = subprocess.Popen(
+                ['bash', '-c', 'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && python3 ./mvp_gui/get_topside_loc.py'],
+                # stdout=subprocess.DEVNULL,
+                # stderr=subprocess.DEVNULL, 
+                env=env,
+                preexec_fn=os.setsid
+            )
+
 def stop_ros_process(env):
     global ros_process
     print("TO STOP: ", ros_process)
