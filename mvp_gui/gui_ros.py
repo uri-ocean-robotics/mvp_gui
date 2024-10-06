@@ -5,7 +5,7 @@ from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped
 from mvp_msgs.msg import Power, Waypoint
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float32MultiArray
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
 import yaml
@@ -86,7 +86,8 @@ class gui_ros():
 
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
 
-        self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
+        # self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
+        self.vitals_sub = message_filters.Subscriber(self.vitals_source, Float32MultiArray)
 
         # self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub, self.vitals_sub], 10, 0.1)
@@ -172,9 +173,11 @@ class gui_ros():
             vital = Vitals.query.first()
             vital.id = 1
             vital.name = self.name_space
-            vital.voltage = vitals_sub.voltage
-            vital.current = vitals_sub.current
-            
+            # vital.voltage = vitals_sub.voltage
+            # vital.current = vitals_sub.current
+            vital.voltage = vitals_sub.data[0]
+            vital.current = vitals_sub.data[1]
+
             db.session.commit() 
 
             
