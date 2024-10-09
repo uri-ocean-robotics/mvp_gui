@@ -34,17 +34,17 @@ def stop_processes():
 if __name__ == "__main__":
     start_processes()
 
-    # Clear pervious ROS launchfiles, nodes, topics, topic keywords
+    # Clear pervious ROS launchfiles, nodes, node_keywords, topics, topic keywords
     db.session.query(RosLaunchList).delete()
     db.session.query(RosThreadList).delete()
     db.session.query(RosNodeList).delete()
+    db.session.query(RosNodeKeywords).delete()
     db.session.query(RosTopicList).delete()
     db.session.query(RosTopicKeywords).delete()
     db.session.commit()
     
     try:
         while True:
-            # pass
             time.sleep(1)  # Sleep for 1 second to reduce CPU usage
     except KeyboardInterrupt:
         print("\nExiting server !!")

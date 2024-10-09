@@ -1,4 +1,4 @@
-name_space: race
+name_space: alpha_rise
 
 ##vehicle status
 poses_source: odometry/filtered/local
@@ -25,10 +25,10 @@ lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager
-remote_host: "192.168.2.60"
+remote_host: "192.168.2.50"
 remote_user: "mvp_admin"
-remote_password: "temppwd"  
+remote_password: "temppwd" 
 
-roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
+roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
 ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
 

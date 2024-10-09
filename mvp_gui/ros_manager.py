@@ -64,12 +64,8 @@ class SSHConnection:
     def execute_command_disp_terminal(self, command, message_callback):
         
         stdin, stdout, stderr = self.ssh_client.exec_command(command, get_pty=True)
-        # pid = self.ssh_client.get_pid_of_ros_launch(stdout)  # Implement a method to get the PID of the ROS launch process
-        # print("pid: ", pid)
         stdout.channel.setblocking(0)  # Set stdout channel to non-blocking mode
         stderr.channel.setblocking(0)  # Set stderr channel to non-blocking mode
-
-        start_time = time.time()
     
         while True:
             if stdout.channel.recv_ready():
@@ -86,9 +82,8 @@ class SSHConnection:
             if stdout.channel.exit_status_ready() and not stdout.channel.recv_ready():
                 break
             
-            if time.time() - start_time >= 10:
-                time.sleep(0.1)  # Small sleep to reduce CPU usage
-    
+            time.sleep(0.1)
+
     # def kill_terminal_session(self):
     #     # Command to find the parent process (shell) PID of the roslaunch process
     #     find_shell_pid_command = "ps -o ppid= -p $(cat /tmp/ros_launch_pid.txt)"
@@ -105,45 +100,51 @@ class SSHConnection:
     #         print("Shell PID not found.")
 
     def kill_terminal_session(self, id):
+        kill_shell_command = f"kill -SIGHUP {id} & sed -i '/{id}/d' /tmp/ros_launch_pid.txt"
+        self.ssh_client.exec_command(kill_shell_command)
+
         # Command to find the parent process (shell) PID of the roslaunch process
         # ppid = "cat /tmp/ros_launch_pid.txt"
         # stdin, stdout, stderr = self.ssh_client.exec_command(ppid)
         # print(stdout)
-        find_shell_pid_command = f"sed -n '{id}p' /tmp/ros_launch_pid.txt"
+        # find_shell_pid_command = f"sed -n '{id}p' /tmp/ros_launch_pid.txt"
         # find_shell_pid_command = "ps -o ppid= -p $(cat /tmp/ros_launch_pid.txt)"
-        stdin, stdout, stderr = self.ssh_client.exec_command(find_shell_pid_command)
+
+        # stdin, stdout, stderr = self.ssh_client.exec_command(find_shell_pid_command)
         
-        shell_pid = stdout.read().decode('utf-8').strip()
+        # shell_pid = stdout.read().decode('utf-8').strip()
         
-        if shell_pid:
-            print(f"Killing shell with PID: {shell_pid}")
-            # Command to kill the shell and all its child processes
-            kill_shell_command = f"kill -SIGHUP {shell_pid}"
-            self.ssh_client.exec_command(kill_shell_command)
-            self.remove_terminated_pid_from_file(id - 1)
-        else:
-            print("Shell PID not found.")
+        # if shell_pid:
+        #     print(f"Killing shell with PID: {shell_pid}")
+        #     # Command to kill the shell and all its child processes
+        #     kill_shell_command = f"kill -SIGHUP {shell_pid}"
+        #     self.ssh_client.exec_command(kill_shell_command)
+        #     self.remove_terminated_pid_from_file(id - 1)
+        # else:
+        #     print("Shell PID not found.")
 
-    def remove_terminated_pid_from_file(self, pid_index):
-        # Read the contents of the PID file line by line
-        read_pid_command = "cat /tmp/ros_launch_pid.txt"
-        stdin, stdout, stderr = self.ssh_client.exec_command(read_pid_command)
-        pids = stdout.read().decode('utf-8').strip().splitlines()
 
-        # Ensure the index is within the valid range
-        if 0 <= pid_index < len(pids):
-            # Remove the PID at the specified index
-            del pids[pid_index]
 
-            # Write the remaining PIDs back to the file, each on a new line
-            if pids:
-                new_content = '\n'.join(pids)
-                update_pid_command = f"echo -e '{new_content}' > /tmp/ros_launch_pid.txt"
-            else:
-                # If no PIDs remain, truncate the file
-                update_pid_command = "truncate -s 0 /tmp/ros_launch_pid.txt"
+    # def remove_terminated_pid_from_file(self, pid_index):
+    #     # Read the contents of the PID file line by line
+    #     read_pid_command = "cat /tmp/ros_launch_pid.txt"
+    #     stdin, stdout, stderr = self.ssh_client.exec_command(read_pid_command)
+    #     pids = stdout.read().decode('utf-8').strip().splitlines()
+
+    #     # Ensure the index is within the valid range
+    #     if 0 <= pid_index < len(pids):
+    #         # Remove the PID at the specified index
+    #         del pids[pid_index]
+
+    #         # Write the remaining PIDs back to the file, each on a new line
+    #         if pids:
+    #             new_content = '\n'.join(pids)
+    #             update_pid_command = f"echo -e '{new_content}' > /tmp/ros_launch_pid.txt"
+    #         else:
+    #             # If no PIDs remain, truncate the file
+    #             update_pid_command = "truncate -s 0 /tmp/ros_launch_pid.txt"
             
-            self.ssh_client.exec_command(update_pid_command)
+    #         self.ssh_client.exec_command(update_pid_command)
 
         
     def execute_command_with_xvfb(self, command):

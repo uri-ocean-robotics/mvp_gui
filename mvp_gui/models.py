@@ -131,7 +131,8 @@ class RosLaunchList(db.Model):
 class RosThreadList(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(length=30), nullable=False) 
-    thread = db.Column(db.String(length=30), nullable=False)
+    thread = db.Column(db.Integer(), nullable=False)
+    pid = db.Column(db.Integer(), nullable=True)
     def __repr__(self):
         return f'rosthreadlist {self}'
 

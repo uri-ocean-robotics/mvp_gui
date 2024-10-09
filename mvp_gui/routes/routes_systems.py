@@ -69,6 +69,7 @@ def check_ros_master_uri(env):
 def emit_message(message):
     socketio.emit('terminal_output', {'data': message}, namespace='/terminal')
 
+
 # def ssh_command_thread(command, emit_message, stop_event):
 #     while not stop_event.is_set():
 #         ssh_connection.execute_command_disp_terminal(command, emit_message)
@@ -93,11 +94,12 @@ def get_node(timeout_subprocess):
         node_list = response.stdout.splitlines()
         count = 0
         db.session.query(RosNodeList).delete()
+        db.session.commit()
         for item in node_list:
             node_ = RosNodeList(id=count, name = item)
             db.session.add(node_)
+            db.session.commit()
             count = count + 1                
-        db.session.commit()
     except subprocess.CalledProcessError as e:
         db.session.query(RosNodeList).delete()
         node_ = RosNodeList(id=0, name = 'empty')
@@ -117,9 +119,7 @@ def systems_page():
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
     rosnode_keyword = RosNodeKeywords.query.all()
-
     rosthread_list = RosThreadList.query.all()
-
 
     remote_connection  = ssh_connection.is_connected()
     
@@ -148,7 +148,6 @@ def systems_page():
                 ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
                 env['ROS_MASTER_URI'] = ros_master_uri
                 os.environ['ROS_MASTER_URI'] = ros_master_uri
-                # ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
                 ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
                 # return redirect(url_for('systems_page'))
                 cmd = "rm -rf /tmp/ros_launch_pid.txt"
@@ -177,8 +176,6 @@ def systems_page():
         elif 'roscore_start' in request.form:
             if ssh_connection.is_connected():
                 print(ros_source + "roscore")
-                # ssh_connection.execute_command(ros_source + "roscore", wait=False)
-                # ssh_connection.execute_command_disp_terminal(ros_source + "roscore")
                 threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(ros_source + "roscore", emit_message)).start()
 
                 # time.sleep(1.0)
@@ -222,17 +219,17 @@ def systems_page():
                 launch_list = response[0].splitlines()
                 count = 0
                 db.session.query(RosLaunchList).delete()
+                db.session.commit()
                 for item in launch_list:
                     if item.endswith(".launch"):
                         launch_ = RosLaunchList(id=count, folder_dir = roslaunch_folder, name = item)
                         db.session.add(launch_)
-                        # db.session.commit()
+                        db.session.commit()
                         count = count + 1
-                    # print(item)
-                db.session.commit()
 
             else:
                 db.session.query(RosLaunchList).delete()
+                db.session.commit()
                 launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
                 db.session.add(launch_)
                 db.session.commit()
@@ -246,41 +243,31 @@ def systems_page():
                 command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
                 command_with_pid = f"bash -c '( {command} & echo $! >> /tmp/ros_launch_pid.txt; wait $!)'"
                 thread = threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command_with_pid, emit_message))
+                thread.daemon = True
                 thread.start()
-                threads.append(thread)
-                launch_files.append(temp_launch.name)
+                thread_nid = threading.get_native_id()
+                time.sleep(2.0)
+                pid_val, _ = ssh_connection.execute_command('tail -1 /tmp/ros_launch_pid.txt')
 
-                db.session.query(RosThreadList).delete()
-                for i in range(len(threads)):
-                    thread_ = RosThreadList(id=i, name=launch_files[i], thread=str(threads[i]))
-                    db.session.add(thread_)
+                id = db.session.query(RosThreadList).count()     
+
+                thread_ = RosThreadList(id=id, name=temp_launch.name, thread=thread_nid, pid=pid_val)                
+                db.session.add(thread_)
                 db.session.commit()
-                
-
-                # threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command, emit_message)).start()
 
                 return render_template("terminal.html")
 
-                # return redirect(url_for('terminal_page'))
-
-                # ssh_connection.execute_command(command, wait=True)
-                # time.sleep(5)
             return redirect(url_for('systems_page'))
         
         elif 'terminate_thread' in request.form:
             if remote_connection: 
                 t_request = request.form['terminate_thread']
-                t_id = RosThreadList.query.get(t_request)   
-                ssh_connection.kill_terminal_session(t_id.id + 1)
-                thread = threads[t_id.id]
-                thread.join(timeout=3)
-
-                threads.remove(thread)
-
-                db.session.query(RosThreadList).filter(RosThreadList.id == t_id.id).delete()
-                db.session.query(RosThreadList).filter(RosThreadList.id > int(t_id.id)).update({RosThreadList.id: RosThreadList.id - 1})
+                thread_tk = RosThreadList.query.get(t_request)   
+                ssh_connection.kill_terminal_session(thread_tk.pid)
+                db.session.query(RosThreadList).filter(RosThreadList.id == thread_tk.id).delete()
+                db.session.query(RosThreadList).filter(RosThreadList.id > int(thread_tk.id)).update({RosThreadList.id: RosThreadList.id - 1})
                 db.session.commit()
-                time.sleep(1.0)
+                time.sleep(2.0)
                 get_node(timeout_subprocess)
 
             return redirect(url_for('systems_page'))
