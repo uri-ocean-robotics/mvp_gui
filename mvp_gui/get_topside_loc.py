@@ -27,10 +27,17 @@ while True:
                 pose_topside = PoseTopside.query.first()
                 if pose_topside == None:
                     pose_topside = PoseTopside()
-                pose_topside.id = 1
-                pose_topside.lat = msg.latitude
-                pose_topside.lon = msg.longitude
-                pose_topside.z = float(msg.altitude)
+                    pose_topside.id = 1
+                if msg.latitude != None and msg.longitude != None:
+                    pose_topside.lat = float(msg.latitude)
+                    pose_topside.lon = float(msg.longitude)
+                    pose_topside.z = float(msg.altitude)
+                else:
+                    pose_topside.lat = 0.0
+                    pose_topside.lon = 0.0
+                    pose_topside.z = 0.0
+                
+
                 db.session.add(pose_topside)
 
                 #increase id by 1
@@ -41,9 +48,9 @@ while True:
                 # Create a new instance of PoseHistory with the values from new_pose
                 new_pose_history_topside = PoseHistoryTopside()
                 new_pose_history_topside.id = 1
-                new_pose_history_topside.lat = msg.latitude
-                new_pose_history_topside.lon = msg.longitude
-                new_pose_history_topside.z = float(msg.altitude)
+                new_pose_history_topside.lat = pose_topside.lat
+                new_pose_history_topside.lon = pose_topside.lon
+                new_pose_history_topside.z = pose_topside.z
 
                 # Add the new entry to the session and commit
                 db.session.add(new_pose_history_topside)

@@ -37,8 +37,6 @@ class gui_ros():
             rospy.sleep(0.1)
             self.set_lumen()
             rospy.sleep(0.5)
-            self.log_poses()
-            rospy.sleep(0.1)
             self.get_state()
             rospy.sleep(0.1)
             self.change_state()
@@ -50,6 +48,8 @@ class gui_ros():
             self.get_waypoints()
             rospy.sleep(0.1)
             self.publish_wpt()
+            rospy.sleep(0.1)
+            self.log_poses()
             rospy.sleep(0.1)
     
 
@@ -87,10 +87,11 @@ class gui_ros():
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
 
         # self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
-        self.vitals_sub = message_filters.Subscriber(self.vitals_source, Float32MultiArray)
+        self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
+        # self.cache = message_filters.Cache(self.vitals_sub, 100, allow_headerless=True)
 
         # self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
-        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub, self.vitals_sub], 10, 0.1)
+        self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
 
@@ -135,13 +136,18 @@ class gui_ros():
             self.current_lumen = float(lumen_item.status) ##used for publishing when there is a change
             db.session.commit()
 
+    def vital_callback(self, msg):
+        with app.app_context():
+            vital = Vitals.query.first()
+            vital.id = 1
+            vital.name = self.name_space
+            vital.voltage = msg.data[0]
+            vital.current = msg.data[1]
+            db.session.commit() 
 
-    #obtain pose and power information and store in the database 
-    def callback(self, poses_sub, geo_pose_sub, vitals_sub):
-        # quad = [poses_sub.pose.pose.orientation.x, 
-        #         poses_sub.pose.pose.orientation.y, 
-        #         poses_sub.pose.pose.orientation.z, 
-        #         poses_sub.pose.pose.orientation.w]
+
+    #obtain pose information and store in the database 
+    def callback(self, poses_sub, geo_pose_sub):
 
         quad = [geo_pose_sub.pose.orientation.x, 
                 geo_pose_sub.pose.orientation.y, 
@@ -159,7 +165,6 @@ class gui_ros():
             poses.yaw = euler_angles[2] * 180 / np.pi
             poses.x = poses_sub.pose.pose.position.x
             poses.y = poses_sub.pose.pose.position.y
-            # poses.z = poses_sub.pose.pose.position.z
             poses.z = geo_pose_sub.pose.position.altitude
             poses.u = poses_sub.twist.twist.linear.x
             poses.v = poses_sub.twist.twist.linear.y
@@ -167,16 +172,12 @@ class gui_ros():
             poses.p = poses_sub.twist.twist.angular.x
             poses.q = poses_sub.twist.twist.angular.y
             poses.r = poses_sub.twist.twist.angular.z
-            poses.lat = geo_pose_sub.pose.position.latitude
-            poses.lon = geo_pose_sub.pose.position.longitude
-
-            vital = Vitals.query.first()
-            vital.id = 1
-            vital.name = self.name_space
-            # vital.voltage = vitals_sub.voltage
-            # vital.current = vitals_sub.current
-            vital.voltage = vitals_sub.data[0]
-            vital.current = vitals_sub.data[1]
+            if geo_pose_sub.pose.position.latitude != None and geo_pose_sub.pose.position.longitude != None:
+                poses.lat = geo_pose_sub.pose.position.latitude
+                poses.lon = geo_pose_sub.pose.position.longitude
+            else:
+                poses.lat = 0.0
+                poses.lon = 0.0
 
             db.session.commit() 
 
