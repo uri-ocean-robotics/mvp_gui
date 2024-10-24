@@ -19,38 +19,51 @@ class gui_ros():
         self.helm_state = 'start'
         self.helm_connected_states = []
         self.service_timeout = 0.1
-        print("node start")
+        self.rate = rospy.Rate(1)
         # ros parameters
         self.get_params()
-        print("param get")
         # ros subscribers and publishers
         self.setup_ros()
-        print("Setup ros done")
         # Main while loop.
         self.main_loop()
 
+
     def main_loop(self):
         while not rospy.is_shutdown():
+            # self.get_power_port_status()
+            # rospy.sleep(0.1)
+            # self.set_power_port()
+            # rospy.sleep(0.1)
+            # self.set_lumen()
+            # rospy.sleep(0.1)
+            # self.get_state()
+            # rospy.sleep(0.1)
+            # self.change_state()
+            # rospy.sleep(0.1)
+            # self.change_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_controller_state()
+            # rospy.sleep(0.1)
+            # self.get_waypoints()
+            # rospy.sleep(0.1)
+            # self.publish_wpt()
+            # rospy.sleep(0.1)
+            # self.log_poses()
+            # rospy.sleep(0.1)
+            
             self.get_power_port_status()
-            rospy.sleep(0.1)
-            self.set_power_port()
-            rospy.sleep(0.1)
-            self.set_lumen()
-            rospy.sleep(0.5)
             self.get_state()
-            rospy.sleep(0.1)
-            self.change_state()
-            rospy.sleep(0.1)
-            self.change_controller_state()
-            rospy.sleep(0.1)
             self.get_controller_state()
-            rospy.sleep(0.1)
             self.get_waypoints()
-            rospy.sleep(0.1)
+            self.change_state()
+            self.change_controller_state()
+            self.set_power_port()
+
+            self.set_lumen()            
             self.publish_wpt()
-            rospy.sleep(0.1)
             self.log_poses()
-            rospy.sleep(0.1)
+            
+            rospy.sleep()
     
 
     def get_params(self):
@@ -59,12 +72,8 @@ class gui_ros():
 
         # make lookup table for mapping
         self.name_space = '/' + dataset_config['name_space'] + '/'
-        print(self.name_space)
         self.poses_source = self.name_space + dataset_config['poses_source']
-
         self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
-        print(self.geo_pose_source)
-
         self.vitals_source = self.name_space + dataset_config['vitals_source']
 
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
@@ -83,16 +92,10 @@ class gui_ros():
     def setup_ros(self):
         
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
-
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
-
-        # self.vitals_sub = message_filters.Subscriber(self.vitals_source, Power)
-        self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
-        # self.cache = message_filters.Cache(self.vitals_sub, 100, allow_headerless=True)
-
-        # self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
+        self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
 
         self.ts.registerCallback(self.callback)
@@ -100,31 +103,6 @@ class gui_ros():
         self.action_list = ['change_state', 'controller_state', 'publish_waypoints', 'get_topics', 'rosnode_cleanup', 'set_power']
         
         with app.app_context():
-            
-            # action = RosActions.query.filter_by(action='change_state').first()
-            # action.pending = 0
-            # db.session.commit()
-
-            # action = RosActions.query.filter_by(action='controller_state').first()
-            # action.pending = 0
-            # db.session.commit()
-        
-            # action = RosActions.query.filter_by(action='publish_waypoints').first()
-            # action.pending = 0
-            # db.session.commit()
-
-            # action = RosActions.query.filter_by(action='get_topics').first()
-            # action.pending = 0
-            # db.session.commit()
-
-            # action = RosActions.query.filter_by(action='rosnode_cleanup').first()
-            # action.pending = 0
-            # db.session.commit()
-
-            # action = RosActions.query.filter_by(action='set_power').first()
-            # action.pending = 0
-            # db.session.commit()
-
             for action_item in self.action_list:
                 action_item = action_item
                 action = RosActions.query.filter_by(action=action_item).first()
@@ -148,12 +126,10 @@ class gui_ros():
 
     #obtain pose information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):
-
         quad = [geo_pose_sub.pose.orientation.x, 
                 geo_pose_sub.pose.orientation.y, 
                 geo_pose_sub.pose.orientation.z, 
                 geo_pose_sub.pose.orientation.w]
-        
         euler_angles = euler_from_quaternion(quad)
         
         with app.app_context():
@@ -183,7 +159,7 @@ class gui_ros():
 
             
     def log_poses(self):
-        decay = 20
+        decay = 30
         with app.app_context():
             new_pose = db.session.query(Poses).first()
             num_entries = db.session.query(PoseHistory).count()
