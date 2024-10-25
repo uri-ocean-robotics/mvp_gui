@@ -19,7 +19,7 @@ class gui_ros():
         self.helm_state = 'start'
         self.helm_connected_states = []
         self.service_timeout = 0.1
-        self.rate = rospy.Rate(1)
+        self.rate = rospy.Rate(0.5)
         # ros parameters
         self.get_params()
         # ros subscribers and publishers
@@ -52,18 +52,17 @@ class gui_ros():
             # rospy.sleep(0.1)
             
             self.get_power_port_status()
+            self.set_power_port()
+            self.set_lumen()            
             self.get_state()
-            self.get_controller_state()
-            self.get_waypoints()
             self.change_state()
             self.change_controller_state()
-            self.set_power_port()
-
-            self.set_lumen()            
+            self.get_controller_state()
+            self.get_waypoints()
             self.publish_wpt()
             self.log_poses()
             
-            rospy.sleep()
+            self.rate.sleep()
     
 
     def get_params(self):

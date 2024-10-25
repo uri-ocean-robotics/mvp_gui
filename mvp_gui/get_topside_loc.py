@@ -8,11 +8,15 @@ ser = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=1.0)
 sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
 
 with app.app_context():
-    pose_topside = PoseTopside.query.first()
-    if pose_topside == None:
-        pose_topside = PoseTopside()
-        pose_topside.id = 1
-        db.session.add(pose_topside)
+    db.session.query(PoseTopside).delete()
+
+    # pose_topside = PoseTopside.query.first()
+    # if pose_topside != None:
+
+    pose_topside = PoseTopside()
+    pose_topside.id = 1
+    db.session.add(pose_topside)
+    
     db.session.query(PoseHistoryTopside).delete()
     db.session.commit()
 
