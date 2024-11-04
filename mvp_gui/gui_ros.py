@@ -30,27 +30,6 @@ class gui_ros():
 
     def main_loop(self):
         while not rospy.is_shutdown():
-            # self.get_power_port_status()
-            # rospy.sleep(0.1)
-            # self.set_power_port()
-            # rospy.sleep(0.1)
-            # self.set_lumen()
-            # rospy.sleep(0.1)
-            # self.get_state()
-            # rospy.sleep(0.1)
-            # self.change_state()
-            # rospy.sleep(0.1)
-            # self.change_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_controller_state()
-            # rospy.sleep(0.1)
-            # self.get_waypoints()
-            # rospy.sleep(0.1)
-            # self.publish_wpt()
-            # rospy.sleep(0.1)
-            # self.log_poses()
-            # rospy.sleep(0.1)
-            
             self.get_power_port_status()
             self.set_power_port()
             self.set_lumen()            
@@ -95,7 +74,7 @@ class gui_ros():
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
         self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
-        self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=0)
+        self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=10)
 
         self.ts.registerCallback(self.callback)
 
