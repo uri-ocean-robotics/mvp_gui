@@ -4,7 +4,7 @@ import message_filters
 from datetime import datetime
 from nav_msgs.msg import Odometry
 from geographic_msgs.msg import GeoPath, GeoPoseStamped
-from mvp_msgs.msg import Power, Waypoint
+from mvp_msgs.msg import Power, Waypoint, ControlProcess
 from std_msgs.msg import Float64, Float32MultiArray
 from tf.transformations import euler_from_quaternion
 from mvp_gui import *
@@ -12,7 +12,6 @@ import yaml
 from mvp_msgs.srv import GetStateRequest, GetState, ChangeStateRequest, ChangeState, GetWaypoints, GetWaypointsRequest, SendWaypoints, SendWaypointsRequest
 from std_srvs.srv import Empty, Trigger, SetBool, SetBoolRequest
 from std_msgs.msg import Int16
-
 
 class gui_ros():
     def __init__(self):
@@ -51,8 +50,12 @@ class gui_ros():
         # make lookup table for mapping
         self.name_space = '/' + dataset_config['name_space'] + '/'
         self.poses_source = self.name_space + dataset_config['poses_source']
+        self.pose_setpoint_source = self.name_space + dataset_config['setpoint_source']
+        self.pose_value_source = self.name_space + dataset_config['value_source']
+
         self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
         self.vitals_source = self.name_space + dataset_config['vitals_source']
+
 
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
         self.change_state_srv  = self.name_space + dataset_config['change_state_service']
@@ -73,8 +76,12 @@ class gui_ros():
         self.geo_pose_sub = message_filters.Subscriber(self.geo_pose_source, GeoPoseStamped)
         self.ts = message_filters.ApproximateTimeSynchronizer([self.poses_sub, self.geo_pose_sub], 10, 0.1)
 
+        self.setpoint_sub = rospy.Subscriber(self.pose_setpoint_source, ControlProcess, self.setpoint_callback)
+        self.value_sub = rospy.Subscriber(self.pose_value_source, ControlProcess, self.value_callback)
+
         self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=10)
+
 
         self.ts.registerCallback(self.callback)
 
@@ -99,6 +106,45 @@ class gui_ros():
             vital.name = self.name_space
             vital.voltage = msg.data[0]
             vital.current = msg.data[1]
+            db.session.commit() 
+    
+    def setpoint_callback(self, msg):
+        with app.app_context():
+            setpoint_pose = PoseSetpoint.query.first()
+            setpoint_pose.id = 1
+            setpoint_pose.frame_id = msg.header.frame_id
+            setpoint_pose.roll = msg.orientation.x * 180 / np.pi
+            setpoint_pose.pitch = msg.orientation.y * 180 / np.pi 
+            setpoint_pose.yaw = msg.orientation.z * 180 / np.pi
+            setpoint_pose.x = msg.position.x
+            setpoint_pose.y = msg.position.y
+            setpoint_pose.z = msg.position.z
+            setpoint_pose.u = msg.velocity.x
+            setpoint_pose.v = msg.velocity.y
+            setpoint_pose.w = msg.velocity.z
+            setpoint_pose.p = msg.angular_rate.x
+            setpoint_pose.q = msg.angular_rate.y
+            setpoint_pose.r = msg.angular_rate.z
+
+            db.session.commit() 
+
+    def value_callback(self, msg):
+        with app.app_context():
+            value_pose = PoseValue.query.first()
+            value_pose.id = 1
+            value_pose.frame_id = msg.header.frame_id
+            value_pose.roll = msg.orientation.x * 180 / np.pi
+            value_pose.pitch = msg.orientation.y * 180 / np.pi 
+            value_pose.yaw = msg.orientation.z * 180 / np.pi
+            value_pose.x = msg.position.x
+            value_pose.y = msg.position.y
+            value_pose.z = msg.position.z
+            value_pose.u = msg.velocity.x
+            value_pose.v = msg.velocity.y
+            value_pose.w = msg.velocity.z
+            value_pose.p = msg.angular_rate.x
+            value_pose.q = msg.angular_rate.y
+            value_pose.r = msg.angular_rate.z
             db.session.commit() 
 
 

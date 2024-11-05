@@ -31,6 +31,48 @@ class Poses(db.Model):
     def __repr__(self):
         return f'poses {self}'
 
+class PoseSetpoint(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    x = db.Column(db.Numeric(10,2), nullable=False)
+    y = db.Column(db.Numeric(10,2), nullable=False)
+    z = db.Column(db.Numeric(10,2), nullable=False)
+    roll = db.Column(db.Numeric(10,2), nullable=False)
+    pitch = db.Column(db.Numeric(10,2), nullable=False)
+    yaw = db.Column(db.Numeric(10,2), nullable=False)
+    child_frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    u = db.Column(db.Numeric(10,2), nullable=False)
+    v = db.Column(db.Numeric(10,2), nullable=False)
+    w = db.Column(db.Numeric(10,2), nullable=False)
+    p = db.Column(db.Numeric(10,2), nullable=False)
+    q = db.Column(db.Numeric(10,2), nullable=False)
+    r = db.Column(db.Numeric(10,2), nullable=False)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posesetpoint {self}'
+    
+class PoseValue(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    x = db.Column(db.Numeric(10,2), nullable=False)
+    y = db.Column(db.Numeric(10,2), nullable=False)
+    z = db.Column(db.Numeric(10,2), nullable=False)
+    roll = db.Column(db.Numeric(10,2), nullable=False)
+    pitch = db.Column(db.Numeric(10,2), nullable=False)
+    yaw = db.Column(db.Numeric(10,2), nullable=False)
+    child_frame_id = db.Column(db.String(length=30), nullable=False, unique=True)
+    u = db.Column(db.Numeric(10,2), nullable=False)
+    v = db.Column(db.Numeric(10,2), nullable=False)
+    w = db.Column(db.Numeric(10,2), nullable=False)
+    p = db.Column(db.Numeric(10,2), nullable=False)
+    q = db.Column(db.Numeric(10,2), nullable=False)
+    r = db.Column(db.Numeric(10,2), nullable=False)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posevalue {self}'
+
 class PoseTopside(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     lat = db.Column(db.Numeric(10,8), nullable=False)

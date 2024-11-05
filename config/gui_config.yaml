@@ -5,6 +5,9 @@ poses_source: odometry/filtered/local
 geo_pose_source: odometry/geopose
 vitals_source: power_monitor/power
 
+setpoint_source: controller/process/set_point
+value_source: controller/process/value
+
 #state services
 get_state_service: helm/get_state
 get_states_service: helm/get_states

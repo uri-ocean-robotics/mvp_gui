@@ -24,11 +24,19 @@ def vehicle_status_page():
 
 @app.route('/path/to/api/endpoint')
 def get_latest_yaw():
-    pose = Poses.query.first()  
-    heading_data = {
+    setpoint_pose = PoseSetpoint.query.first()
+    pose = PoseValue.query.first()  
+    orientation_data = {
+        'roll': float(pose.roll),
+        'pitch': float(pose.pitch),
         'yaw': float(pose.yaw)
     }
-    return jsonify({"heading_data": heading_data})
+    orientation_setpoint = {
+        'roll': float(setpoint_pose.roll),
+        'pitch': float(setpoint_pose.pitch),
+        'yaw': float(setpoint_pose.yaw)
+    }
+    return jsonify({"orientation_data": orientation_data, "orientation_setpoint": orientation_setpoint})
 
 
 @app.route('/vehicle_status/states')

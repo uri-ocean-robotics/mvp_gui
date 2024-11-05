@@ -6,21 +6,6 @@
     let intervalId_heading = null;
     const updateInterval_heading = 1000
     const plotSettings = initializePlot();
-   
-    /** TURBO **/
-    // // Start the interval when on the page
-    // document.addEventListener('turbo:load', () => {
-    //     if (intervalId_heading === null){
-    //         intervalId_heading = setInterval(() => updatePlot(plotSettings), updateInterval_heading)
-    //     }
-    // });
-
-    // // Stop the interval when navigating away from the page
-    // document.addEventListener('turbo:before-render', () => {
-    //     if (intervalId_heading !== null) {
-    //         clearInterval(intervalId_heading);
-    //     }
-    // });
 
     // Function to start the interval
     function startInterval() {
@@ -54,72 +39,65 @@
     // Initial setup for the plot
     function initializePlot() { 
         const layout = {
-            title: 'Current Heading',
-            xaxis: {
-                range: [-1, 1],
-                showgrid: false,
-                zeroline: false,
-                showticklabels: false
-            },
-            yaxis: {
-                range: [-1, 1],
-                showgrid: false,
-                zeroline: false,
-                showticklabels: false
-            },
-            shapes: [
-                {
-                    type: 'line',
-                    x0: 0,  
-                    y0: 0.,
-                    x1: 0,
-                    y1: 1,
-                    line: {
-                        color: 'rgba(255, 0, 0, 0.5)', // semi-transparent red
-                        width: 2,
-                        dash: 'dash'
-                    }
+            title: 'Heading',
+            polar: {
+                angularaxis: {
+                    tickmode: "linear",
+                    dtick: 30,  // 30-degree interval
+                    range: [0, 360],
+                    rotation: 90,
+                    direction: "clockwise",
+                    tickfont: { size: 10 }
                 },
-                {
-                    type: 'line',
-                    x0: 0,  
-                    y0: 0,
-                    x1: 1,
-                    y1: 0,
-                    line: {
-                        color: 'rgba(255, 0, 0, 0.5)', // semi-transparent red
-                        width: 2,
-                        dash: 'dash'
-                    }
+                radialaxis: {
+                    visible: false,
+                    range: [0, 1]
                 }
-            ],
-            annotations: [
-                {
-                    x: 0,
-                    y: 1,
-                    xref: 'x',
-                    yref: 'y',
-                    text: 'N',
-                    showarrow: false,
-                    font: { size: 16, color: 'rgba(0, 0, 0, 0.5)' },
-                    xanchor: 'center',
-                    yanchor: 'bottom'
-                },
-                {
-                    x: 1,
-                    y: 0,
-                    xref: 'x',
-                    yref: 'y',
-                    text: 'E',
-                    showarrow: false,
-                    font: { size: 16, color: 'rgba(0, 0, 0, 0.5)' },
-                    xanchor: 'left',
-                    yanchor: 'middle'
-                }
-            ],
+            },
             showlegend: false,
             margin: { t: 50, b: 20, l: 50, r: 50 },
-
+            annotations: [
+                {
+                    x: 0.5,
+                    y: 1.1,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'N',
+                    showarrow: false,
+                    font: { size: 14, color: 'black' },
+                    xanchor: 'center'
+                },
+                {
+                    x: 1.25,
+                    y: 0.5,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'E',
+                    showarrow: false,
+                    font: { size: 14, color: 'black' },
+                    yanchor: 'middle'
+                },
+                {
+                    x: 0.5,
+                    y: -0.1,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'S',
+                    showarrow: false,
+                    font: { size: 14, color: 'black' },
+                    xanchor: 'center'
+                },
+                {
+                    x: -0.25,
+                    y: 0.5,
+                    xref: 'paper',
+                    yref: 'paper',
+                    text: 'W',
+                    showarrow: false,
+                    font: { size: 14, color: 'black' },
+                    yanchor: 'middle'
+                }
+            ]
         };
 
         const config = {
@@ -139,39 +117,37 @@
         fetch('/path/to/api/endpoint')
             .then(response => response.json())
             .then(data => {
-                const yaw = data.heading_data.yaw
+                const roll = data.orientation_data.roll
+                const pitch = data.orientation_data.pitch
+                const yaw = data.orientation_data.yaw
+
+                const roll_setpoint = data.orientation_setpoint.roll
+                const pitch_setpoint = data.orientation_setpoint.pitch
+                const yaw_setpoint = data.orientation_setpoint.yaw
+
                 const layout = plotSettings.layout
                 const config = plotSettings.config
-                // Ensure "North" and "East" labels are not removed during updates
-                const northLabel = layout.annotations[0];
-                const eastLabel = layout.annotations[1];
-                // Clear previous annotations
-                layout.annotations = [northLabel, eastLabel];
+   
+                const trace_yaw = {
+                    type: "scatterpolar",
+                    r: [0, 1],
+                    theta: [yaw, yaw],
+                    mode: 'lines+markers',
+                    marker: { size: 8, color: 'blue' },
+                    line: { color: 'blue', width: 3 }
+                };
 
-                // Calculate the end of the arrow
-                const lineLength = 0.8;
-                const endX = lineLength * Math.cos(yaw * Math.PI / 180);
-                const endY = lineLength * Math.sin(yaw * Math.PI / 180);
-
-                // Add the arrow annotation
-                layout.annotations.push({
-                    x: endX,
-                    y: endY,
-                    ax: 0,
-                    ay: 0,
-                    axref: 'x',
-                    ayref: 'y',
-                    xref: 'x',
-                    yref: 'y',
-                    showarrow: true,
-                    arrowhead: 2,
-                    arrowsize: 1,
-                    arrowwidth: 3,
-                    arrowcolor: 'blue'
-                });
+                const trace_yaw_setpoint = {
+                    type: "scatterpolar",
+                    r: [0, 1],
+                    theta: [yaw_setpoint, yaw_setpoint],
+                    mode: 'lines+markers',
+                    marker: { size: 8, color: 'red' },
+                    line: { color: 'red', width: 3 }
+                };
 
                 // Update the plot with the new arrow
-                Plotly.react('heading_plot', [], layout, config);
+                Plotly.react('heading_plot', [trace_yaw, trace_yaw_setpoint], layout, config);
             })
     }
     

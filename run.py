@@ -41,6 +41,7 @@ if __name__ == "__main__":
     db.session.query(RosNodeKeywords).delete()
     db.session.query(RosTopicList).delete()
     db.session.query(RosTopicKeywords).delete()
+
     db.session.commit()
     
     try:
