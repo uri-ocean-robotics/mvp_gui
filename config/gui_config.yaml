@@ -8,11 +8,10 @@ vitals_source: power_monitor/power
 setpoint_source: controller/process/set_point
 value_source: controller/process/value
 
-#state services
+##state services
 get_state_service: helm/get_state
 get_states_service: helm/get_states
 change_state_service: helm/change_state
-
 
 #mvp_controller service
 controller_service: controller
@@ -26,7 +25,6 @@ pub_waypoints_service: helm/path_3d/update_waypoints
 get_power_port_srv: gpio_manager/get_power_status
 lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
-
 ##remote ros manager
 remote_host: "192.168.2.60"
 remote_user: "mvp_admin"
@@ -35,3 +33,9 @@ remote_password: "temppwd"
 roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
 ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
 
+
+##usbl
+geo_pose_secondary_source: race_station/usbl_data
+
+##pose decay time
+pose_decay_time: 30

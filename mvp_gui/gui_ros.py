@@ -56,7 +56,6 @@ class gui_ros():
         self.geo_pose_source = self.name_space + dataset_config['geo_pose_source']
         self.vitals_source = self.name_space + dataset_config['vitals_source']
 
-
         self.get_state_srv  = self.name_space + dataset_config['get_state_service']
         self.change_state_srv  = self.name_space + dataset_config['change_state_service']
 
@@ -70,6 +69,10 @@ class gui_ros():
        
         self.lumen_control_topic = self.name_space + dataset_config['lumen_control_topic']
 
+        self.geo_pose_secondary_topic = dataset_config['geo_pose_secondary_source']
+
+        self.pose_decay_time = dataset_config['pose_decay_time']
+
     def setup_ros(self):
         
         self.poses_sub = message_filters.Subscriber(self.poses_source, Odometry)
@@ -82,8 +85,9 @@ class gui_ros():
         self.vitals_sub = rospy.Subscriber(self.vitals_source, Float32MultiArray, self.vital_callback)
         self.lumen_pub = rospy.Publisher(self.lumen_control_topic, Float64, queue_size=10)
 
-
         self.ts.registerCallback(self.callback)
+    
+        self.geo_pose_secondary_sub = rospy.Subscriber(self.geo_pose_secondary_topic, GeoPoseStamped, self.geo_pose_secondary_callback)
 
         self.action_list = ['change_state', 'controller_state', 'publish_waypoints', 'get_topics', 'rosnode_cleanup', 'set_power']
         
@@ -147,7 +151,6 @@ class gui_ros():
             value_pose.r = msg.angular_rate.z
             db.session.commit() 
 
-
     #obtain pose information and store in the database 
     def callback(self, poses_sub, geo_pose_sub):
         quad = [geo_pose_sub.pose.orientation.x, 
@@ -181,15 +184,13 @@ class gui_ros():
 
             db.session.commit() 
 
-            
     def log_poses(self):
-        decay = 30
         with app.app_context():
             new_pose = db.session.query(Poses).first()
             num_entries = db.session.query(PoseHistory).count()
             #increase id by 1
             db.session.query(PoseHistory).update({PoseHistory.id: PoseHistory.id + 1})
-            db.session.query(PoseHistory).filter(PoseHistory.id > decay).delete()
+            db.session.query(PoseHistory).filter(PoseHistory.id > self.pose_decay_time).delete()
             db.session.commit()
 
             # Create a new instance of PoseHistory with the values from new_pose
@@ -216,7 +217,34 @@ class gui_ros():
             db.session.add(new_pose_history)
             db.session.commit()
 
+    def geo_pose_secondary_callback(self, msg):
+        with app.app_context():
+            geo_pose_secondary = PoseSecondary.query.first()
+            if geo_pose_secondary == None:
+                geo_pose_secondary = PoseSecondary()
+                geo_pose_secondary.id = 1
+                geo_pose_secondary.lat = 0.0
+                geo_pose_secondary.lon = 0.0
+                geo_pose_secondary.z = 0.0
+            geo_pose_secondary.id = 1
+            geo_pose_secondary.lat = msg.pose.position.latitude
+            geo_pose_secondary.lon = msg.pose.position.longitude
+            geo_pose_secondary.z = msg.pose.position.altitude
+            db.session.add(geo_pose_secondary)
 
+            #increase id by 1
+            db.session.query(PoseHistorySecondary).update({PoseHistorySecondary.id: PoseHistorySecondary.id + 1})
+            db.session.query(PoseHistorySecondary).filter(PoseHistorySecondary.id > self.pose_decay_time).delete()
+            db.session.commit()
+
+            geo_pose_secondary_history = PoseHistorySecondary()
+            geo_pose_secondary_history.id = 1
+            geo_pose_secondary_history.lat = msg.pose.position.latitude
+            geo_pose_secondary_history.lon = msg.pose.position.longitude
+            geo_pose_secondary_history.z = msg.pose.position.altitude
+            db.session.add(geo_pose_secondary_history)
+            db.session.commit()
+        
     ##state info
     def get_state(self):
         with app.app_context():

@@ -87,7 +87,23 @@ class PoseHistoryTopside(db.Model):
     lon = db.Column(db.Numeric(10,8), nullable=False)
     z = db.Column(db.Numeric(10,8), nullable=False)
     def __repr__(self):
-        return f'posehsitorytopside {self}'
+        return f'posehistorytopside {self}'
+
+class PoseSecondary(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    z = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posesecondary {self}'
+    
+class PoseHistorySecondary(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    lat = db.Column(db.Numeric(10,8), nullable=False)
+    lon = db.Column(db.Numeric(10,8), nullable=False)
+    z = db.Column(db.Numeric(10,8), nullable=False)
+    def __repr__(self):
+        return f'posehistorysecondary {self}'
 
 class PoseHistory(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
