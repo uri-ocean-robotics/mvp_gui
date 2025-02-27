@@ -1,4 +1,4 @@
-name_space: race
+name_space: wamv_rise
 
 ##vehicle status
 poses_source: odometry/filtered/local
@@ -26,7 +26,7 @@ get_power_port_srv: gpio_manager/get_power_status
 lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 ##remote ros manager
-remote_host: "192.168.2.60"
+remote_host: "192.168.2.55"
 remote_user: "mvp_admin"
 remote_password: "temppwd" 
 
@@ -35,7 +35,7 @@ ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/s
 
 
 ##usbl
-geo_pose_secondary_source: race_station/usbl_data
+geo_pose_secondary_source: usbl/modem_geopose
 
 ##pose decay time
 pose_decay_time: 30

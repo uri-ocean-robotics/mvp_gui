@@ -91,6 +91,13 @@
         transform-origin: center;
     }
 
+    .secondary-marker {
+        width: 20px; /* Adjust size as needed */
+        height: 20px; /* Adjust size as needed */
+        background-color: blue;
+        border-radius: 50% ;
+    }
+
     .vehicle-altitude-display {
         margin-top: -5px; /* Adjust negative margin to bring text closer to the arrow */
         font-size: 13px;
@@ -229,6 +236,10 @@
     const GSElement = document.createElement('div');
     GSElement.className = 'groundstation-marker';
 
+    // Create a custom HTML element for the arrow marker
+    const secondaryElement = document.createElement('div');
+    secondaryElement.className = 'secondary-marker';
+
     // Create the ID display element
     const vehiclealtitudeDisplay = document.createElement('div');
     vehiclealtitudeDisplay.className = 'vehicle-altitude-display';
@@ -245,7 +256,7 @@
         .setLngLat([topsideData.lon, topsideData.lat])
         .addTo(map);
 
-    secondaryMarker = new maplibregl.Marker({ element: GSElement, draggable: false })
+    secondaryMarker = new maplibregl.Marker({ element: secondaryElement, draggable: false })
         .setLngLat([secondaryData.lon, secondaryData.lat])
         .addTo(map);
 
@@ -507,7 +518,7 @@
 
                 if (secondaryMarker) {
                     secondaryMarker.setLngLat([newsecondaryData.lon, newsecondaryData.lat]);
-                    const GSElement = secondaryMarker.getElement().querySelector('.groundstation-marker');
+                    const secondaryElement = secondaryMarker.getElement().querySelector('.secondary-marker');
                 } 
 
                 current_wpt_markers.forEach(marker => marker.remove());
@@ -678,6 +689,28 @@
             }
         });
 
+        map.addSource('route5', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        map.addLayer({
+            id: 'routeLayer5',
+            type: 'line',
+            source: 'route5',
+            layout: {
+                'line-join': 'round',
+                'line-cap': 'round'
+            },
+            paint: {
+                'line-color': '#f5a442', // orange color
+                'line-width': 3,
+                'line-opacity': 0.5 
+            }
+        });
 
         // Initialize markers with the existing data
         jsonData.forEach((item, index) => {

@@ -23,6 +23,7 @@ class gui_ros():
         self.get_params()
         # ros subscribers and publishers
         self.setup_ros()
+        self.clear_pervious_gps()
         # Main while loop.
         self.main_loop()
 
@@ -69,7 +70,8 @@ class gui_ros():
        
         self.lumen_control_topic = self.name_space + dataset_config['lumen_control_topic']
 
-        self.geo_pose_secondary_topic = dataset_config['geo_pose_secondary_source']
+        # self.geo_pose_secondary_topic = dataset_config['geo_pose_secondary_source']
+        self.geo_pose_secondary_topic = self.name_space + dataset_config['geo_pose_secondary_source']
 
         self.pose_decay_time = dataset_config['pose_decay_time']
 
@@ -219,6 +221,7 @@ class gui_ros():
 
     def geo_pose_secondary_callback(self, msg):
         with app.app_context():
+            print(msg.pose.position.latitude, msg.pose.position.longitude, msg.pose.position.altitude)
             geo_pose_secondary = PoseSecondary.query.first()
             if geo_pose_secondary == None:
                 geo_pose_secondary = PoseSecondary()
@@ -418,6 +421,20 @@ class gui_ros():
                     lumen_ms = Float64()
                     lumen_ms.data = float(lumen_item.status)
                     self.lumen_pub.publish(lumen_ms)
+    
+    def clear_pervious_gps(self):
+        with app.app_context():
+            db.session.query(PoseSecondary).delete()
+
+            pose_secondary = PoseSecondary()
+            pose_secondary.id = 1
+            pose_secondary.lat = 0
+            pose_secondary.lon = 0
+            pose_secondary.z = 0
+            db.session.add(pose_secondary)
+            
+            db.session.query(PoseHistorySecondary).delete()
+            db.session.commit()
 
 
 def gui_ros_start():  
