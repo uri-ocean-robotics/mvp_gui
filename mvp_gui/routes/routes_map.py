@@ -32,7 +32,21 @@ def map_page():
         {"id": pose_t.id, "lat": float(pose_t.lat), "lon": float(pose_t.lon)}
         for pose_t in pose_history_topside
     ]
-    
+
+    # Get secondary lat lon for map
+    pose_secondary = PoseSecondary.query.first()
+    secondary_data = {
+        "lat": float(pose_secondary.lat),
+        "lon": float(pose_secondary.lon),
+        "alt": float(pose_secondary.z)
+    }
+
+    pose_history_secondary = PoseHistorySecondary.query.order_by(PoseHistorySecondary.id).all()
+    secondary_history_data = [
+        {"id": pose_t.id, "lat": float(pose_t.lat), "lon": float(pose_t.lon)}
+        for pose_t in pose_history_secondary
+    ]
+
     # Sort the waypoints by ID
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
@@ -86,6 +100,7 @@ def map_page():
                                         vehicle_jsn=vehicle_data, host_ip=host_ip, states=states,
                                         pose_jsn =pose_data, controller_state = controller_state, 
                                         topside_jsn=topside_data, topsidehistory_jsn = topside_history_data,
+                                        secondary_jsn = secondary_data, secondaryhistory_jsn = secondary_history_data,
                                         current_page = "map")
 
 
@@ -124,6 +139,13 @@ def latest_data():
         "alt": float(pose_topside.z)
     }
 
+    pose_secondary = PoseSecondary.query.first()
+    secondary_data = {
+        "lat": float(pose_secondary.lat),
+        "lon": float(pose_secondary.lon),
+        "alt": float(pose_secondary.z)
+    }
+
     waypoints = Waypoints.query.order_by(Waypoints.id).all()
     waypoints_data = [
         {"id": waypoint.id, "lat": float(waypoint.lat), "lon": float(waypoint.lon), "alt": float(waypoint.alt)}
@@ -147,8 +169,16 @@ def latest_data():
         for pose_t in pose_history_topside
     ]
 
+    pose_history_secondary = PoseHistorySecondary.query.order_by(PoseHistorySecondary.id).all()
+    secondary_history_data = [
+        {"id": pose_t.id, "lat": float(pose_t.lat), "lon": float(pose_t.lon)}
+        for pose_t in pose_history_secondary
+    ]
 
-    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, "pose":pose_data, "topside":topside_data, "topside_history":topside_history_data})
+
+    return jsonify({"vehicle": vehicle_data, "waypoints": waypoints_data, "current_waypoints": current_waypoints_data, 
+                    "pose":pose_data, "topside":topside_data, "topside_history":topside_history_data,
+                    "secondary":secondary_data, "secondary_history":secondary_history_data})
 
 
 
