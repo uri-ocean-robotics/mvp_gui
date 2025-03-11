@@ -8,20 +8,22 @@ from mvp_gui import *
 class gps_topside():
     def __init__(self):
         try:
+            # serial port
+            self.ser = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=1.0)
+            self.sio = io.TextIOWrapper(io.BufferedRWPair(self.ser, self.ser))
+
+            # rosnode
             rospy.init_node('gps_topside_node', disable_signals=True)
             self.rate = rospy.Rate(0.5)
             self.setup_gpsdecay = 30
-            self.setup_gps()
+            self.topside_geopose_pub = rospy.Publisher('/topside/geopose', GeoPoseStamped, queue_size=10)
+            self.clear_pervious_gps()
+
             self.main_loop()
+        except serial.serialutil.SerialException as e:
+            print("No Topside GPS Module!!!")
         except rospy.exceptions.ROSException as e:
             print("GPS top side node not working!")
-
-    def setup_gps(self):
-        self.ser = serial.Serial('/dev/ttyACM0', baudrate=9600, timeout=1.0)
-        self.sio = io.TextIOWrapper(io.BufferedRWPair(self.ser, self.ser))
-        self.topside_geopose_pub = rospy.Publisher('/topside/geopose', GeoPoseStamped, queue_size=10)
-        self.clear_pervious_gps()
-
 
     def main_loop(self):
         while not rospy.is_shutdown():

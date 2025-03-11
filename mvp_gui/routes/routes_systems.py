@@ -115,6 +115,7 @@ def systems_page():
     global roscore_status
     global threads
     global launch_files
+    global config
 
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
@@ -145,14 +146,11 @@ def systems_page():
             ssh_connection_status = ssh_connection.connect()
 
             if ssh_connection_status:
-                ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-                env['ROS_MASTER_URI'] = ros_master_uri
-                os.environ['ROS_MASTER_URI'] = ros_master_uri
-                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-                # return redirect(url_for('systems_page'))
-                cmd = "rm -rf /tmp/ros_launch_pid.txt"
-                ssh_connection.execute_command(cmd)
-
+                #ros_master_uri = 'http://' + request.form['ros_master_uri']  + ':11311/'
+                #env['ROS_MASTER_URI'] = ros_master_uri
+                #os.environ['ROS_MASTER_URI'] = ros_master_uri
+                #ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
+                pass
             else:
                 ssh_connection.close()
                 # If SSH connection fails, you can render an error page or redirect to a different route

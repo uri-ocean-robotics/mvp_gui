@@ -28,6 +28,8 @@ config = yaml.safe_load(open(global_file_name, 'r'))
 roslaunch_folder_default = config['roslaunch_folder']
 ros_source_base = config['ros_source_base']
 
+ros_master_uri = config['ros_master_uri']
+
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path

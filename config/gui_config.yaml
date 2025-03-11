@@ -30,12 +30,21 @@ remote_host: "192.168.2.55"
 remote_user: "mvp_admin"
 remote_password: "temppwd" 
 
-roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
-ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+##rosmater uri
+ros_master_uri: 192.168.2.55
 
+##RACE
+# roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
+# ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+##WAMV
+roslaunch_folder: ~/catkin_ws/src/wamv_rise/wamv_rise_bringup/launch/
+ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
 
 ##usbl
 geo_pose_secondary_source: usbl/modem_geopose
 
 ##pose decay time
 pose_decay_time: 30
+
+##topside gps
+topside_gps: false
