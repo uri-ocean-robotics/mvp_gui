@@ -12,6 +12,7 @@ class RemoteManager:
     """Manages remote ROS system operations and state"""
     def __init__(self):
         self.roslaunch_folder = yaml_config['roslaunch_folder']
+        self.ros_source = yaml_config['ros_source_base']
         self.threads = []
         self.launch_files = []
 
@@ -81,8 +82,7 @@ class RemoteManager:
         if not ssh_connection.is_connected():
             return False
             
-        ros_source = yaml_config['ros_source_base']
-        command = ros_source + "roscore"
+        command = self.ros_source + "roscore"
         
         thread = threading.Thread(
             target=ssh_connection.execute_command_disp_terminal, 
@@ -97,8 +97,7 @@ class RemoteManager:
         if not ssh_connection.is_connected():
             return False
             
-        ros_source = yaml_config['ros_source_base']
-        command = ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz"
+        command = self.ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz"
         
         ssh_connection.execute_command(command)
         return True
@@ -316,11 +315,9 @@ class RemoteManager:
         """Start a launch file via SSH and track it in the database"""
         if not ssh_connection.is_connected():
             return None
-            
-        ros_source = yaml_config['ros_source_base']
-        
+                    
         # Construct commands
-        base_command = f"{ros_source}roslaunch {launch_file.folder_dir}{launch_file.name}"
+        base_command = f"{self.ros_source} roslaunch {launch_file.folder_dir}{launch_file.name}"
         # base_command = f"roslaunch {launch_file.folder_dir}{launch_file.name}"
         command_with_pid = f"bash -c '( {base_command} & echo $! >> /tmp/ros_launch_pid.txt; wait $!)'"
         
@@ -383,8 +380,7 @@ class RemoteManager:
         if not ssh_connection.is_connected():
             return False
             
-        ros_source = yaml_config['ros_source_base']
-        command = f"{ros_source}rosnode kill -a"
+        command = f"{self.ros_source}rosnode kill -a"
         
         ssh_connection.execute_command(command, wait=False)
         self.cleanup_dead_nodes()
@@ -396,8 +392,7 @@ class RemoteManager:
         if not ssh_connection.is_connected():
             return False
             
-        ros_source = yaml_config['ros_source_base']
-        command = f"{ros_source}rosnode kill {node_name}"
+        command = f"{self.ros_source}rosnode kill {node_name}"
         
         ssh_connection.execute_command(command, wait=False)
         self.cleanup_dead_nodes()
