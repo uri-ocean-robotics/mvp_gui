@@ -1,432 +1,288 @@
-from mvp_gui import *
-import subprocess
-import yaml 
-import rosnode
-import rosgraph
-import threading
 from sqlalchemy import func
+from flask import request, redirect, url_for, render_template, jsonify
+from mvp_gui import app, socketio
+from mvp_gui.ros_manager import SSHConnection
+from mvp_gui.remote_manager import *
+from mvp_gui.gui_ros_manager import *
 
-# ros_master_uri = 'http://' + ssh_connection.hostname  + ':11311/'
-# ros_hostname = ssh_connection.hostname 
-# env['ROS_MASTER_URI'] = ros_master_uri
-# os.environ['ROS_MASTER_URI'] = ros_master_uri
-# ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} && export ROS_IP={ros_hostname} && ROS_HOSTNAME={ros_hostname} &&"
+# Socket.IO event handlers
+@socketio.on('connect', namespace='/terminal')
+def handle_connect():
+    """Handle client connection to terminal namespace"""
+    print('Client connected to terminal')
 
-roslaunch_folder = roslaunch_folder_default
-
-threads = []
-launch_files = []
-
-def check_mvpgui_status(mvpgui_node_name, env):
-    mvpgui_command = 'rosnode list'
-    try:
-        # cleanup_dead_nodes()
-        mvpgui_result = subprocess.run(['bash', '-c', mvpgui_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
-        nodes = mvpgui_result.stdout.splitlines()
-        mvpgui_status =  mvpgui_node_name in nodes
-    except subprocess.TimeoutExpired:
-        mvpgui_status = False
-    except subprocess.CalledProcessError as e:
-        mvpgui_status = False
-    return mvpgui_status
-
-def cleanup_dead_nodes():
-    try:
-        _, unpinged = rosnode.rosnode_ping_all()    
-        if unpinged:
-            if unpinged:
-                master = rosgraph.Master("")
-                rosnode.cleanup_master_blacklist(master, unpinged)
-        time.sleep(1.0)
-    except rosnode.ROSNodeIOException as e:
-        pass
-
-
-def check_roscore_status(env):
-    roscore_status =False
-    # node_command = 'source /opt/ros/noetic/setup.bash && rosnode list'
-    node_command = 'rosnode list'
-
-    node_name = '/rosout'
-    try:
-        node_result = subprocess.run(['bash', '-c', node_command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
-        # nodes = node_result.communicate()
-        nodes = node_result.stdout.splitlines()
-        roscore_status =  node_name in nodes
-    except subprocess.TimeoutExpired:
-        roscore_status = False
-    except subprocess.CalledProcessError as e:
-        roscore_status = False
-    return roscore_status
-        
-
-def check_ros_master_uri(env):
-    check_ros_master_cmd = 'echo $ROS_MASTER_URI'
-    current_ros_master_uri = subprocess.run(['bash', '-c', check_ros_master_cmd], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=5)
-    return current_ros_master_uri.stdout
+@socketio.on('disconnect', namespace='/terminal')
+def handle_disconnect():
+    """Handle client disconnection from terminal namespace"""
+    print('Client disconnected from terminal')
 
 # Event emitter function
 def emit_message(message):
+    """Emit a message to connected clients"""
     socketio.emit('terminal_output', {'data': message}, namespace='/terminal')
 
+# Create a global instance of the remote manager
+ros_system = RemoteManager()
 
-# def ssh_command_thread(command, emit_message, stop_event):
-#     while not stop_event.is_set():
-#         ssh_connection.execute_command_disp_terminal(command, emit_message)
-#         time.sleep(0.1)
+# Get SSH connection from the server manager 
+ssh_connection = SSHConnection(yaml_config['remote_host'], yaml_config['remote_user'], yaml_config['remote_password'])
 
-# get node with cmd_line
-def get_node(timeout_subprocess):
-    try:
-        command = "rosnode list"
-        if len(RosNodeKeywords.query.all()) == 0:
-            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
-        else:
-            keywords_list = RosNodeKeywords.query.all()
-            command += " |grep '"
-            for count, item in enumerate(keywords_list):
-                if count != len(keywords_list) - 1:
-                    command += str(item.name) + "\|"
-                else:
-                    command += str(item.name) 
-            command += "'"
-            response = subprocess.run(['bash', '-c', command], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True, timeout=timeout_subprocess)
-        node_list = response.stdout.splitlines()
-        count = 0
-        db.session.query(RosNodeList).delete()
-        db.session.commit()
-        for item in node_list:
-            node_ = RosNodeList(id=count, name = item)
-            db.session.add(node_)
-            db.session.commit()
-            count = count + 1                
-    except subprocess.CalledProcessError as e:
-        db.session.query(RosNodeList).delete()
-        node_ = RosNodeList(id=0, name = 'empty')
-        db.session.add(node_)
-        db.session.commit()
 
-## systems tools for launch files
 @app.route('/', methods=['GET', 'POST'])
 def systems_page():
-    global ros_source
-    global roslaunch_folder
-    global env
-    global roscore_status
-    global threads
-    global launch_files
-    global config
-
+    """Main systems page route handler"""
+    # Get data for the page
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
     rosnode_keyword = RosNodeKeywords.query.all()
     rosthread_list = RosThreadList.query.all()
-
-    remote_connection  = ssh_connection.is_connected()
     
-    ##check ros master
-    roscore_status = False
-    roscore_status = check_roscore_status(env)
+    remote_connection = ssh_connection.is_connected()
     
-    ##check mvp_gui node 
-    mvpgui_status = False
-    mvpgui_node_name = '/mvp_gui_node'
-    if roscore_status:
-        mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
+    # Check system status
+    roscore_status = ros_system.check_roscore_status()
+    mvpgui_status = ros_system.check_node_status('/mvp_gui_node') if roscore_status else False
 
-    timeout_subprocess = 5
-
-    ## buttons
+    # Handle form submissions
     if request.method == 'POST':
-         ### remote connection
-        if 'ssh_connect' in request.form:
-            ssh_connection.hostname = request.form['hostname']
-            ssh_connection.username = request.form['username']
-            ssh_connection.password = request.form['password']
-            ssh_connection_status = ssh_connection.connect()
+        response = handle_post_request(request, ssh_connection)
+        if response:
+            return response
 
-            if ssh_connection_status:
-                #ros_master_uri = 'http://' + request.form['ros_master_uri']  + ':11311/'
-                #env['ROS_MASTER_URI'] = ros_master_uri
-                #os.environ['ROS_MASTER_URI'] = ros_master_uri
-                #ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-                pass
-            else:
-                ssh_connection.close()
-                # If SSH connection fails, you can render an error page or redirect to a different route
-                # flash("SSH connection failed. Please check your credentials.")
-                return redirect(url_for('ssh_failed'))  # Redirect to login page or error page
-        
-        elif 'ssh_disconnect' in request.form:
-            ssh_connection.close()
-            return redirect(url_for('systems_page'))
-        
-        elif 'export_rosmasteruri' in request.form:
-            if request.form['ros_master_uri'] != '':
-                ros_master_uri = 'http://' + request.form['ros_master_uri']  + ':11311/'
-                env['ROS_MASTER_URI'] = ros_master_uri
-                os.environ['ROS_MASTER_URI'] = ros_master_uri
-                ros_source = ros_source_base + f"export ROS_MASTER_URI={ros_master_uri} &&"
-            return redirect(url_for('systems_page'))
+    # Render the page with data
+    return render_template(
+        "systems.html", 
+        launch_list=roslaunch_list,
+        thread_list=rosthread_list, 
+        node_list=rosnode_list, 
+        keyword_list=rosnode_keyword,
+        remote_connection=str(remote_connection),
+        remote_hostname=str(ssh_connection.hostname),
+        remote_username=str(ssh_connection.username),
+        roscore_status=str(roscore_status),
+        mvpgui_status=str(mvpgui_status),
+        roslaunch_folder=ros_system.roslaunch_folder,
+        current_page="systems"
+    )
 
-        
-        ###roscore stuff
-        elif 'roscore_start' in request.form:
-            if ssh_connection.is_connected():
-                print(ros_source + "roscore")
-                threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(ros_source + "roscore", emit_message)).start()
 
-                # time.sleep(1.0)
-                return render_template("terminal.html")
-
-            # return redirect(url_for('systems_page'))
-        
-        elif 'roscore_stop' in request.form:
-            if ssh_connection.is_connected():
-                ssh_connection.execute_command(ros_source + "killall -9 rosmaster && killall -9 roscore && killall -9 rviz")
-            return redirect(url_for('systems_page'))
-
-        elif 'rosnode_cleanup' in request.form:
-            cleanup_dead_nodes()
-            get_node(timeout_subprocess)
-            mvpgui_status = check_mvpgui_status(mvpgui_node_name, env)
-            return redirect(url_for('systems_page'))
-        
-        ### mvp_gui node
-        elif 'mvpgui_start' in request.form:
-            print(env['ROS_MASTER_URI'])
-            stop_ros_process(env)
-            cleanup_dead_nodes()
-            start_ros_process(env)
-            get_node(timeout_subprocess)
-            return redirect(url_for('systems_page'))
-
-        elif 'mvpgui_stop' in request.form:
-            print(env['ROS_MASTER_URI'])
-            stop_ros_process(env)
-            cleanup_dead_nodes()
-            get_node(timeout_subprocess)
-            return redirect(url_for('systems_page'))
-
-        ##roslaunch
-        elif 'roslaunch_list' in request.form:
-            if remote_connection: 
-                roslaunch_folder = request.form['roslaunch_folder']
-                command = "ls " +  roslaunch_folder
-                response = ssh_connection.execute_command(command, wait=True)
-                launch_list = response[0].splitlines()
-                count = 0
-                db.session.query(RosLaunchList).delete()
-                db.session.commit()
-                for item in launch_list:
-                    if item.endswith(".launch"):
-                        launch_ = RosLaunchList(id=count, folder_dir = roslaunch_folder, name = item)
-                        db.session.add(launch_)
-                        db.session.commit()
-                        count = count + 1
-
-            else:
-                db.session.query(RosLaunchList).delete()
-                db.session.commit()
-                launch_ = RosLaunchList(id=0, folder_dir='', name = 'Clicked without Connection')
-                db.session.add(launch_)
-                db.session.commit()
-            return redirect(url_for('systems_page'))
-
-        elif 'launch' in request.form:
-            if remote_connection: 
-                launch_id = request.form['launch']
-                ##get the package name and launch file
-                temp_launch = RosLaunchList.query.get(launch_id)
-                command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
-                command_with_pid = f"bash -c '( {command} & echo $! >> /tmp/ros_launch_pid.txt; wait $!)'"
-                thread = threading.Thread(target=ssh_connection.execute_command_disp_terminal, args=(command_with_pid, emit_message))
-                thread.daemon = True
-                thread.start()
-                thread_nid = threading.get_native_id()
-                time.sleep(2.0)
-                pid_val, _ = ssh_connection.execute_command('tail -1 /tmp/ros_launch_pid.txt')
-
-                id = db.session.query(RosThreadList).count()     
-
-                thread_ = RosThreadList(id=id, name=temp_launch.name, thread=thread_nid, pid=pid_val)                
-                db.session.add(thread_)
-                db.session.commit()
-
-                return render_template("terminal.html")
-
-            return redirect(url_for('systems_page'))
-        
-        elif 'terminate_thread' in request.form:
-            if remote_connection: 
-                t_request = request.form['terminate_thread']
-                thread_tk = RosThreadList.query.get(t_request)   
-                ssh_connection.kill_terminal_session(thread_tk.pid)
-                db.session.query(RosThreadList).filter(RosThreadList.id == thread_tk.id).delete()
-                db.session.query(RosThreadList).filter(RosThreadList.id > int(thread_tk.id)).update({RosThreadList.id: RosThreadList.id - 1})
-                db.session.commit()
-                time.sleep(2.0)
-                get_node(timeout_subprocess)
-
-            return redirect(url_for('systems_page'))
-        
-        elif 'launch_xvfb' in request.form:
-            if remote_connection: 
-                launch_id = request.form['launch_xvfb']
-                
-                ##get the package name and launch file
-                temp_launch = RosLaunchList.query.get(launch_id)
-                command = ros_source + "roslaunch " + temp_launch.folder_dir + temp_launch.name
-                # ssh_connection.execute_command(command, wait=False)
-                ssh_connection.execute_command_with_xvfb(command)
-                # time.sleep(20)
-            return redirect(url_for('systems_page'))
-        
-        elif 'info' in request.form:
-            if remote_connection: 
-                launch_id = request.form['info']
-                temp_launch = RosLaunchList.query.get(launch_id)
-                command = "cat " + temp_launch.folder_dir + temp_launch.name
-                response = ssh_connection.execute_command(command, wait=True)
-            return redirect(url_for('launch_file_data', response=response[0])) 
-            
-        elif 'rosnode_list' in request.form:
-            rosnode_keyword = request.form['ros_node_keyword']
-            count = len(RosNodeKeywords.query.all())
-            for keyword in rosnode_keyword.split(','):
-                if keyword.strip() != '':
-                    keyword_ = RosNodeKeywords(id=count, name = keyword.strip())
-                    db.session.add(keyword_)
-                    count += 1 
-
-            # Get the IDs of the duplicates to be deleted
-            subquery = db.session.query(
-                RosNodeKeywords.id
-            ).filter(
-                RosNodeKeywords.id.notin_(
-                    db.session.query(func.min(RosNodeKeywords.id)).group_by(RosNodeKeywords.name)
-                )
-            )
-            # Step 2: Delete the Duplicates
-            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id.in_(subquery)).delete(synchronize_session=False)
-            # Retrieve the remaining entries sorted by their current ID
-            remaining_entries = db.session.query(RosNodeKeywords).order_by(RosNodeKeywords.id).all()
-            # Update the IDs to be sequential starting from 0
-            for index, entry in enumerate(remaining_entries):
-                entry.id = index
-            db.session.commit()
-
-            get_node(timeout_subprocess)
-
-            return redirect(url_for('systems_page'))
-        
-        elif 'kill_all_nodes' in request.form:
-            if remote_connection: 
-                command = ros_source + "rosnode kill -a"
-                ssh_connection.execute_command(command, wait=False)
-                cleanup_dead_nodes()
-                time.sleep(1.0)
-                get_node(timeout_subprocess)
-            else:
-                db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=0, name = 'Clicked without Connection')
-                db.session.add(node_)
-                db.session.commit()
-            return redirect(url_for('systems_page'))
-
-        elif 'kill_node' in request.form:
-            if remote_connection: 
-                kill_id = request.form['kill_node']
-                temp_kill = RosNodeList.query.get(kill_id)
-                command = ros_source + "rosnode kill " + temp_kill.name
-                ssh_connection.execute_command(command, wait=False)
-                cleanup_dead_nodes()
-                time.sleep(1.0)
-                get_node(timeout_subprocess)
-            else:
-                db.session.query(RosNodeList).delete()
-                node_ = RosNodeList(id=0, name = 'Clicked without Connection')
-                db.session.add(node_)
-                db.session.commit()
-            return redirect(url_for('systems_page'))
-
-        elif 'remove_keywords' in request.form:
-            db.session.query(RosNodeKeywords).delete()
-            db.session.commit()
-            get_node(timeout_subprocess)
-            return redirect(url_for('systems_page'))
+def handle_post_request(request, ssh_connection):
+    """Handle POST requests to the systems page"""
     
-        elif 'remove_single_keyword' in request.form:
-            keyword_id = request.form['remove_single_keyword']
-            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id == keyword_id).delete()
-            db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id > int(keyword_id)).update({RosNodeKeywords.id: RosNodeKeywords.id - 1})
-            db.session.commit()
-            get_node(timeout_subprocess)
-            return redirect(url_for('systems_page'))
+    # SSH connection management
+    if 'ssh_connect' in request.form:
+        return handle_ssh_connect(request, ssh_connection)
         
-    return render_template("systems.html", 
-                           launch_list = roslaunch_list,
-                           thread_list = rosthread_list, 
-                           node_list = rosnode_list, 
-                           keyword_list = rosnode_keyword,
-                           remote_connection = str(remote_connection),
-                           remote_hostname  = str(ssh_connection.hostname),
-                           remote_username = str(ssh_connection.username),
-                           roscore_status = str(roscore_status),
-                           mvpgui_status = str(mvpgui_status),
-                           roslaunch_folder = roslaunch_folder,
-                           current_page = "systems")
+    elif 'ssh_disconnect' in request.form:
+        ssh_connection.close()
+        return redirect(url_for('systems_page'))
+        
+    elif 'export_rosmasteruri' in request.form:
+        if request.form['ros_master_uri']:
+            ros_system.update_ros_master_uri(request.form['ros_master_uri'])
+        return redirect(url_for('systems_page'))
+    
+    # ROS core management
+    elif 'roscore_start' in request.form:
+        if ssh_connection.is_connected():
+            ros_system.start_roscore(ssh_connection, emit_message)
+            return render_template("terminal.html")
+            
+    elif 'roscore_stop' in request.form:
+        if ssh_connection.is_connected():
+            ros_system.stop_roscore(ssh_connection)
+        return redirect(url_for('systems_page'))
+        
+    elif 'rosnode_cleanup' in request.form:
+        ros_system.cleanup_dead_nodes()
+        ros_system.update_node_database()
+        return redirect(url_for('systems_page'))
+    
+    ### mvp_gui nodes
+    elif 'mvpgui_start' in request.form:
+        stop_ros_process(env)
+        ros_system.cleanup_dead_nodes()
+        start_ros_process(env)
+        ros_system.get_node_list()
+        return redirect(url_for('systems_page'))
 
-@socketio.on('connect', namespace='/terminal')
-def handle_connect():
-    print('Client connected')
+    elif 'mvpgui_stop' in request.form:
+        stop_ros_process(env)
+        ros_system.cleanup_dead_nodes()
+        ros_system.get_node_list()
+        return redirect(url_for('systems_page'))
 
-@socketio.on('disconnect', namespace='/terminal')
-def handle_disconnect():
-    print('Client disconnected')
+    # ROS launch file management
+    elif 'roslaunch_list' in request.form:
+        if ssh_connection.is_connected():
+            ros_system.roslaunch_folder = request.form['roslaunch_folder']
+            ros_system.update_launch_database(ssh_connection, ros_system.roslaunch_folder)
+        else:
+            # Clear and add placeholder when not connected
+            db.session.query(RosLaunchList).delete()
+            launch_ = RosLaunchList(id=0, folder_dir='', name='Clicked without Connection')
+            db.session.add(launch_)
+            db.session.commit()
+        return redirect(url_for('systems_page'))
+        
+    elif 'launch' in request.form:
+        if ssh_connection.is_connected():
+            launch_id = request.form['launch']
+            temp_launch = RosLaunchList.query.get(launch_id)
+            ros_system.start_launch_file(ssh_connection, temp_launch, emit_message)
+            return render_template("terminal.html")
+        return redirect(url_for('systems_page'))
+        
+    elif 'terminate_thread' in request.form:
+        if ssh_connection.is_connected():
+            thread_id = request.form['terminate_thread']
+            thread_entry = RosThreadList.query.get(thread_id)
+            ros_system.terminate_thread(ssh_connection, thread_entry)
+            time.sleep(2.0)
+            ros_system.update_node_database()
+        return redirect(url_for('systems_page'))
+        
+    elif 'info' in request.form:
+        if ssh_connection.is_connected():
+            launch_id = request.form['info']
+            temp_launch = RosLaunchList.query.get(launch_id)
+            response = ros_system.get_launch_file_content(ssh_connection, temp_launch)
+            return redirect(url_for('launch_file_data', response=response))
+    
+    # Node management
+    elif 'rosnode_list' in request.form:
+        handle_node_keywords(request.form['ros_node_keyword'])
+        ros_system.update_node_database()
+        return redirect(url_for('systems_page'))
+        
+    elif 'kill_all_nodes' in request.form:
+        if ssh_connection.is_connected():
+            ros_system.kill_all_nodes(ssh_connection)
+            time.sleep(1.0)
+            ros_system.update_node_database()
+        else:
+            # Add placeholder when not connected
+            db.session.query(RosNodeList).delete()
+            node_ = RosNodeList(id=0, name='Clicked without Connection')
+            db.session.add(node_)
+            db.session.commit()
+        return redirect(url_for('systems_page'))
+        
+    elif 'kill_node' in request.form:
+        if ssh_connection.is_connected():
+            node_id = request.form['kill_node']
+            temp_node = RosNodeList.query.get(node_id)
+            ros_system.kill_specific_node(ssh_connection, temp_node.name)
+            time.sleep(1.0)
+            ros_system.update_node_database()
+        else:
+            # Add placeholder when not connected
+            db.session.query(RosNodeList).delete()
+            node_ = RosNodeList(id=0, name='Clicked without Connection')
+            db.session.add(node_)
+            db.session.commit()
+        return redirect(url_for('systems_page'))
+    
+    # Keyword management
+    elif 'remove_keywords' in request.form:
+        db.session.query(RosNodeKeywords).delete()
+        db.session.commit()
+        ros_system.update_node_database()
+        return redirect(url_for('systems_page'))
+        
+    elif 'remove_single_keyword' in request.form:
+        keyword_id = request.form['remove_single_keyword']
+        db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id == keyword_id).delete()
+        db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id > int(keyword_id)).update(
+            {RosNodeKeywords.id: RosNodeKeywords.id - 1}
+        )
+        db.session.commit()
+        ros_system.update_node_database()
+        return redirect(url_for('systems_page'))
+    
+    return None
+
+
+def handle_ssh_connect(request, ssh_connection):
+    """Handle SSH connection request"""
+    ssh_connection.hostname = request.form['hostname']
+    ssh_connection.username = request.form['username']
+    ssh_connection.password = request.form['password']
+    
+    if ssh_connection.connect():
+        # Connection successful
+        return redirect(url_for('systems_page'))
+    else:
+        ssh_connection.close()
+        return redirect(url_for('ssh_failed'))
+
+
+def handle_node_keywords(keywords_string):
+    """Process and add node keywords to the database"""
+    if not keywords_string.strip():
+        return
+        
+    count = len(RosNodeKeywords.query.all())
+    
+    for keyword in keywords_string.split(','):
+        if keyword.strip():
+            keyword_ = RosNodeKeywords(id=count, name=keyword.strip())
+            db.session.add(keyword_)
+            count += 1
+    
+    # Remove duplicates
+    subquery = db.session.query(
+        RosNodeKeywords.id
+    ).filter(
+        RosNodeKeywords.id.notin_(
+            db.session.query(func.min(RosNodeKeywords.id)).group_by(RosNodeKeywords.name)
+        )
+    )
+    
+    db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id.in_(subquery)).delete(synchronize_session=False)
+    
+    # Reindex remaining entries
+    remaining_entries = db.session.query(RosNodeKeywords).order_by(RosNodeKeywords.id).all()
+    for index, entry in enumerate(remaining_entries):
+        entry.id = index
+        
+    db.session.commit()
+
 
 @app.route('/ssh_failed', methods=['GET', 'POST'])
 def ssh_failed():
-    if request.method == 'POST':
-         ### remote connection
-        if 'return' in request.form:
-            return redirect(url_for('systems_page'))
+    """SSH connection failure page"""
+    if request.method == 'POST' and 'return' in request.form:
+        return redirect(url_for('systems_page'))
     return render_template("ssh_failed.html")
 
 
 @app.route('/launch_file_info', methods=['GET', 'POST'])
 def launch_file_data():
+    """Display launch file contents"""
     response = request.args.get('response')
-    cat_string = response.splitlines()
-    # cat_string = response
-    if request.method == 'POST':
-         ### remote connection
-        if 'return' in request.form:
-            return redirect(url_for('systems_page'))
+    cat_string = response.splitlines() if response else []
     
-    return render_template("roslaunch_info.html", info = cat_string)
- 
+    if request.method == 'POST' and 'return' in request.form:
+        return redirect(url_for('systems_page'))
+    
+    return render_template("roslaunch_info.html", info=cat_string)
 
 
 @app.route('/current_system_status')
 def current_status():
-    global env
-    remote_connection_tab  = {
-        "data": ssh_connection.is_connected()
-    }
-    connected_ros_master = {
-        "data": check_ros_master_uri(env)
-    }
-    
-    roscore_status = {
-        # "data": check_roscore_status(ssh_connection, ssh_connection.is_connected())
-        "data": check_roscore_status(env)
-    }
-
-    mvpgui_status = {
-        "data": check_mvpgui_status('/mvp_gui_node', env)
-    }
-
-
-
-    return jsonify({"remote_connection": remote_connection_tab, "roscore_status": roscore_status, "mvpgui_status": mvpgui_status, "connected_ros_master": connected_ros_master})
+    """API endpoint for current system status"""
+    return jsonify({
+        "remote_connection": {
+            "data": ssh_connection.is_connected()
+        },
+        "roscore_status": {
+            "data": ros_system.check_roscore_status()
+        },
+        "mvpgui_status": {
+            "data": ros_system.check_node_status('/mvp_gui_node')
+        },
+        "connected_ros_master": {
+            "data": ros_system.get_ros_master_uri()
+        }
+    })

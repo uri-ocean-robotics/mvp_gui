@@ -1,6 +1,5 @@
 
 from mvp_gui import *
-# from mvp_gui.forms import WaypointForm
 import xml.etree.ElementTree as ET
 
 @app.context_processor

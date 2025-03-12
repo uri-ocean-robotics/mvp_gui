@@ -22,20 +22,22 @@ app.app_context().push()
 TILES_DIR_1 = "./offline_map/"
 TILES_DIR_2 = "../offline_map/"
 
+# Constants
+SUBPROCESS_TIMEOUT = 5
+ROS_PORT = "11311"
 
 global_file_name = './config/gui_config.yaml'
-config = yaml.safe_load(open(global_file_name, 'r'))
-roslaunch_folder_default = config['roslaunch_folder']
-ros_source_base = config['ros_source_base']
-
-ros_master_uri = config['ros_master_uri']
+yaml_config = yaml.safe_load(open(global_file_name, 'r'))
+ros_master_uri = yaml_config['ros_master_uri']
 
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
+env['ROS_MASTER_URI'] = f'http://{ros_master_uri}:{ROS_PORT}/'
+
 
 # Create SSHConnection instance
-ssh_connection = SSHConnection(config['remote_host'], config['remote_user'], config['remote_password'])
+# ssh_connection = SSHConnection(config['remote_host'], config['remote_user'], config['remote_password'])
 
 
 from mvp_gui.routes import routes_base

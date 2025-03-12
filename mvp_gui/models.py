@@ -191,6 +191,7 @@ class RosThreadList(db.Model):
     name = db.Column(db.String(length=30), nullable=False) 
     thread = db.Column(db.Integer(), nullable=False)
     pid = db.Column(db.Integer(), nullable=True)
+    start_time = db.Column(db.String(length=30), nullable=False)
     def __repr__(self):
         return f'rosthreadlist {self}'
 
