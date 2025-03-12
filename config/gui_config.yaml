@@ -30,12 +30,12 @@ lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
 
 ##remote ros manager
-remote_host: "192.168.2.50"
+remote_host: "192.168.2.55"
 remote_user: "mvp_admin"
 remote_password: "temppwd" 
 
 ##rosmater uri
-ros_master_uri: 192.168.2.50
+ros_master_uri: 192.168.2.55
 
 ##RACE
 # roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
@@ -43,6 +43,7 @@ ros_master_uri: 192.168.2.50
 ##WAMV
 roslaunch_folder: ~/catkin_ws/src/wamv_rise/wamv_rise_bringup/launch/
 ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+# ros_source_base: source ~/.bashrc && 
 
 ##topside gps
 topside_gps: false

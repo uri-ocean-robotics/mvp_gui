@@ -83,8 +83,9 @@ class SSHConnection:
             time.sleep(0.1)
 
     def kill_terminal_session(self, id):
-        kill_shell_command = f"kill -SIGHUP {id} & sed -i '/{id}/d' /tmp/ros_launch_pid.txt"
-        self.ssh_client.exec_command(kill_shell_command)
+        if id != None:
+            kill_shell_command = f"kill -SIGHUP {id} & sed -i '/{id}/d' /tmp/ros_launch_pid.txt"
+            self.ssh_client.exec_command(kill_shell_command)
 
         
     # def execute_command_with_xvfb(self, command):

@@ -1,4 +1,3 @@
-from sqlalchemy import func
 from flask import request, redirect, url_for, render_template, jsonify
 from mvp_gui import app, socketio
 from mvp_gui.ros_manager import SSHConnection
@@ -151,7 +150,7 @@ def handle_post_request(request, ssh_connection):
     
     # Node management
     elif 'rosnode_list' in request.form:
-        handle_node_keywords(request.form['ros_node_keyword'])
+        ros_system.handle_keywords('node', request.form['ros_node_keyword'])
         ros_system.update_node_database()
         return redirect(url_for('systems_page'))
         
@@ -185,19 +184,12 @@ def handle_post_request(request, ssh_connection):
     
     # Keyword management
     elif 'remove_keywords' in request.form:
-        db.session.query(RosNodeKeywords).delete()
-        db.session.commit()
-        ros_system.update_node_database()
+        ros_system.remove_all_keywords('node')
         return redirect(url_for('systems_page'))
         
     elif 'remove_single_keyword' in request.form:
         keyword_id = request.form['remove_single_keyword']
-        db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id == keyword_id).delete()
-        db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id > int(keyword_id)).update(
-            {RosNodeKeywords.id: RosNodeKeywords.id - 1}
-        )
-        db.session.commit()
-        ros_system.update_node_database()
+        ros_system.remove_single_keyword('node', keyword_id)
         return redirect(url_for('systems_page'))
     
     return None
@@ -215,38 +207,6 @@ def handle_ssh_connect(request, ssh_connection):
     else:
         ssh_connection.close()
         return redirect(url_for('ssh_failed'))
-
-
-def handle_node_keywords(keywords_string):
-    """Process and add node keywords to the database"""
-    if not keywords_string.strip():
-        return
-        
-    count = len(RosNodeKeywords.query.all())
-    
-    for keyword in keywords_string.split(','):
-        if keyword.strip():
-            keyword_ = RosNodeKeywords(id=count, name=keyword.strip())
-            db.session.add(keyword_)
-            count += 1
-    
-    # Remove duplicates
-    subquery = db.session.query(
-        RosNodeKeywords.id
-    ).filter(
-        RosNodeKeywords.id.notin_(
-            db.session.query(func.min(RosNodeKeywords.id)).group_by(RosNodeKeywords.name)
-        )
-    )
-    
-    db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id.in_(subquery)).delete(synchronize_session=False)
-    
-    # Reindex remaining entries
-    remaining_entries = db.session.query(RosNodeKeywords).order_by(RosNodeKeywords.id).all()
-    for index, entry in enumerate(remaining_entries):
-        entry.id = index
-        
-    db.session.commit()
 
 
 @app.route('/ssh_failed', methods=['GET', 'POST'])

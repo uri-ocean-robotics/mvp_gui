@@ -6,6 +6,7 @@ import rosgraph
 import threading
 import time
 from datetime import datetime
+from sqlalchemy import func
 
 class RemoteManager:
     """Manages remote ROS system operations and state"""
@@ -127,6 +128,44 @@ class RemoteManager:
         except subprocess.CalledProcessError:
             return ["empty"]
 
+    def get_topic_list(self, keywords=None):
+        """Get list of ROS topics, optionally filtered by keywords"""
+        try:
+            command = "rostopic list"
+            
+            # Add keyword filtering if provided
+            if keywords and len(keywords) > 0:
+                command += " | grep '"
+                command += "\\|".join(str(kw.name) for kw in keywords)
+                command += "'"
+            
+            response = subprocess.run(
+                ['bash', '-c', command], 
+                env=env, 
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE, 
+                text=True, 
+                check=True, 
+                timeout=SUBPROCESS_TIMEOUT
+            )
+            
+            topic_list = response.stdout.splitlines()
+            count = 0
+            db.session.query(RosTopicList).delete()
+            for item in topic_list:
+                node_ = RosTopicList(id=count, name=item)
+                db.session.add(node_)
+                count = count + 1                
+            db.session.commit()
+            
+            return topic_list
+        except subprocess.CalledProcessError:
+            db.session.query(RosTopicList).delete()
+            topic_ = RosTopicList(id=0, name='empty')
+            db.session.add(topic_)
+            db.session.commit()
+            return ["empty"]
+        
     def update_node_database(self, timeout=SUBPROCESS_TIMEOUT):
         """Update the database with current ROS nodes"""
         try:
@@ -153,6 +192,97 @@ class RemoteManager:
             db.session.add(node_)
             db.session.commit()
             return False
+
+    def update_topic_database(self, timeout=SUBPROCESS_TIMEOUT):
+        """Update the database with current ROS topics"""
+        try:
+            # Get all keywords for filtering
+            keywords_list = RosTopicKeywords.query.all()
+            
+            # Get topics with optional keyword filtering
+            topic_list = self.get_topic_list(keywords_list if keywords_list else None)
+            
+            # Clear existing topics
+            db.session.query(RosTopicList).delete()
+            
+            # Add new topics to database
+            for count, item in enumerate(topic_list):
+                topic_ = RosTopicList(id=count, name=item)
+                db.session.add(topic_)
+                
+            db.session.commit()
+            return True
+        except Exception as e:
+            # Handle errors by adding an empty node
+            db.session.query(RosTopicList).delete()
+            topic_ = RosTopicList(id=0, name='error: ' + str(e))
+            db.session.add(topic_)
+            db.session.commit()
+            return False
+    
+    def handle_keywords(self, db_type, keywords_string=None):
+        """Process and add keywords to the database"""
+        if not keywords_string.strip():
+            return
+        
+        if db_type == 'node':
+            kw_type = RosNodeKeywords
+        elif db_type == 'topic':
+            kw_type = RosTopicKeywords
+
+        count = len(kw_type.query.all())
+        
+        for keyword in keywords_string.split(','):
+            if keyword.strip():
+                keyword_ = kw_type(id=count, name=keyword.strip())
+                db.session.add(keyword_)
+                count += 1
+        
+        # Remove duplicates
+        subquery = db.session.query(
+            kw_type.id
+        ).filter(
+            kw_type.id.notin_(
+                db.session.query(func.min(kw_type.id)).group_by(kw_type.name)
+            )
+        )
+        
+        db.session.query(kw_type).filter(kw_type.id.in_(subquery)).delete(synchronize_session=False)
+        
+        # Reindex remaining entries
+        remaining_entries = db.session.query(kw_type).order_by(kw_type.id).all()
+        for index, entry in enumerate(remaining_entries):
+            entry.id = index
+            
+        db.session.commit()
+
+    def remove_all_keywords(self, db_type):
+        if db_type == 'node':
+            db.session.query(RosNodeKeywords).delete()
+            db.session.commit()
+            self.update_node_database()
+        elif db_type == 'topic':
+            db.session.query(RosTopicKeywords).delete()
+            db.session.commit()
+            self.update_topic_database()
+    
+    def remove_single_keyword(self, db_type, keyword=None):
+        if keyword != None:
+            if db_type == 'node':
+                db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id == keyword).delete()
+                db.session.query(RosNodeKeywords).filter(RosNodeKeywords.id > int(keyword)).update(
+                    {RosNodeKeywords.id: RosNodeKeywords.id - 1}
+                )
+                db.session.commit()
+                self.update_node_database()
+            elif db_type == 'topic':
+                db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id == keyword).delete()
+                db.session.query(RosTopicKeywords).filter(RosTopicKeywords.id > int(keyword)).update(
+                    {RosTopicKeywords.id: RosTopicKeywords.id - 1}
+                )
+                db.session.commit()
+                self.update_node_database()
+
         
     def get_launch_files(self, ssh_connection, folder_path):
         """Get list of launch files from specified folder"""
@@ -191,6 +321,7 @@ class RemoteManager:
         
         # Construct commands
         base_command = f"{ros_source}roslaunch {launch_file.folder_dir}{launch_file.name}"
+        # base_command = f"roslaunch {launch_file.folder_dir}{launch_file.name}"
         command_with_pid = f"bash -c '( {base_command} & echo $! >> /tmp/ros_launch_pid.txt; wait $!)'"
         
         # Start thread to execute command
@@ -218,7 +349,7 @@ class RemoteManager:
         db.session.add(thread_entry)
         db.session.commit()
         
-        return thread_entry
+        return True
     
     def terminate_thread(self, ssh_connection, thread_entry):
         """Terminate a running thread/process"""
@@ -226,8 +357,8 @@ class RemoteManager:
             return False
             
         # Kill the process
-        ssh_connection.kill_terminal_session(thread_entry.pid)
-        
+        stdout, stderr = ssh_connection.kill_terminal_session(thread_entry.pid)
+        print(stdout)
         # Remove from database and reindex
         db.session.query(RosThreadList).filter(RosThreadList.id == thread_entry.id).delete()
         db.session.query(RosThreadList).filter(RosThreadList.id > int(thread_entry.id)).update(
@@ -246,7 +377,7 @@ class RemoteManager:
         response = ssh_connection.execute_command(command, wait=True)
         
         return response[0] if response and response[0] else "Error reading file"
-    
+
     def kill_all_nodes(self, ssh_connection):
         """Kill all running ROS nodes"""
         if not ssh_connection.is_connected():
