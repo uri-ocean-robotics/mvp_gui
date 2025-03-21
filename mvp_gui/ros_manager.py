@@ -60,7 +60,6 @@ class SSHConnection:
             # If we don't want to wait, we return immediately.
             return None, None
 
-
     def execute_command_disp_terminal(self, command, message_callback):
         stdin, stdout, stderr = self.ssh_client.exec_command(command, get_pty=True)
         stdout.channel.setblocking(0)  # Set stdout channel to non-blocking mode
@@ -68,12 +67,10 @@ class SSHConnection:
         while True:
             if stdout.channel.recv_ready():
                 stdout_data = stdout.channel.recv(1024).decode('utf-8')
-                # print("stdout_data: {}".format(stdout_data))
                 message_callback({'type': 'stdout', 'data': stdout_data})
 
             if stderr.channel.recv_stderr_ready():
                 stderr_data = stderr.channel.recv_stderr(1024).decode('utf-8')
-                # print("stdout_data: {}".format(stderr_data))
                 message_callback({'type': 'stderr', 'data': stderr_data})
             
             # Check if command has finished executing
@@ -86,53 +83,6 @@ class SSHConnection:
         if id != None:
             kill_shell_command = f"kill -SIGHUP {id} & sed -i '/{id}/d' /tmp/ros_launch_pid.txt"
             self.ssh_client.exec_command(kill_shell_command)
-
-        
-    # def execute_command_with_xvfb(self, command):
-    #     # Open a new session with X11 forwarding
-    #     transport = self.ssh_client.get_transport()
-    #     session = transport.open_session()
-
-    #     # Request X11 forwarding
-    #     session.get_pty()
-    #     session.request_x11()
-
-    #     # Execute the command with DISPLAY set
-    #     # session.exec_command(f'export DISPLAY=$DISPLAY; {command}')
-    #     # session.exec_command(f'export DISPLAY={os.getenv("DISPLAY")}; {command}')
-
-    #     ros_master_uri = 'http://' + self.hostname  + ':11311/'
-    #     ros_hostname = self.hostname 
-    #     ros_ip = self.hostname
-
-    #     # Start Xvfb and set DISPLAY variable
-    #     full_command = (
-    #         'if pgrep -x "Xvfb" > /dev/null; then pkill -x "Xvfb"; fi; '
-    #         'rm -f /tmp/.X99-lock; '
-    #         'Xvfb :99 -screen 0 1200x800x24 & '
-    #         'export DISPLAY=:99; '
-    #         f'export ROS_MASTER_URI={ros_master_uri}; '
-    #         f'export ROS_HOSTNAME={ros_hostname}; '
-    #         f'export ROS_IP={ros_ip}; '
-    #         f'source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && {command}'
-    #     )
-
-    #     # Execute the command
-    #     session.exec_command(full_command)
-
-    #     # Get the output and error streams
-    #     stdout = session.makefile('r', 2048)
-    #     stderr = session.makefile_stderr('r', 2048)
-
-    #     # Print the output and error
-    #     for line in stdout:
-    #         print(line, end="")
-
-    #     for line in stderr:
-    #         print(line, end="")
-
-    #     # Close the session
-    #     # session.close()
 
     def close(self):
         if self.ssh_client:
