@@ -50,10 +50,28 @@ class RemoteManager:
         except (subprocess.TimeoutExpired, subprocess.CalledProcessError):
             return False
 
-    def cleanup_dead_nodes(self):
-        """Clean up dead ROS nodes"""
+    def cleanup_dead_nodes(self, node_name=None):
+        """
+        Clean up dead ROS nodes.
+        
+        Args:
+            node_name (str, optional): If provided, only clean up this specific node
+                                    if it's found to be dead. Default is None.
+        
+        Returns:
+            bool: True if cleanup operation was successful, False otherwise.
+        """
         try:
-            _, unpinged = rosnode.rosnode_ping_all()    
+            alive, unpinged = rosnode.rosnode_ping_all()
+            
+            if node_name is not None:
+                # Filter to only include the specified node if it's in the unpinged list
+                unpinged = [node for node in unpinged if node == node_name]
+                # If the node is not in unpinged list (meaning it's alive or doesn't exist),
+                # there's nothing to clean up
+                if not unpinged:
+                    return True
+                
             if unpinged:
                 master = rosgraph.Master("")
                 rosnode.cleanup_master_blacklist(master, unpinged)
@@ -305,13 +323,13 @@ class RemoteManager:
         
         # Add new launch files to database
         for count, item in enumerate(launch_files):
-            launch_ = RosLaunchList(id=count, folder_dir=folder_path, name=item)
+            launch_ = RosLaunchList(id=count, folder_dir=folder_path, name=item, pending=0)
             db.session.add(launch_)
             
         db.session.commit()
         return len(launch_files) > 0
 
-    def start_launch_file(self, ssh_connection, launch_file, emit_callback):
+    def start_launch_file_ssh(self, ssh_connection, launch_file, emit_callback):
         """Start a launch file via SSH and track it in the database"""
         if not ssh_connection.is_connected():
             return None
@@ -346,6 +364,13 @@ class RemoteManager:
         db.session.add(thread_entry)
         db.session.commit()
         
+        return True
+    
+    def start_launch_file(self, launch_id):
+        launch_file = RosLaunchList.query.get(launch_id)
+        launch_file.pending = 1
+        db.session.commit()
+
         return True
     
     def terminate_thread(self, ssh_connection, thread_entry):
@@ -395,7 +420,7 @@ class RemoteManager:
         command = f"{self.ros_source}rosnode kill {node_name}"
         
         ssh_connection.execute_command(command, wait=False)
-        self.cleanup_dead_nodes()
+        self.cleanup_dead_nodes(node_name)
         
         return True
     

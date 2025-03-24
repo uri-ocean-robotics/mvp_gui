@@ -100,14 +100,13 @@ def handle_post_request(request, ssh_connection):
     ### mvp_gui nodes
     elif 'mvpgui_start' in request.form:
         stop_ros_process(env)
-        ros_system.cleanup_dead_nodes()
         start_ros_process(env)
         ros_system.get_node_list()
         return redirect(url_for('systems_page'))
 
     elif 'mvpgui_stop' in request.form:
-        stop_ros_process(env)
-        ros_system.cleanup_dead_nodes()
+        node_name = stop_ros_process(env)
+        ros_system.cleanup_dead_nodes(node_name)
         ros_system.get_node_list()
         return redirect(url_for('systems_page'))
 
@@ -119,7 +118,7 @@ def handle_post_request(request, ssh_connection):
         else:
             # Clear and add placeholder when not connected
             db.session.query(RosLaunchList).delete()
-            launch_ = RosLaunchList(id=0, folder_dir='', name='Clicked without Connection')
+            launch_ = RosLaunchList(id=0, folder_dir='', name='Clicked without Connection', pending=0)
             db.session.add(launch_)
             db.session.commit()
         return redirect(url_for('systems_page'))
@@ -127,10 +126,10 @@ def handle_post_request(request, ssh_connection):
     elif 'launch' in request.form:
         if ssh_connection.is_connected():
             launch_id = request.form['launch']
-            temp_launch = RosLaunchList.query.get(launch_id)
-            ros_system.start_launch_file(ssh_connection, temp_launch, emit_message)
-            return render_template("terminal.html")
-        return redirect(url_for('systems_page'))
+            ros_system.start_launch_file(launch_id)
+            # ros_system.start_launch_file_ssh(ssh_connection, temp_launch, emit_message)
+            #return render_template("terminal.html")
+            return redirect(url_for('systems_page'))
         
     elif 'terminate_thread' in request.form:
         if ssh_connection.is_connected():

@@ -178,11 +178,11 @@ class RosActions(db.Model):
     def __repr__(self):
         return f'rosactions {self}'
 
-    
 class RosLaunchList(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     folder_dir = db.Column(db.String(length=100), nullable=False)
     name = db.Column(db.String(length=100), nullable=False)
+    pending = db.Column(db.Integer(), nullable=False)
     def __repr__(self):
         return f'roslaunchlist {self}'
     
