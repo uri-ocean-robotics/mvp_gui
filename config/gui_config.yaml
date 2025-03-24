@@ -37,13 +37,13 @@ get_launch: get_launch
 # remote_host: "192.168.2.55"
 # remote_user: "mvp_admin"
 # remote_password: "temppwd" 
-remote_host: "192.168.50.68"
+remote_host: "192.168.2.115"
 remote_user: "soslab-latitude5420"
 remote_password: "temppwd" 
 
 
 ##rosmater uri
-ros_master_uri: 192.168.50.68
+ros_master_uri: 192.168.2.115
 
 ##ALPHA_RISE
 roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/

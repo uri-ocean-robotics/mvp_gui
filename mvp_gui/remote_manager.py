@@ -373,22 +373,30 @@ class RemoteManager:
 
         return True
     
-    def terminate_thread(self, ssh_connection, thread_entry):
-        """Terminate a running thread/process"""
-        if not ssh_connection.is_connected():
-            return False
-            
-        # Kill the process
-        stdout, stderr = ssh_connection.kill_terminal_session(thread_entry.pid)
-        print(stdout)
-        # Remove from database and reindex
-        db.session.query(RosThreadList).filter(RosThreadList.id == thread_entry.id).delete()
-        db.session.query(RosThreadList).filter(RosThreadList.id > int(thread_entry.id)).update(
-            {RosThreadList.id: RosThreadList.id - 1}
-        )
+    def terminate_launch_file(self, launch_id):
+        print("setting {} to False".format(launch_id))
+        launch_file = RosActiveLaunchList.query.get(launch_id)
+        launch_file.pending = 1
         db.session.commit()
-        
+
         return True
+
+    # def terminate_thread(self, ssh_connection, thread_entry):
+    #     """Terminate a running thread/process"""
+    #     if not ssh_connection.is_connected():
+    #         return False
+            
+    #     # Kill the process
+    #     stdout, stderr = ssh_connection.kill_terminal_session(thread_entry.pid)
+    #     print(stdout)
+    #     # Remove from database and reindex
+    #     db.session.query(RosThreadList).filter(RosThreadList.id == thread_entry.id).delete()
+    #     db.session.query(RosThreadList).filter(RosThreadList.id > int(thread_entry.id)).update(
+    #         {RosThreadList.id: RosThreadList.id - 1}
+    #     )
+    #     db.session.commit()
+        
+    #     return True
     
     def get_launch_file_content(self, ssh_connection, launch_file):
         """Get the content of a launch file"""
@@ -403,7 +411,7 @@ class RemoteManager:
     def kill_all_nodes(self, ssh_connection):
         """Kill all running ROS nodes"""
         if not ssh_connection.is_connected():
-            return False
+            return "Error: Not connected to remote server"
             
         command = f"{self.ros_source}rosnode kill -a"
         

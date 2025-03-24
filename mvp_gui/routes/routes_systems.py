@@ -34,8 +34,9 @@ def systems_page():
     roslaunch_list = RosLaunchList.query.all()
     rosnode_list = RosNodeList.query.all()
     rosnode_keyword = RosNodeKeywords.query.all()
-    rosthread_list = RosThreadList.query.all()
-    
+    # rosthread_list = RosThreadList.query.all()
+    rosactivelaunch_list = RosActiveLaunchList.query.all()
+
     remote_connection = ssh_connection.is_connected()
     
     # Check system status
@@ -52,7 +53,8 @@ def systems_page():
     return render_template(
         "systems.html", 
         launch_list=roslaunch_list,
-        thread_list=rosthread_list, 
+        # thread_list=rosthread_list, 
+        active_launch_list = rosactivelaunch_list,
         node_list=rosnode_list, 
         keyword_list=rosnode_keyword,
         remote_connection=str(remote_connection),
@@ -124,21 +126,23 @@ def handle_post_request(request, ssh_connection):
         return redirect(url_for('systems_page'))
         
     elif 'launch' in request.form:
-        if ssh_connection.is_connected():
-            launch_id = request.form['launch']
-            ros_system.start_launch_file(launch_id)
-            # ros_system.start_launch_file_ssh(ssh_connection, temp_launch, emit_message)
-            #return render_template("terminal.html")
-            return redirect(url_for('systems_page'))
-        
-    elif 'terminate_thread' in request.form:
-        if ssh_connection.is_connected():
-            thread_id = request.form['terminate_thread']
-            thread_entry = RosThreadList.query.get(thread_id)
-            ros_system.terminate_thread(ssh_connection, thread_entry)
-            time.sleep(2.0)
-            ros_system.update_node_database()
+        launch_id = request.form['launch']
+        ros_system.start_launch_file(launch_id)
         return redirect(url_for('systems_page'))
+
+    elif 'terminate_launch_file' in request.form:
+        launch_id = request.form['terminate_launch_file']
+        ros_system.terminate_launch_file(launch_id)
+        return redirect(url_for('systems_page'))
+        
+    # elif 'terminate_thread' in request.form:
+    #     if ssh_connection.is_connected():
+    #         thread_id = request.form['terminate_thread']
+    #         thread_entry = RosThreadList.query.get(thread_id)
+    #         ros_system.terminate_thread(ssh_connection, thread_entry)
+    #         time.sleep(2.0)
+    #         ros_system.update_node_database()
+    #     return redirect(url_for('systems_page'))
         
     elif 'info' in request.form:
         if ssh_connection.is_connected():
@@ -231,6 +235,9 @@ def launch_file_data():
 @app.route('/current_system_status')
 def current_status():
     """API endpoint for current system status"""
+    # Convert the list to something JSON serializable (e.g., a list of full paths)
+    active_launches_data = [{"id": item.id, "full_path": item.full_path} for item in RosActiveLaunchList.query.all()]
+    
     return jsonify({
         "remote_connection": {
             "data": ssh_connection.is_connected()
@@ -243,5 +250,6 @@ def current_status():
         },
         "connected_ros_master": {
             "data": ros_system.get_ros_master_uri()
-        }
+        },
+        "active_launches": active_launches_data
     })

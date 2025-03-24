@@ -15,6 +15,7 @@ from mvp_roslaunch_manager.srv import GetLaunch, SetLaunch, GetLaunchRequest, Se
 from std_srvs.srv import Empty, Trigger, SetBool, SetBoolRequest
 from std_msgs.msg import Int16
 import time
+import threading
 
 class gui_ros():
     def __init__(self):
@@ -24,8 +25,6 @@ class gui_ros():
         self.get_params()
         # ros subscribers and publishers
         self.setup_ros()
-        # Set the loop rate
-        self.rate = rospy.Rate(1.0)
     
     def get_params(self):
         dataset_config = yaml.safe_load(open(global_file_name, 'r'))
@@ -51,7 +50,8 @@ class gui_ros():
         self.get_power_port_srv = self.name_space + dataset_config['get_power_port_srv']
 
         self.set_roslaunch_srv = self.name_space + dataset_config['set_launch']
-       
+        self.get_roslaunch_srv = self.name_space + dataset_config['get_launch']
+
         self.lumen_control_topic = self.name_space + dataset_config['lumen_control_topic']
         self.geo_pose_secondary_topic = self.name_space + dataset_config['geo_pose_secondary_source']
 
@@ -168,9 +168,12 @@ class gui_ros():
 
     def run(self):
         try:
+            # Set the loop rate
             while not rospy.is_shutdown():
                 # Execute all the monitoring functions in sequence
                 try:
+                    self.roslaunch_file()
+                    self.activate_roslaunch_list()
                     self.get_power_port()
                     self.set_power_port()
                     self.set_lumen()
@@ -181,12 +184,12 @@ class gui_ros():
                     self.get_waypoints()
                     self.publish_waypoints()
                     self.log_poses()
-                    self.roslaunch_file()
+
                 except Exception as e:
                     rospy.logwarn(f"Error in main loop: {e}")
                 
                 # Sleep at the specified rate
-                self.rate.sleep()
+                time.sleep(0.5)
                 
         except KeyboardInterrupt:
             rospy.loginfo("Received keyboard interrupt, shutting down...")
@@ -212,46 +215,105 @@ class gui_ros():
             rospy.logerr(f"Error checking if service {service_name} exists: {e}")
             return False
 
-    def call_service_safely(self, service_name, service_type, request=None, timeout=0.1):
+    # def call_service_safely(self, service_name, service_type, request=None, timeout=0.5):
+    #     """
+    #     A helper method to safely call ROS services with proper error handling.
+    #     Args:
+    #         service_name (str): The name of the service to call
+    #         service_type: The service type/class
+    #         request: The request object to send (optional)
+    #         timeout (float): Timeout in seconds (optional)
+    #     Returns:
+    #         Response object if successful, None if failed
+    #     """
+    #     try:
+    #         # Check if the service exists
+    #         if not self.service_exists(service_name):
+    #             rospy.logwarn(f"Service {service_name} does not exist")
+    #             return None
+                
+    #         # Wait for service with timeout
+    #         try:
+    #             rospy.wait_for_service(service_name, timeout=timeout)
+    #         except rospy.ROSException as e:
+    #             rospy.logwarn(f"Service {service_name} timed out: {e}")
+    #             return None
+                
+    #         # Create proxy and call service
+    #         service_proxy = rospy.ServiceProxy(service_name, service_type)
+        
+    #         # Call with or without request
+    #         if request is not None:
+    #             return service_proxy(request)
+    #         else:
+    #             return service_proxy()
+
+    #     except rospy.ServiceException as e:
+    #         rospy.logerr(f"Service call to {service_name} failed: {e}")
+    #     except rospy.ROSInterruptException:
+    #         rospy.loginfo("ROS interrupt received")
+    #     except Exception as e:
+    #         rospy.logerr(f"Unexpected error calling {service_name}: {e}")
+    #     return None
+
+    def call_service_safely(self, service_name, service_type, request=None, timeout=1.0):
         """
-        A helper method to safely call ROS services with proper error handling.
+        A helper method to safely call ROS services with proper error handling using threading.
+
         Args:
             service_name (str): The name of the service to call
             service_type: The service type/class
             request: The request object to send (optional)
             timeout (float): Timeout in seconds (optional)
+
         Returns:
-            Response object if successful, None if failed
+            Response object if successful, None if failed or timed out.
         """
+        # Check if the service exists
+        if not self.service_exists(service_name):
+            rospy.logwarn(f"Service {service_name} does not exist")
+            return None
+
+        # Try waiting for the service with a timeout
         try:
-            # Check if the service exists
-            if not self.service_exists(service_name):
-                rospy.logwarn(f"Service {service_name} does not exist")
-                return None
-                
-            # Wait for service with timeout
+            rospy.wait_for_service(service_name, timeout=timeout)
+        except rospy.ROSException as e:
+            rospy.logwarn(f"Service {service_name} timed out: {e}")
+            return None
+
+        response_container = {'response': None}  # Shared variable for response
+        done_event = threading.Event()  # Event to track completion
+
+        def service_call():
+            """ Calls the ROS service and stores the response. """
             try:
-                rospy.wait_for_service(service_name, timeout=timeout)
-            except rospy.ROSException as e:
-                rospy.logwarn(f"Service {service_name} timed out: {e}")
-                return None
-                
-            # Create proxy and call service
-            service_proxy = rospy.ServiceProxy(service_name, service_type)
-            
-            # Call with or without request
-            if request is not None:
-                return service_proxy(request)
-            else:
-                return service_proxy()
-        except rospy.ServiceException as e:
-            rospy.logerr(f"Service call to {service_name} failed: {e}")
-        except rospy.ROSInterruptException:
-            rospy.loginfo("ROS interrupt received")
-        except Exception as e:
-            rospy.logerr(f"Unexpected error calling {service_name}: {e}")
-        return None
-    
+                service_proxy = rospy.ServiceProxy(service_name, service_type)
+                if request is not None:
+                    response_container['response'] = service_proxy(request)
+                else:
+                    response_container['response'] = service_proxy()
+                done_event.set()  # Mark as done
+            except rospy.ServiceException as e:
+                rospy.logerr(f"Service call to {service_name} failed: {e}")
+                done_event.set()  # Ensure thread doesn't hang
+            except Exception as e:
+                rospy.logerr(f"Unexpected error calling {service_name}: {e}")
+                done_event.set()  # Ensure thread doesn't hang
+
+        # Create and start a thread for the service call
+        service_thread = threading.Thread(target=service_call)
+        service_thread.start()
+
+        # Wait for completion or timeout
+        service_thread.join(timeout=timeout)
+
+        if not done_event.is_set():
+            rospy.logerr(f"Service {service_name} timed out after {timeout} seconds")
+            return None  # Timeout occurred
+
+        return response_container['response']  # Return actual response
+
+
     # Ros Services
     def get_state(self):
         with app.app_context():
@@ -510,14 +572,64 @@ class gui_ros():
                         SetLaunchRequest(launch_file_full_path, True)
                     )
                     if response:
+                        print("sucessfully launched: {}".format(launch_file.name))
                         launch_file.pending = 0
                         db.session.commit()
+                    else:
+                        print("failed to launch: {}".format(launch_file.name))
                     time.sleep(1.0)
+    
+    def activate_roslaunch_list(self):
+        with app.app_context():
+            # Call the ROS service to get the current launch list
+            response = self.call_service_safely(
+                self.get_roslaunch_srv,
+                GetLaunch,
+                GetLaunchRequest()
+            )
+            if len(response.list) != 0:
+                # Retrieve existing launch records indexed by full_path
+                current_launches = {launch.full_path: launch for launch in RosActiveLaunchList.query.all()}
                 
+                # response.list now contains only full_path values, so we create a set for easy lookup
+                new_launch_set = set(response.list)
+                
+                # Add new launch files that don't exist in the current records
+                current_launches_len = len(current_launches)
+                for count, full_path in enumerate(new_launch_set):
+                    if full_path not in current_launches:
+                        new_record = RosActiveLaunchList(id=count + current_launches_len, full_path=full_path, pending=0)
+                        db.session.add(new_record)
+                        print(f"Added new launch file: {full_path}")
+                
+                # remove records that are no longer in the new list
+                if len(current_launches) != 0:
+                    for full_path, launch in current_launches.items():
+                        if full_path not in new_launch_set:
+                            db.session.delete(launch)
+                            print(f"Deleted launch file: {full_path}")
+                
+                # Commit all changes once done
+                db.session.commit()
+
+                # Now process any records that have pending set to 1.
+                pending_launches = RosActiveLaunchList.query.filter_by(pending=1).all()
+                for launch in pending_launches:
+                    # Call the ROS service for the pending launch
+                    response = self.call_service_safely(
+                        self.set_roslaunch_srv,
+                        SetLaunch,
+                        SetLaunchRequest(launch.full_path, False)
+                    )
+                    print(f"SetLaunch for: {launch.full_path} to False")
+            else:
+                db.session.query(RosActiveLaunchList).delete()
+                db.session.commit()
+            
 
 if __name__ == "__main__":
     try:
-        rospy.init_node('mvp_gui_node', disable_signals=True)
+        rospy.init_node('mvp_gui_node')
         gui_ros_node = gui_ros()
         gui_ros_node.run()
     except rospy.exceptions.ROSException as e:

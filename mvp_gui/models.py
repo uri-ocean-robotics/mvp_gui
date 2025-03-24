@@ -126,7 +126,6 @@ class PoseHistory(db.Model):
     def __repr__(self):
         return f'posehsitory {self}'
     
-
 class PowerItems(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     name = db.Column(db.String(length=30), nullable=False, unique=True)
@@ -185,6 +184,13 @@ class RosLaunchList(db.Model):
     pending = db.Column(db.Integer(), nullable=False)
     def __repr__(self):
         return f'roslaunchlist {self}'
+
+class RosActiveLaunchList(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    full_path = db.Column(db.String(length=100), nullable=False)
+    pending = db.Column(db.Integer(), nullable=False)
+    def __repr__(self):
+        return f'rosactivelaunchlist {self}'
     
 class RosThreadList(db.Model):
     id = db.Column(db.Integer(), primary_key=True)

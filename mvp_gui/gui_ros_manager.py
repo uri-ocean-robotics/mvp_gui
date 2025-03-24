@@ -23,6 +23,7 @@ def start_ros_process(env):
             
             # Command that launches the ROS node and saves its PID to a temp file
             ros_cmd = (
+                'sleep 1;'
                 'source /opt/ros/noetic/setup.bash && '
                 'source ~/catkin_ws/devel/setup.bash && '
                 'python3 ./mvp_gui/gui_ros.py & '
