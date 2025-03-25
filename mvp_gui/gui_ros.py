@@ -215,7 +215,7 @@ class gui_ros():
             rospy.logerr(f"Error checking if service {service_name} exists: {e}")
             return False
 
-    # def call_service_safely(self, service_name, service_type, request=None, timeout=0.5):
+    # def call_service_safely(self, service_name, service_type, request=None, timeout=3.0):
     #     """
     #     A helper method to safely call ROS services with proper error handling.
     #     Args:
@@ -249,14 +249,14 @@ class gui_ros():
     #             return service_proxy()
 
     #     except rospy.ServiceException as e:
-    #         rospy.logerr(f"Service call to {service_name} failed: {e}")
+    #         rospy.logerr(f"Service call to {service_name} failed: {e} !!!")
     #     except rospy.ROSInterruptException:
-    #         rospy.loginfo("ROS interrupt received")
+    #         rospy.loginfo("ROS interrupt received !!!")
     #     except Exception as e:
-    #         rospy.logerr(f"Unexpected error calling {service_name}: {e}")
+    #         rospy.logerr(f"Unexpected error calling {service_name}: {e} !!!")
     #     return None
 
-    def call_service_safely(self, service_name, service_type, request=None, timeout=1.0):
+    def call_service_safely(self, service_name, service_type, request=None, timeout=2.0):
         """
         A helper method to safely call ROS services with proper error handling using threading.
 
@@ -336,7 +336,7 @@ class gui_ros():
                 
                 # Process transitions
                 for count, state_name in enumerate(response.state.transitions):
-                    state = HelmStates(id=count, name=state_name)
+                    state = HelmStates(id=count+1, name=state_name)
                     db.session.add(state)
                 db.session.commit()
             else:
@@ -355,15 +355,15 @@ class gui_ros():
                     # Service call successful
                     change_state_action.pending = 0
                     db.session.commit()
-                    rospy.loginfo(f"State changed to {change_state_action.value}")
+                    rospy.loginfo(f"Helm State changed to {change_state_action.value}")
                 else:
-                    rospy.logwarn(f"Failed to change state to {change_state_action.value}")
+                    rospy.logwarn(f"Failed to change Helm State to {change_state_action.value}")
 
     def get_controller_state(self):
         with app.app_context():
             # Use the helper method for service call
             response = self.call_service_safely(
-                self.controller_srv, 
+                self.controller_state_srv, 
                 Trigger
             )
             if response:
@@ -385,9 +385,9 @@ class gui_ros():
                     # Service call successful
                     controller_state.pending = 0
                     db.session.commit()
-                    rospy.loginfo(f"State changed to {controller_state.value}")
+                    rospy.loginfo(f"Controller State changed to {controller_state.value}")
                 else:
-                    rospy.logwarn(f"Failed to change state to {controller_state.value}")
+                    rospy.logwarn(f"Failed to change Controller State to {controller_state.value}")
 
 
     def get_power_port(self):
@@ -460,7 +460,8 @@ class gui_ros():
         with app.app_context():
             response = self.call_service_safely(
                 self.get_waypoint_srv, 
-                GetWaypoints
+                GetWaypoints,
+                GetWaypointsRequest(Int16(0))
             )
             if response:
                 db.session.query(CurrentWaypoints).delete()
@@ -479,25 +480,58 @@ class gui_ros():
         with app.app_context():
             pub_wpt_action = RosActions.query.filter_by(action='publish_waypoints').first()
             if pub_wpt_action.pending == 1:
+                waypoints = Waypoints.query.order_by(Waypoints.id).all()
+                geo_wpt = SendWaypointsRequest()
+                geo_wpt.type = 'geopath'
+                for count, entry in enumerate(waypoints):
+                    wpt = Waypoint()
+                    wpt.header.seq = count
+                    wpt.ll_wpt.latitude = entry.lat
+                    wpt.ll_wpt.longitude = entry.lon
+                    wpt.ll_wpt.altitude = entry.alt
+                    geo_wpt.wpt.append(wpt)
+
                 response = self.call_service_safely(
-                    self.set_roslaunch_src,
-                    SendWaypoints
+                    self.pub_waypoint_srv,
+                    SendWaypoints,
+                    geo_wpt
                 )
                 if response:
-                    waypoints = Waypoints.query.order_by(Waypoints.id).all()
-                    geo_wpt = SendWaypointsRequest()
-                    geo_wpt.type = 'geopath'
-                    for count, entry in enumerate(waypoints):
-                        wpt = Waypoint()
-                        wpt.header.seq = count
-                        wpt.ll_wpt.latitude = entry.lat
-                        wpt.ll_wpt.longitude = entry.lon
-                        wpt.ll_wpt.altitude = entry.alt
-                        geo_wpt.wpt.append(wpt)
+                    # Log waypoint details
+                    waypoint_details = [
+                        f"{wpt.header.seq}: [{wpt.ll_wpt.latitude}, {wpt.ll_wpt.longitude}, {wpt.ll_wpt.altitude}]"
+                        for wpt in geo_wpt.wpt
+                    ]
+                    rospy.loginfo(f"Published Waypoints: {', '.join(waypoint_details)}")
+                    # rospy.loginfo(f"Published Waypoints")
                     pub_wpt_action.pending = 0
                     db.session.commit()
                 else:
                     rospy.logwarn(f"Failed to publish waypoints")
+
+    # def publish_waypoints(self):
+    #     with app.app_context():
+    #         pub_wpt_action = RosActions.query.filter_by(action='publish_waypoints').first()
+    #         if pub_wpt_action.pending == 1:
+    #             waypoints = Waypoints.query.order_by(Waypoints.id).all()
+    #             geo_wpt =  SendWaypointsRequest()
+    #             geo_wpt.type = 'geopath'
+    #             count = 0
+    #             for entry in waypoints:
+    #                 wpt = Waypoint()
+    #                 wpt.header.seq = count
+    #                 wpt.ll_wpt.latitude = entry.lat
+    #                 wpt.ll_wpt.longitude = entry.lon
+    #                 wpt.ll_wpt.altitude =  entry.alt
+    #                 count = count +1
+    #                 geo_wpt.wpt.append(wpt)
+    #             try:
+    #                 service_client_pub_waypoint_srv= rospy.ServiceProxy(self.pub_waypoint_srv, SendWaypoints)
+    #                 response = service_client_pub_waypoint_srv(geo_wpt)
+    #                 pub_wpt_action.pending = 0
+    #                 db.session.commit()
+    #             except:
+    #                 print("Publish Waypoints Service Timeout")
 
     def log_poses(self):
         with app.app_context():
@@ -588,26 +622,32 @@ class gui_ros():
                 GetLaunchRequest()
             )
             if len(response.list) != 0:
-                # Retrieve existing launch records indexed by full_path
-                current_launches = {launch.full_path: launch for launch in RosActiveLaunchList.query.all()}
-                
+                active_launches_db_list = RosActiveLaunchList.query.all()
+                active_launches_db_list_full_path = {launch.full_path: launch for launch in RosActiveLaunchList.query.all()}
                 # response.list now contains only full_path values, so we create a set for easy lookup
                 new_launch_set = set(response.list)
-                
-                # Add new launch files that don't exist in the current records
-                current_launches_len = len(current_launches)
-                for count, full_path in enumerate(new_launch_set):
-                    if full_path not in current_launches:
-                        new_record = RosActiveLaunchList(id=count + current_launches_len, full_path=full_path, pending=0)
-                        db.session.add(new_record)
-                        print(f"Added new launch file: {full_path}")
+                current_launches_len = len(active_launches_db_list_full_path)
                 
                 # remove records that are no longer in the new list
-                if len(current_launches) != 0:
-                    for full_path, launch in current_launches.items():
-                        if full_path not in new_launch_set:
-                            db.session.delete(launch)
-                            print(f"Deleted launch file: {full_path}")
+                if current_launches_len != 0:
+                    for active_launches_full_path in active_launches_db_list_full_path:
+                        if active_launches_full_path not in new_launch_set:
+                            db.session.query(RosActiveLaunchList).filter(RosActiveLaunchList.full_path == active_launches_full_path).delete()
+                            # Reindex remaining entries
+                            remaining_entries = db.session.query(RosActiveLaunchList).order_by(RosActiveLaunchList.id).all()
+                            for index, entry in enumerate(remaining_entries):
+                                entry.id = index
+                            print(f"Deleted launch file: {active_launches_full_path}")
+        
+                current_launches_len = len(RosActiveLaunchList.query.all())
+                # Add new launch files that don't exist in the current records
+                count = 0
+                for full_path in new_launch_set:
+                    if full_path not in active_launches_db_list_full_path:
+                        new_record = RosActiveLaunchList(id=count + current_launches_len, full_path=full_path, pending=0)
+                        db.session.add(new_record)
+                        count += 1
+                        print(f"Added new launch file: {full_path}")
                 
                 # Commit all changes once done
                 db.session.commit()
