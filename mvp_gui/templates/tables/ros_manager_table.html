@@ -60,16 +60,6 @@
     <button type="submit">Stop ROS Core </button>
 </form>
 
-<form action="/" method="post">
-    <input type="hidden" name="kill_all_nodes">
-    <button type="submit">Kill all ROS Nodes</button>
-</form>
-
-<form action="/" method="post">
-    <input type="hidden" name="rosnode_cleanup">
-    <button type="submit">Cleanup ROS Nodes </button>
-</form>
-
 </table>
 
 <h4> MVP GUI ROS NODE Manager</h4>
@@ -103,7 +93,7 @@
     </tr>
 </thead>
 <tbody>
-    <!-- Loop through each item in roslaunch_config list -->
+    <!-- Loop through each item in launch_list list -->
     {% for item in launch_list %}
         <tr>
             <td>{{ item.id }}</td>
@@ -129,10 +119,9 @@
 </tbody>
 </table>
 
-<h6>Current Ros Launchfiles</h6>
-
+<h6>Active ROS Launchfiles</h6>
 <table class="table table-hover table-dark">
-    <thead>
+    <!-- <thead>
         <tr>
             <th scope="col">ID</th>
             <th scope="col">Launch File</th>
@@ -141,7 +130,6 @@
         </tr>
     </thead>
     <tbody>
-        <!-- Loop through each item in roslaunch_config list -->
         {% for item in thread_list %}
             <tr>
                 <td>{{ item.id }}</td>
@@ -155,33 +143,32 @@
             </tr>
         {% endfor %}
     </tbody>
-    </table>
+    </table> -->
 
-<!-- <h6>Node lists</h6>
-<table class="table table-hover table-dark">
     <thead>
-    <tr>
-        <th scope="col">ID</th>
-        <th scope="col">Name</th>
-        <th scope="col"> Action</th>
-    </tr>
+        <tr>
+            <th scope="col">ID</th>
+            <th scope="col">Launch File</th>
+            <th scope="col">Actions</th>
+            <th scope="col"> </th>
+        </tr>
     </thead>
-    <tbody>
-        Loop through each item in roslaunch_config list
-        {% for item in node_list %}
+    <tbody id="active_launch_table_body">
+        {% for item in active_launch_list %}
             <tr>
                 <td>{{ item.id }}</td>
-                <td>{{ item.name }}</td>
+                <td>{{ item.full_path }}</td>
                 <td>
-                <form action="/" method="post">
-                    <input type="hidden" name="kill_node" value="{{ item.id }}">
-                    <button type="submit">Kill</button>
-                </form>
-            </td>
+                    <form action="/" method="post">
+                        <input type="hidden" name="terminate_launch_file" value="{{ item.id }}">
+                        <button type="submit">Terminate</button>
+                    </form>
+                </td>
             </tr>
         {% endfor %}
     </tbody>
-</table> -->
+    </table>
+
 
 &nbsp
 <h6> ROS Nodes</h6>
@@ -190,6 +177,8 @@
     <input type="ros_node_keyword" id="ros_node_keyword" name="ros_node_keyword" value="{{ ros_node_keyword }}" style="width: 450px;"><br>
     <input type="submit" value="Get ROS Nodes" name="rosnode_list">
     <input type="submit" value="Remove All Keywords" name="remove_keywords">
+    <input type="submit" value="Kill all ROS Nodes" name="kill_all_nodes">
+    <input type="submit" value="Cleanup ROS Nodes" name="rosnode_cleanup">
 </form>
 
 &nbsp
@@ -274,7 +263,7 @@
 
 <script>
     let intervalId_system_status = null;
-    const updateInterval_system_status = 1000;
+    const updateInterval_system_status = 500;
 
     // Function to start the interval
     function startssInterval() {
@@ -309,14 +298,66 @@
         fetch('/current_system_status')
             .then(response => response.json())
             .then(data => {
-                const { remote_connection, roscore_status, mvpgui_status, connected_ros_master} = data;
+                const { remote_connection, roscore_status, mvpgui_status, connected_ros_master, active_launches} = data;
                 // Populate vital data
                 document.getElementById('remote_connection').textContent = remote_connection.data;
                 document.getElementById('roscore_status').textContent = roscore_status.data;
                 document.getElementById('mvpgui_status').textContent = mvpgui_status.data;
                 document.getElementById('connected_ros_master').textContent = connected_ros_master.data;
+                
+                // Update the active launch file table
+                updateActiveLaunchTable(active_launches);
 
             })
+        }
+
+        function updateActiveLaunchTable(activeLaunches) {
+            const tbody = document.getElementById('active_launch_table_body');
+            
+            if (!tbody) {
+                console.error("Error: Element with ID 'active_launch_table_body' not found");
+                return;
+            }
+
+            // Clear previous content
+            tbody.innerHTML = '';
+
+            // Populate table with new data
+            activeLaunches.forEach(item => {
+                const row = document.createElement('tr');
+
+                // ID Column
+                const idCell = document.createElement('td');
+                idCell.textContent = item.id;
+                row.appendChild(idCell);
+
+                // Launch File Column
+                const launchCell = document.createElement('td');
+                launchCell.textContent = item.full_path;
+                row.appendChild(launchCell);
+
+                // Actions Column with Terminate Button
+                const actionsCell = document.createElement('td');
+                const form = document.createElement('form');
+                form.setAttribute('action', '/');
+                form.setAttribute('method', 'post');
+
+                const input = document.createElement('input');
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', 'terminate_launch_file');
+                input.setAttribute('value', item.id);
+                form.appendChild(input);
+
+                const button = document.createElement('button');
+                button.setAttribute('type', 'submit');
+                button.textContent = 'Terminate';
+                form.appendChild(button);
+
+                actionsCell.appendChild(form);
+                row.appendChild(actionsCell);
+
+                tbody.appendChild(row);
+            });
         }
 
 </script>

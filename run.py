@@ -4,7 +4,7 @@ import os
 import threading
 import time
 import atexit
-from mvp_gui.models import db, RosLaunchList, RosThreadList, RosNodeList, RosNodeKeywords, RosTopicList, RosTopicKeywords
+from mvp_gui.models import db, RosLaunchList, RosThreadList, RosNodeList, RosNodeKeywords, RosTopicList, RosTopicKeywords, RosActiveLaunchList
 
 class ServerManager:
     """Manages the Flask server process lifecycle and environment"""
@@ -69,6 +69,7 @@ class DatabaseManager:
         """Initialize the database manager"""
         self.ros_tables = {
             'RosLaunchList': RosLaunchList,
+            'RosActiveLaunchList': RosActiveLaunchList, 
             'RosThreadList': RosThreadList,
             'RosNodeList': RosNodeList,
             'RosNodeKeywords': RosNodeKeywords,
@@ -113,7 +114,7 @@ def main():
                 print("Server stopped unexpectedly, restarting...")
                 server_manager.start_server()
             
-            time.sleep(5)  # Reduced polling frequency to lower CPU usage
+            time.sleep(1)  # Reduced polling frequency to lower CPU usage
             
     except KeyboardInterrupt:
         print("\nShutting down gracefully...")

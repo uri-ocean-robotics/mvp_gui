@@ -36,9 +36,6 @@ env['PYTHONPATH'] = project_path
 env['ROS_MASTER_URI'] = f'http://{ros_master_uri}:{ROS_PORT}/'
 
 
-# Create SSHConnection instance
-# ssh_connection = SSHConnection(config['remote_host'], config['remote_user'], config['remote_password'])
-
 
 from mvp_gui.routes import routes_base
 from mvp_gui.routes import routes_systems
