@@ -28,12 +28,12 @@ ROS_PORT = "11311"
 
 global_file_name = './config/gui_config.yaml'
 yaml_config = yaml.safe_load(open(global_file_name, 'r'))
-ros_master_uri = yaml_config['ros_master_uri']
+# ros_master_uri = yaml_config['ros_master_uri']
 
 project_path = os.getcwd()
 env = os.environ.copy()
 env['PYTHONPATH'] = project_path
-env['ROS_MASTER_URI'] = f'http://{ros_master_uri}:{ROS_PORT}/'
+# env['ROS_MASTER_URI'] = f'http://{ros_master_uri}:{ROS_PORT}/'
 
 
 

@@ -1,5 +1,5 @@
-name_space: wamv_rise
-# name_space: alpha_rise
+# name_space: wamv_rise
+name_space: alpha_rise
 
 ##vehicle status
 poses_source: odometry/filtered/local
@@ -29,7 +29,7 @@ pub_waypoints_service: helm/path_3d/update_waypoints
 get_power_port_srv: gpio_manager/get_power_status
 lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
 
-##roslaunch manager
+##ros2 launch manager
 set_launch: set_launch
 get_launch: get_launch
 
@@ -42,19 +42,19 @@ remote_password: "temppwd"
 # remote_password: "temppwd" 
 
 
-##rosmater uri
-ros_master_uri: 192.168.2.55
+##ros_master_uri (Deprecated in ROS2)
+# ros_master_uri: 192.168.2.55
 
 # ##ALPHA_RISE
-# roslaunch_folder: ~/catkin_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
-# ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+# roslaunch_folder: ~/ros2_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
+# ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 
 ##RACE
-# roslaunch_folder: ~/catkin_ws/src/race_auv/race_bringup/launch/
-# ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+# roslaunch_folder: ~/ros2_ws/src/race_auv/race_bringup/launch/
+# ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 # #WAMV
-roslaunch_folder: ~/catkin_ws/src/wamv_rise/wamv_rise_bringup/launch/
-ros_source_base: source /opt/ros/noetic/setup.bash && source ~/catkin_ws/devel/setup.bash && 
+roslaunch_folder: ~/ros2_ws/src/wamv_rise/wamv_rise_bringup/launch/
+ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 # ros_source_base: source ~/.bashrc && 
 
 ##topside gps

@@ -6,14 +6,16 @@ import time
 import tempfile
 
 # Initialize global variables
-gui_node = '/mvp_gui_node'
+# In ROS 2, nodes are often namespaced. The actual name might be different.
+# The gui_ros.py will create a node named 'mvp_gui_node'.
+gui_node = '/mvp_gui_node' # This might need adjustment based on how the node is launched.
 ros_process = None
 process_lock_gui = threading.Lock()
 TIMEOUT = 2
 ROS_PID_FILE = os.path.join(tempfile.gettempdir(), "ros_gui_pid.txt")
 
 def start_ros_process(env):
-    """Launch ROS GUI process in a separate terminal that will persist if parent script terminates."""
+    """Launch ROS 2 GUI process in a separate terminal that will persist if parent script terminates."""
     global ros_process
     
     with process_lock_gui:
@@ -21,21 +23,35 @@ def start_ros_process(env):
             # First, check if there's an existing PID file from a previous run
             cleanup_existing_process()
             
-            # Command that launches the ROS node and saves its PID to a temp file
+            # This new command is more robust and keeps the terminal open for debugging.
+            # It runs the python script as a module to ensure imports work correctly.
             ros_cmd = (
-                'sleep 1;'
-                'source /opt/ros/noetic/setup.bash && '
-                'source ~/catkin_ws/devel/setup.bash && '
-                'python3 ./mvp_gui/gui_ros.py & '
-                'echo $! > ' + ROS_PID_FILE + ' && '
-                'wait'  # Wait for background process to complete
+                'echo "Setting up environment...";'
+                # Add current directory to PYTHONPATH to help with local package imports
+                'export PYTHONPATH=$(pwd):$PYTHONPATH;'
+                # Source ROS 2 environments
+                'source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash;'
+                'echo "Launching ROS node...";'
+                # Use -m to run as a module (solves import issues) and -u for unbuffered output
+                'python3 -u -m mvp_gui.gui_ros & '
+                'GUI_PID=$!;'
+                'echo "ROS GUI process started with PID: $GUI_PID";'
+                # Store the PID
+                'echo $GUI_PID > ' + ROS_PID_FILE + '; '
+                # Wait for the specific background process to finish
+                'wait $GUI_PID; '
+                'EXIT_CODE=$?;'
+                'echo "ROS GUI process exited with code: $EXIT_CODE";'
+                # This is the key for debugging: keep the terminal open to see any errors.
+                'echo "Press Enter to close this terminal...";'
+                'read'
             )
             
             ros_process = subprocess.Popen(
                 ['gnome-terminal', '--', 'bash', '-c', ros_cmd],
                 env=env
             )
-            print(f"Started ROS GUI process (Terminal PID: {ros_process.pid})")
+            print(f"Started ROS 2 GUI process (Terminal PID: {ros_process.pid})")
             
             # Give the process time to write the PID file
             time.sleep(1)
@@ -94,59 +110,28 @@ def get_ros_pid():
         print(f"Error reading PID file: {e}")
         return None
 
-def kill_rosnode(node_name, env, timeout=TIMEOUT):
-    """Kill a specific ROS node using rosnode kill command."""
-    try:
-        command = (
-            'source /opt/ros/noetic/setup.bash && '
-            'source ~/catkin_ws/devel/setup.bash && '
-            f'rosnode kill {node_name}'
-        )
-        
-        result = subprocess.run(
-            ['bash', '-c', command], 
-            env=env, 
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE, 
-            text=True, 
-            timeout=timeout
-        )
-        
-        if result.returncode == 0:
-            print(f"Successfully killed ROS node: {node_name}")
-            return True
-        else:
-            print(f"Failed to kill ROS node: {node_name}\nError: {result.stderr}")
-            return False
-            
-    except subprocess.TimeoutExpired:
-        print(f"Timeout while trying to kill ROS node: {node_name}")
-        return False
-    except Exception as e:
-        print(f"Error killing ROS node {node_name}: {str(e)}")
-        return False
+# The `rosnode kill` command is from ROS 1 and is not directly available in ROS 2.
+# We will rely on process ID (PID) killing, which is more robust.
+# The original kill_rosnode function is removed.
 
 def stop_ros_process(env):
-    """Stop the ROS GUI process and kill associated ROS nodes."""
+    """Stop the ROS GUI process by terminating its process ID."""
     global ros_process
     global gui_node
     
     with process_lock_gui:
-        # First check if we have a tracked PID file, regardless of ros_process status
+        # Get the PID from the file, as this is the most reliable source
         ros_pid = get_ros_pid()
         if ros_pid:
             try:
-                # First try to gracefully kill the ROS node
-                kill_rosnode(gui_node, env)
-                
-                # Now terminate the actual process
-                print(f"Killing gui_node with PID: {ros_pid}")
+                # Terminate the actual process using its PID
+                print(f"Killing gui_node process with PID: {ros_pid}")
                 os.kill(ros_pid, signal.SIGTERM)
                 
                 # Give it a moment to terminate
                 time.sleep(0.5)
                 
-                # Verify termination
+                # Verify termination and use SIGKILL if necessary
                 if is_process_running(ros_pid):
                     print(f"Process {ros_pid} didn't terminate gracefully, using SIGKILL...")
                     os.kill(ros_pid, signal.SIGKILL)
