@@ -79,13 +79,13 @@ def map_page():
         ##controller state change
         elif 'controller_disable' in request.form:
             change_state = RosActions.query.filter_by(action='controller_state').first()
-            change_state.value = "disable"
+            change_state.value = "0"
             change_state.pending = 1
             db.session.commit()
 
         elif 'controller_enable' in request.form:
             change_state = RosActions.query.filter_by(action='controller_state').first()
-            change_state.value = "enable"
+            change_state.value = "1"
             change_state.pending = 1
             db.session.commit()
             # return redirect(url_for('map_page'))

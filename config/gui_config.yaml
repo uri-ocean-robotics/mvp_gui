@@ -1,60 +1,61 @@
 # name_space: wamv_rise
-name_space: alpha_rise
+# name_space: alpha_rise
 
 ##vehicle status
-poses_source: odometry/filtered/local
-geo_pose_source: odometry/geopose
-vitals_source: power_monitor/power
+poses_source: odometry
+geo_pose_source: geopose
+# vitals_source: power_monitor/power
 
-setpoint_source: controller/process/set_point
-value_source: controller/process/value
+# setpoint_source: controller/process/set_point
+# value_source: controller/process/value  
 
-#usbl
-geo_pose_secondary_source: usbl/modem_geopose
+# #usbl
+# geo_pose_secondary_source: usbl/modem_geopose
 
-##state services
-get_state_service: helm/get_state
-get_states_service: helm/get_states
-change_state_service: helm/change_state
+# ##state services
+helm_state_get: helm/state
+helm_state_set: mvp_helm/change_state
+# get_states_service: helm/get_states
+# change_state_service: helm/change_state
 
-#mvp_controller service
-controller_service: controller
-controller_state_service: controller/get_state
+# #mvp_controller service
+# controller_service: controller
+controller_state_get: controller_state
+controller_state_set: controller/set
 
-##waypoints services
-get_waypoints_service: helm/path_3d/get_next_waypoints
-pub_waypoints_service: helm/path_3d/update_waypoints
+# ##waypoints services
+# get_waypoints_service: helm/path_3d/get_next_waypoints
+# pub_waypoints_service: helm/path_3d/update_waypoints
+pub_waypoints_service: mvp_helm/set_waypoints
 
-##power manager
-get_power_port_srv: gpio_manager/get_power_status
-lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
+# ##power manager
+# get_power_port_srv: gpio_manager/get_power_status
+# lumen_control_topic: gpio_manager/set_pwm_lumen_brightness
+gpio_power_state: gpio_power_state
 
 ##ros2 launch manager
-set_launch: set_launch
-get_launch: get_launch
+# set_launch: set_launch
+# get_launch: get_launch
+roslaunch_state: roslaunch_state
 
 ##remote ros manager
 remote_host: "192.168.2.55"
 remote_user: "mvp_admin"
 remote_password: "temppwd" 
-# remote_host: "192.168.2.115"
-# remote_user: "soslab-latitude5420"
-# remote_password: "temppwd" 
-
 
 ##ros_master_uri (Deprecated in ROS2)
 # ros_master_uri: 192.168.2.55
 
 # ##ALPHA_RISE
-# roslaunch_folder: ~/ros2_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
-# ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
+roslaunch_folder: ~/ros2_ws/src/alpha_rise_auv/alpha_rise_bringup/launch/
+ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 
 ##RACE
 # roslaunch_folder: ~/ros2_ws/src/race_auv/race_bringup/launch/
 # ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 # #WAMV
-roslaunch_folder: ~/ros2_ws/src/wamv_rise/wamv_rise_bringup/launch/
-ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
+# roslaunch_folder: ~/ros2_ws/src/wamv_rise/wamv_rise_bringup/launch/
+# ros_source_base: source /opt/ros/jazzy/setup.bash && source ~/ros2_ws/install/setup.bash && 
 # ros_source_base: source ~/.bashrc && 
 
 ##topside gps
